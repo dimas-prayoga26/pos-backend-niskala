@@ -3,6 +3,14 @@ const { pool } = require("../config/database");
 const mapOrder = (row, items = []) => {
   if (!row) return null;
 
+  const totalWithTax = Number(row.total_with_tax);
+  const cateringPaymentPlan = row.catering_payment_plan || "Full";
+  const rawCateringPaid = Number(row.catering_dp_received || 0);
+  const cateringPaidAmount =
+    row.catering_order_id && cateringPaymentPlan !== "DP"
+      ? totalWithTax
+      : rawCateringPaid;
+
   return {
     _id: row.id,
     id: row.id,
@@ -19,10 +27,10 @@ const mapOrder = (row, items = []) => {
       total: Number(row.total),
       onlineOrderCharge: Number(row.online_order_charge || 0),
       tax: Number(row.tax),
-      totalWithTax: Number(row.total_with_tax),
-      dp: Number(row.catering_dp_received || 0),
+      totalWithTax,
+      dp: cateringPaidAmount,
       remainingBalance: Math.max(
-        Number(row.total_with_tax) - Number(row.catering_dp_received || 0),
+        totalWithTax - cateringPaidAmount,
         0
       ),
     },
@@ -35,9 +43,9 @@ const mapOrder = (row, items = []) => {
           orderDate: row.catering_order_date,
           eventDate: row.catering_event_date,
           deliveryTime: row.catering_delivery_time,
-          paymentPlan: row.catering_payment_plan || "Full",
-          dp: Number(row.catering_dp_received || 0),
-          isPaid: Boolean(row.catering_is_paid),
+          paymentPlan: cateringPaymentPlan,
+          dp: cateringPaidAmount,
+          isPaid: Math.max(totalWithTax - cateringPaidAmount, 0) === 0,
           note: row.catering_note || "",
         }
       : null,
@@ -251,10 +259,14 @@ const create = async (orderData) => {
     }
 
     if (cateringDetails) {
+      const cateringPaymentPlan = cateringDetails.paymentPlan || "Full";
+      const cateringDpReceived =
+        cateringPaymentPlan === "Full"
+          ? Number(bills.totalWithTax || 0)
+          : Number(cateringDetails.dp || 0);
       const isPaid =
         Boolean(cateringDetails.isPaid) ||
-        cateringDetails.paymentPlan === "Full" ||
-        Number(cateringDetails.dp || 0) >= Number(bills.totalWithTax || 0);
+        cateringDpReceived >= Number(bills.totalWithTax || 0);
 
       await connection.query(
         `INSERT INTO order_catering_details
@@ -268,8 +280,8 @@ const create = async (orderData) => {
           cateringDetails.orderDate || null,
           cateringDetails.eventDate || null,
           cateringDetails.deliveryTime || null,
-          cateringDetails.paymentPlan || "Full",
-          cateringDetails.dp || 0,
+          cateringPaymentPlan,
+          cateringDpReceived,
           isPaid ? 1 : 0,
           cateringDetails.note || null,
         ]
