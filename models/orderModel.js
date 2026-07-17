@@ -337,8 +337,56 @@ const updateStatus = async (id, orderStatus) => {
 
 const updateCateringPaidStatus = async (id, isPaid) => {
   const [result] = await pool.query(
-    "UPDATE order_catering_details SET is_paid = ? WHERE order_id = ?",
-    [isPaid ? 1 : 0, id]
+    `UPDATE order_catering_details cod
+     JOIN orders o ON o.id = cod.order_id
+     SET
+       cod.is_paid = ?,
+       cod.dp_received = CASE
+         WHEN ? = 1 THEN o.total_with_tax
+         ELSE cod.dp_received
+       END
+     WHERE cod.order_id = ?`,
+    [isPaid ? 1 : 0, isPaid ? 1 : 0, id]
+  );
+
+  if (!result.affectedRows) return null;
+
+  return findById(id);
+};
+
+const addCateringPayment = async (id, amount) => {
+  const [result] = await pool.query(
+    `UPDATE order_catering_details cod
+     JOIN orders o ON o.id = cod.order_id
+     SET
+       cod.dp_received = LEAST(cod.dp_received + ?, o.total_with_tax),
+       cod.is_paid = CASE
+         WHEN LEAST(cod.dp_received + ?, o.total_with_tax) >= o.total_with_tax
+         THEN 1
+         ELSE 0
+       END
+     WHERE cod.order_id = ?`,
+    [amount, amount, id]
+  );
+
+  if (!result.affectedRows) return null;
+
+  return findById(id);
+};
+
+const updateCateringPaymentAmount = async (id, amount) => {
+  const [result] = await pool.query(
+    `UPDATE order_catering_details cod
+     JOIN orders o ON o.id = cod.order_id
+     SET
+       cod.dp_received = LEAST(?, o.total_with_tax),
+       cod.is_paid = CASE
+         WHEN LEAST(?, o.total_with_tax) >= o.total_with_tax
+         THEN 1
+         ELSE 0
+       END
+     WHERE cod.order_id = ?`,
+    [amount, amount, id]
   );
 
   if (!result.affectedRows) return null;
@@ -352,4 +400,6 @@ module.exports = {
   findById,
   updateStatus,
   updateCateringPaidStatus,
+  addCateringPayment,
+  updateCateringPaymentAmount,
 };

@@ -119,8 +119,52 @@ const updateCateringPaymentStatus = async (req, res, next) => {
   }
 };
 
+const addCateringPayment = async (req, res, next) => {
+  try {
+    const { amount } = req.body;
+    const { id } = req.params;
+    const role = req.user?.role?.toLowerCase();
+
+    if (!Number(id)) {
+      const error = createHttpError(404, "Invalid id!");
+      return next(error);
+    }
+
+    if (!["admin", "cashier"].includes(role)) {
+      const error = createHttpError(
+        403,
+        "Only admin or cashier can add catering payment!"
+      );
+      return next(error);
+    }
+
+    const paymentAmount = Number(amount);
+
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+      const error = createHttpError(400, "Payment amount must be greater than 0!");
+      return next(error);
+    }
+
+    const order = await Order.addCateringPayment(id, paymentAmount);
+
+    if (!order) {
+      const error = createHttpError(404, "Catering order not found!");
+      return next(error);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Catering payment added",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   addOrder,
+  addCateringPayment,
   getOrderById,
   getOrders,
   updateOrder,
