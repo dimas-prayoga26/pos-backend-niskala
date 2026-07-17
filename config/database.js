@@ -40,6 +40,7 @@ const seedCategories = [
   ["Main Course", "\u{1F35A}"],
   ["Snack", "\u{1F35F}"],
   ["Catering", "\u{1F371}"],
+  ["Add Ons", "\u2795"],
 ];
 
 const seedMenuItems = [
@@ -87,6 +88,15 @@ const seedAddOns = [
   ["air-mineral", "Air Mineral", 5000],
 ];
 
+const seedStockItems = [
+  ["Ayam Fillet", "Makanan", "kg", 4, 5, "Supplier Ayam Segar"],
+  ["Kentang Beku", "Snack", "kg", 2.5, 3, "Frozen Food Mandiri"],
+  ["Powder Matcha", "Powder", "kg", 0.3, 0.5, "Toko Bahan Minuman"],
+  ["Beras", "Makanan", "kg", 17, 15, "Toko Beras Makmur"],
+  ["Cup 16 oz + tutup", "Packaging", "pak(50)", 5, 4, "Toko Kemasan"],
+  ["Gula Aren Cair", "Sirup", "botol", 3, 2, "UMKM Aren Jaya"],
+];
+
 const deactivateRowsOutsideList = async (table, column, activeColumn, values) => {
   if (!values.length) return;
 
@@ -114,6 +124,8 @@ const connectDB = async () => {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
+  await runSafeMigration("UPDATE users SET role = 'Cashier' WHERE LOWER(role) = 'waiter'");
+  await runSafeMigration("UPDATE users SET name = 'Cashier' WHERE LOWER(name) = 'waiter'");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
@@ -144,6 +156,35 @@ const connectDB = async () => {
     )
   `);
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN description");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stock_items (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(150) NOT NULL UNIQUE,
+      category VARCHAR(100) NOT NULL,
+      unit VARCHAR(30) NOT NULL,
+      stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+      minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+      supplier VARCHAR(150),
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_stock_items_category (category),
+      INDEX idx_stock_items_is_active (is_active)
+    )
+  `);
+
+  await pool.query(
+    `INSERT INTO stock_items
+      (name, category, unit, stock, minimum_stock, supplier)
+     VALUES ?
+     ON DUPLICATE KEY UPDATE
+       category = VALUES(category),
+       unit = VALUES(unit),
+       supplier = VALUES(supplier),
+       is_active = TRUE`,
+    [seedStockItems]
+  );
 
   const defaultCategories = [
     ["Starters", "🍲"],
@@ -219,9 +260,11 @@ const connectDB = async () => {
       order_code VARCHAR(40) UNIQUE,
       customer_name VARCHAR(100) NOT NULL,
       guests INT NOT NULL,
+      order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
       order_status VARCHAR(50) NOT NULL,
       order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       total DECIMAL(12,2) NOT NULL,
+      online_order_charge DECIMAL(12,2) NOT NULL DEFAULT 0,
       tax DECIMAL(12,2) NOT NULL,
       total_with_tax DECIMAL(12,2) NOT NULL,
       payment_method VARCHAR(50),
@@ -231,6 +274,10 @@ const connectDB = async () => {
   `);
 
   await runSafeMigration("ALTER TABLE orders ADD COLUMN order_code VARCHAR(40) UNIQUE AFTER id");
+  await runSafeMigration("ALTER TABLE orders ADD COLUMN order_type VARCHAR(50) NOT NULL DEFAULT 'Offline' AFTER guests");
+  await runSafeMigration("ALTER TABLE orders ADD COLUMN online_order_charge DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER total");
+  await runSafeMigration("UPDATE orders SET order_type = 'Offline' WHERE order_type = 'Dine In'");
+  await runSafeMigration("UPDATE orders SET order_type = 'Online' WHERE order_type = 'Online Order'");
   await runSafeMigration("UPDATE orders SET order_code = CONCAT('ORD-', LPAD(id, 6, '0')) WHERE order_code IS NULL OR order_code = ''");
   await pool.query("UPDATE orders SET order_status = 'Completed' WHERE order_status = 'Ready'");
   await runSafeMigration("ALTER TABLE orders DROP FOREIGN KEY fk_orders_table");
@@ -276,6 +323,30 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE orders DROP COLUMN midtrans_transaction_id");
   await runSafeMigration("ALTER TABLE orders DROP COLUMN midtrans_payment_type");
   await runSafeMigration("ALTER TABLE orders DROP COLUMN midtrans_transaction_status");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_catering_details (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      order_id INT UNSIGNED NOT NULL UNIQUE,
+      institution VARCHAR(150),
+      whatsapp VARCHAR(50),
+      order_date DATE,
+      event_date DATE,
+      delivery_time TIME,
+      payment_plan VARCHAR(20) NOT NULL DEFAULT 'Full',
+      dp_received DECIMAL(12,2) NOT NULL DEFAULT 0,
+      is_paid BOOLEAN NOT NULL DEFAULT FALSE,
+      note TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_order_catering_details_order
+        FOREIGN KEY (order_id) REFERENCES orders(id)
+        ON DELETE CASCADE
+    )
+  `);
+  await runSafeMigration("ALTER TABLE order_catering_details ADD COLUMN payment_plan VARCHAR(20) NOT NULL DEFAULT 'Full' AFTER delivery_time");
+  await runSafeMigration("ALTER TABLE order_catering_details ADD COLUMN is_paid BOOLEAN NOT NULL DEFAULT FALSE AFTER dp_received");
+  await runSafeMigration("UPDATE order_catering_details SET is_paid = TRUE WHERE payment_plan = 'Full'");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_items (

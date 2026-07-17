@@ -12,15 +12,35 @@ const mapOrder = (row, items = []) => {
       name: row.customer_name,
       guests: row.guests,
     },
+    orderType: row.order_type || "Offline",
     orderStatus: row.order_status,
     orderDate: row.order_date,
     bills: {
       total: Number(row.total),
+      onlineOrderCharge: Number(row.online_order_charge || 0),
       tax: Number(row.tax),
       totalWithTax: Number(row.total_with_tax),
+      dp: Number(row.catering_dp_received || 0),
+      remainingBalance: Math.max(
+        Number(row.total_with_tax) - Number(row.catering_dp_received || 0),
+        0
+      ),
     },
     items,
     paymentMethod: row.payment_method,
+    cateringDetails: row.catering_order_id
+      ? {
+          institution: row.catering_institution || "",
+          whatsapp: row.catering_whatsapp || "",
+          orderDate: row.catering_order_date,
+          eventDate: row.catering_event_date,
+          deliveryTime: row.catering_delivery_time,
+          paymentPlan: row.catering_payment_plan || "Full",
+          dp: Number(row.catering_dp_received || 0),
+          isPaid: Boolean(row.catering_is_paid),
+          note: row.catering_note || "",
+        }
+      : null,
     paymentData: {
       midtrans_order_id: row.online_midtrans_order_id,
       midtrans_transaction_id: row.online_midtrans_transaction_id,
@@ -119,9 +139,20 @@ const baseOrderQuery = `
     oot.midtrans_order_id AS online_midtrans_order_id,
     oot.midtrans_transaction_id AS online_midtrans_transaction_id,
     oot.midtrans_payment_type AS online_midtrans_payment_type,
-    oot.midtrans_transaction_status AS online_midtrans_transaction_status
+    oot.midtrans_transaction_status AS online_midtrans_transaction_status,
+    cod.order_id AS catering_order_id,
+    cod.institution AS catering_institution,
+    cod.whatsapp AS catering_whatsapp,
+    cod.order_date AS catering_order_date,
+    cod.event_date AS catering_event_date,
+    cod.delivery_time AS catering_delivery_time,
+    cod.payment_plan AS catering_payment_plan,
+    cod.dp_received AS catering_dp_received,
+    cod.is_paid AS catering_is_paid,
+    cod.note AS catering_note
   FROM orders o
   LEFT JOIN order_online_transactions oot ON oot.order_id = o.id
+  LEFT JOIN order_catering_details cod ON cod.order_id = o.id
 `;
 
 const findAll = async () => {
@@ -150,11 +181,13 @@ const create = async (orderData) => {
 
     const {
       customerDetails,
+      orderType = "Offline",
       orderStatus,
       bills,
       items = [],
       paymentMethod,
       paymentData = {},
+      cateringDetails,
     } = orderData;
 
     let customerName = String(customerDetails.name || "").trim();
@@ -172,14 +205,16 @@ const create = async (orderData) => {
 
     const [result] = await connection.query(
       `INSERT INTO orders
-        (customer_name, guests, order_status, total, tax, total_with_tax,
+        (customer_name, guests, order_type, order_status, total, online_order_charge, tax, total_with_tax,
          payment_method)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerName,
-        customerDetails.guests,
+        customerDetails.guests || 1,
+        orderType,
         orderStatus,
         bills.total,
+        bills.onlineOrderCharge || 0,
         bills.tax,
         bills.totalWithTax,
         paymentMethod,
@@ -211,6 +246,32 @@ const create = async (orderData) => {
           paymentData.midtrans_transaction_id || null,
           paymentData.midtrans_payment_type || null,
           paymentData.midtrans_transaction_status || null,
+        ]
+      );
+    }
+
+    if (cateringDetails) {
+      const isPaid =
+        Boolean(cateringDetails.isPaid) ||
+        cateringDetails.paymentPlan === "Full" ||
+        Number(cateringDetails.dp || 0) >= Number(bills.totalWithTax || 0);
+
+      await connection.query(
+        `INSERT INTO order_catering_details
+          (order_id, institution, whatsapp, order_date, event_date,
+           delivery_time, payment_plan, dp_received, is_paid, note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          cateringDetails.institution || null,
+          cateringDetails.whatsapp || null,
+          cateringDetails.orderDate || null,
+          cateringDetails.eventDate || null,
+          cateringDetails.deliveryTime || null,
+          cateringDetails.paymentPlan || "Full",
+          cateringDetails.dp || 0,
+          isPaid ? 1 : 0,
+          cateringDetails.note || null,
         ]
       );
     }
@@ -274,4 +335,21 @@ const updateStatus = async (id, orderStatus) => {
   return findById(id);
 };
 
-module.exports = { create, findAll, findById, updateStatus };
+const updateCateringPaidStatus = async (id, isPaid) => {
+  const [result] = await pool.query(
+    "UPDATE order_catering_details SET is_paid = ? WHERE order_id = ?",
+    [isPaid ? 1 : 0, id]
+  );
+
+  if (!result.affectedRows) return null;
+
+  return findById(id);
+};
+
+module.exports = {
+  create,
+  findAll,
+  findById,
+  updateStatus,
+  updateCateringPaidStatus,
+};

@@ -36,12 +36,28 @@ CREATE TABLE IF NOT EXISTS menu_items (
     ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS stock_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL UNIQUE,
+  category VARCHAR(100) NOT NULL,
+  unit VARCHAR(30) NOT NULL,
+  stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+  minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+  supplier VARCHAR(150),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_stock_items_category (category),
+  INDEX idx_stock_items_is_active (is_active)
+);
+
 INSERT INTO categories (name, icon) VALUES
   ('Coffee', '☕'),
   ('Non-Coffee', '🥤'),
   ('Main Course', '🍚'),
   ('Snack', '🍟'),
-  ('Catering', '🍱')
+  ('Catering', '🍱'),
+  ('Add Ons', '➕')
 ON DUPLICATE KEY UPDATE
   icon = VALUES(icon),
   is_active = TRUE;
@@ -51,9 +67,11 @@ CREATE TABLE IF NOT EXISTS orders (
   order_code VARCHAR(40) UNIQUE,
   customer_name VARCHAR(100) NOT NULL,
   guests INT NOT NULL,
+  order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
   order_status VARCHAR(50) NOT NULL,
   order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   total DECIMAL(12,2) NOT NULL,
+  online_order_charge DECIMAL(12,2) NOT NULL DEFAULT 0,
   tax DECIMAL(12,2) NOT NULL,
   total_with_tax DECIMAL(12,2) NOT NULL,
   payment_method VARCHAR(50),
@@ -71,6 +89,25 @@ CREATE TABLE IF NOT EXISTS order_online_transactions (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_order_online_transactions_order
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS order_catering_details (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id INT UNSIGNED NOT NULL UNIQUE,
+  institution VARCHAR(150),
+  whatsapp VARCHAR(50),
+  order_date DATE,
+  event_date DATE,
+  delivery_time TIME,
+  payment_plan VARCHAR(20) NOT NULL DEFAULT 'Full',
+  dp_received DECIMAL(12,2) NOT NULL DEFAULT 0,
+  is_paid BOOLEAN NOT NULL DEFAULT FALSE,
+  note TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_order_catering_details_order
     FOREIGN KEY (order_id) REFERENCES orders(id)
     ON DELETE CASCADE
 );

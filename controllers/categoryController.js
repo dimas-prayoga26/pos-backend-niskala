@@ -1,8 +1,19 @@
 const createHttpError = require("http-errors");
 const Category = require("../models/categoryModel");
 
+const requireAdmin = (req, next) => {
+  if (req.user?.role?.toLowerCase() !== "admin") {
+    return createHttpError(403, "Only admin can manage categories!");
+  }
+
+  return null;
+};
+
 const addCategory = async (req, res, next) => {
   try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
     const { name, icon } = req.body;
 
     if (!name) {
@@ -20,7 +31,10 @@ const addCategory = async (req, res, next) => {
 
 const getCategories = async (req, res, next) => {
   try {
-    const categories = await Category.findAll();
+    const includeInactive =
+      req.query.includeInactive === "true" &&
+      req.user?.role?.toLowerCase() === "admin";
+    const categories = await Category.findAll({ includeInactive });
     res.status(200).json({ success: true, data: categories });
   } catch (error) {
     next(error);
@@ -29,6 +43,9 @@ const getCategories = async (req, res, next) => {
 
 const updateCategory = async (req, res, next) => {
   try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
     const { id } = req.params;
     const { name, icon, isActive = true } = req.body;
 
@@ -60,6 +77,9 @@ const updateCategory = async (req, res, next) => {
 
 const deleteCategory = async (req, res, next) => {
   try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
     const { id } = req.params;
 
     if (!Number(id)) {

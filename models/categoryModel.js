@@ -14,10 +14,10 @@ const mapCategory = (row) => {
   };
 };
 
-const findAll = async () => {
+const findAll = async ({ includeInactive = false } = {}) => {
   const [rows] = await pool.query(
     `SELECT * FROM categories
-     WHERE is_active = TRUE
+     ${includeInactive ? "" : "WHERE is_active = TRUE"}
      ORDER BY
        CASE name
          WHEN 'Coffee' THEN 1

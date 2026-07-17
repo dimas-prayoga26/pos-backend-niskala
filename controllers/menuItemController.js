@@ -1,8 +1,19 @@
 const createHttpError = require("http-errors");
 const MenuItem = require("../models/menuItemModel");
 
+const requireAdmin = (req, next) => {
+  if (req.user?.role?.toLowerCase() !== "admin") {
+    return createHttpError(403, "Only admin can manage menu items!");
+  }
+
+  return null;
+};
+
 const addMenuItem = async (req, res, next) => {
   try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
     const { categoryId, name, price, imageUrl, isAvailable } =
       req.body;
 
@@ -28,10 +39,13 @@ const addMenuItem = async (req, res, next) => {
 
 const getMenuItems = async (req, res, next) => {
   try {
-    const { categoryId } = req.query;
+    const { categoryId, includeUnavailable: includeUnavailableQuery } = req.query;
+    const includeUnavailable =
+      includeUnavailableQuery === "true" &&
+      req.user?.role?.toLowerCase() === "admin";
     const menuItems = categoryId
-      ? await MenuItem.findByCategoryId(categoryId)
-      : await MenuItem.findAll();
+      ? await MenuItem.findByCategoryId(categoryId, { includeUnavailable })
+      : await MenuItem.findAll({ includeUnavailable });
 
     res.status(200).json({ success: true, data: menuItems });
   } catch (error) {
@@ -41,6 +55,9 @@ const getMenuItems = async (req, res, next) => {
 
 const updateMenuItem = async (req, res, next) => {
   try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
     const { id } = req.params;
     const { categoryId, name, price, imageUrl, isAvailable = true } =
       req.body;
@@ -75,6 +92,9 @@ const updateMenuItem = async (req, res, next) => {
 
 const deleteMenuItem = async (req, res, next) => {
   try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
     const { id } = req.params;
 
     if (!Number(id)) {

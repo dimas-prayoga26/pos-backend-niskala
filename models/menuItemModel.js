@@ -77,19 +77,23 @@ const menuItemOrder = `
   END
 `;
 
-const findAll = async () => {
+const findAll = async ({ includeUnavailable = false } = {}) => {
   const [rows] = await pool.query(
     `${baseQuery}
-     WHERE mi.is_available = TRUE AND c.is_active = TRUE
+     ${includeUnavailable ? "" : "WHERE mi.is_available = TRUE AND c.is_active = TRUE"}
      ORDER BY ${categoryOrder}, ${menuItemOrder}, mi.name ASC`
   );
   return rows.map(mapMenuItem);
 };
 
-const findByCategoryId = async (categoryId) => {
+const findByCategoryId = async (
+  categoryId,
+  { includeUnavailable = false } = {}
+) => {
   const [rows] = await pool.query(
     `${baseQuery}
-     WHERE mi.category_id = ? AND mi.is_available = TRUE AND c.is_active = TRUE
+     WHERE mi.category_id = ?
+       ${includeUnavailable ? "" : "AND mi.is_available = TRUE AND c.is_active = TRUE"}
      ORDER BY ${menuItemOrder}, mi.name ASC`,
     [categoryId]
   );

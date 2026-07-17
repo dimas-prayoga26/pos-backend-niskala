@@ -8,9 +8,17 @@ const register = async (req, res, next) => {
     try {
 
         const { name, phone, email, password, role } = req.body;
+        const allowedRoles = ["admin", "cashier"];
 
         if(!name || !phone || !email || !password || !role){
             const error = createHttpError(400, "All fields are required!");
+            return next(error);
+        }
+
+        const normalizedRole = String(role).toLowerCase();
+
+        if (!allowedRoles.includes(normalizedRole)) {
+            const error = createHttpError(400, "Role must be Admin or Cashier!");
             return next(error);
         }
 
@@ -27,7 +35,7 @@ const register = async (req, res, next) => {
             phone,
             email,
             password: hashedPassword,
-            role
+            role: normalizedRole === "admin" ? "Admin" : "Cashier"
         });
 
         res.status(201).json({success: true, message: "New user created!", data: newUser});

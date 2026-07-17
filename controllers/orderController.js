@@ -78,4 +78,51 @@ const updateOrder = async (req, res, next) => {
   }
 };
 
-module.exports = { addOrder, getOrderById, getOrders, updateOrder };
+const updateCateringPaymentStatus = async (req, res, next) => {
+  try {
+    const { isPaid } = req.body;
+    const { id } = req.params;
+    const role = req.user?.role?.toLowerCase();
+
+    if (!Number(id)) {
+      const error = createHttpError(404, "Invalid id!");
+      return next(error);
+    }
+
+    if (!["admin", "cashier"].includes(role)) {
+      const error = createHttpError(
+        403,
+        "Only admin or cashier can update catering payment status!"
+      );
+      return next(error);
+    }
+
+    if (typeof isPaid !== "boolean") {
+      const error = createHttpError(400, "Invalid payment status!");
+      return next(error);
+    }
+
+    const order = await Order.updateCateringPaidStatus(id, isPaid);
+
+    if (!order) {
+      const error = createHttpError(404, "Catering order not found!");
+      return next(error);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: isPaid ? "Catering order marked as paid" : "Catering order marked as unpaid",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  addOrder,
+  getOrderById,
+  getOrders,
+  updateOrder,
+  updateCateringPaymentStatus,
+};
