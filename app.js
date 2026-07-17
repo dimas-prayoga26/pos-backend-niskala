@@ -11,7 +11,11 @@ const PORT = config.port;
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "http://demo.kopiniskala.com",
+      "https://demo.kopiniskala.com",
+    ],
   })
 );
 app.use(express.json());
