@@ -17,6 +17,8 @@ const mapMenuItem = (row) => {
           id: row.category_id,
           name: row.category_name,
           icon: row.category_icon,
+          tax: row.category_tax === null ? null : Number(row.category_tax),
+          taxRate: row.category_tax === null ? null : Number(row.category_tax),
         }
       : null,
     createdAt: row.created_at,
@@ -28,7 +30,8 @@ const baseQuery = `
   SELECT
     mi.*,
     c.name AS category_name,
-    c.icon AS category_icon
+    c.icon AS category_icon,
+    c.tax AS category_tax
   FROM menu_items mi
   JOIN categories c ON c.id = mi.category_id
 `;

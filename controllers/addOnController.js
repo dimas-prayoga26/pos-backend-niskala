@@ -1,5 +1,6 @@
 const createHttpError = require("http-errors");
 const AddOn = require("../models/addOnModel");
+const { emitRealtimeEvent } = require("../config/socket");
 
 const addAddOn = async (req, res, next) => {
   try {
@@ -14,6 +15,10 @@ const addAddOn = async (req, res, next) => {
       name,
       price,
       isActive,
+    });
+    emitRealtimeEvent("menu:changed", {
+      action: "add-on-created",
+      addOnId: addOn.id || addOn._id,
     });
     res
       .status(201)
@@ -57,6 +62,10 @@ const updateAddOn = async (req, res, next) => {
       return next(createHttpError(404, "Add-on not found!"));
     }
 
+    emitRealtimeEvent("menu:changed", {
+      action: "add-on-updated",
+      addOnId: addOn.id || addOn._id,
+    });
     res
       .status(200)
       .json({ success: true, message: "Add-on updated!", data: addOn });
@@ -79,6 +88,10 @@ const deleteAddOn = async (req, res, next) => {
       return next(createHttpError(404, "Add-on not found!"));
     }
 
+    emitRealtimeEvent("menu:changed", {
+      action: "add-on-deleted",
+      addOnId: Number(id),
+    });
     res.status(200).json({ success: true, message: "Add-on deleted!" });
   } catch (error) {
     next(error);

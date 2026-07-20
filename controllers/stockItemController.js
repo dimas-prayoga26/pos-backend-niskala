@@ -1,5 +1,6 @@
 const createHttpError = require("http-errors");
 const StockItem = require("../models/stockItemModel");
+const { emitRealtimeEvent } = require("../config/socket");
 
 const normalizeStockPayload = (body) => ({
   name: String(body.name || "").trim(),
@@ -40,6 +41,10 @@ const addStockItem = async (req, res, next) => {
 
     const stockItem = await StockItem.create(payload);
 
+    emitRealtimeEvent("stock:changed", {
+      action: "stock-item-created",
+      stockItemId: stockItem.id || stockItem._id,
+    });
     res.status(201).json({
       success: true,
       message: "Stock item added!",
@@ -80,6 +85,10 @@ const updateStockItem = async (req, res, next) => {
       return next(createHttpError(404, "Stock item not found!"));
     }
 
+    emitRealtimeEvent("stock:changed", {
+      action: "stock-item-updated",
+      stockItemId: stockItem.id || stockItem._id,
+    });
     res.status(200).json({
       success: true,
       message: "Stock item updated!",
@@ -110,6 +119,10 @@ const updateStockQuantity = async (req, res, next) => {
       return next(createHttpError(404, "Stock item not found!"));
     }
 
+    emitRealtimeEvent("stock:changed", {
+      action: "stock-quantity-updated",
+      stockItemId: stockItem.id || stockItem._id,
+    });
     res.status(200).json({
       success: true,
       message: "Stock updated!",
@@ -137,6 +150,10 @@ const deleteStockItem = async (req, res, next) => {
       return next(createHttpError(404, "Stock item not found!"));
     }
 
+    emitRealtimeEvent("stock:changed", {
+      action: "stock-item-deleted",
+      stockItemId: Number(id),
+    });
     res.status(200).json({ success: true, message: "Stock item deleted!" });
   } catch (error) {
     next(error);

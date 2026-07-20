@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS categories (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
   icon VARCHAR(20),
+  tax DECIMAL(5,2) NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -51,6 +52,22 @@ CREATE TABLE IF NOT EXISTS stock_items (
   INDEX idx_stock_items_is_active (is_active)
 );
 
+CREATE TABLE IF NOT EXISTS order_platforms (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  icon_url VARCHAR(255),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO order_platforms (name, icon_url) VALUES
+    ('GoFood', '/platforms/gofood.png'),
+    ('GrabFood', '/platforms/grabfood.png'),
+    ('ShopeeFood', '/platforms/shopeefood.png')
+  ON DUPLICATE KEY UPDATE
+  icon_url = VALUES(icon_url);
+
 INSERT INTO categories (name, icon) VALUES
   ('Coffee', '☕'),
   ('Non-Coffee', '🥤'),
@@ -68,6 +85,7 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_name VARCHAR(100) NOT NULL,
   guests INT NOT NULL,
   order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
+  order_platform VARCHAR(100),
   order_status VARCHAR(50) NOT NULL,
   order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   total DECIMAL(12,2) NOT NULL,

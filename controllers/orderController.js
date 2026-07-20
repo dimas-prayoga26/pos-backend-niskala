@@ -1,9 +1,18 @@
 const createHttpError = require("http-errors");
 const Order = require("../models/orderModel");
+const { emitRealtimeEvent } = require("../config/socket");
 
 const addOrder = async (req, res, next) => {
   try {
+    if (req.body?.orderType === "Online" && !req.body?.orderPlatform) {
+      return next(createHttpError(400, "Online order platform is required!"));
+    }
+
     const order = await Order.create(req.body);
+    emitRealtimeEvent("orders:changed", {
+      action: "created",
+      orderId: order.id || order._id,
+    });
     res
       .status(201)
       .json({ success: true, message: "Order created!", data: order });
@@ -70,6 +79,10 @@ const updateOrder = async (req, res, next) => {
       return next(error);
     }
 
+    emitRealtimeEvent("orders:changed", {
+      action: "updated",
+      orderId: order.id || order._id,
+    });
     res
       .status(200)
       .json({ success: true, message: "Order updated", data: order });
@@ -109,6 +122,10 @@ const updateCateringPaymentStatus = async (req, res, next) => {
       return next(error);
     }
 
+    emitRealtimeEvent("orders:changed", {
+      action: "catering-payment-updated",
+      orderId: order.id || order._id,
+    });
     res.status(200).json({
       success: true,
       message: isPaid ? "Catering order marked as paid" : "Catering order marked as unpaid",
@@ -152,6 +169,10 @@ const addCateringPayment = async (req, res, next) => {
       return next(error);
     }
 
+    emitRealtimeEvent("orders:changed", {
+      action: "catering-payment-added",
+      orderId: order.id || order._id,
+    });
     res.status(200).json({
       success: true,
       message: "Catering payment added",

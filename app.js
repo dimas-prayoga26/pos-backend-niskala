@@ -1,23 +1,24 @@
 const express = require("express");
+const http = require("http");
 const { connectDB } = require("./config/database");
 const config = require("./config/config");
 const globalErrorHandler = require("./middlewares/globalErrorHandler");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const { initSocket } = require("./config/socket");
 
 const app = express();
 const PORT = config.port;
+const corsOptions = {
+  credentials: true,
+  origin: [
+    "http://localhost:5173",
+    "http://demo.kopiniskala.com",
+    "https://demo.kopiniskala.com",
+  ],
+};
 
-app.use(
-  cors({
-    credentials: true,
-    origin: [
-      "http://localhost:5173",
-      "http://demo.kopiniskala.com",
-      "https://demo.kopiniskala.com",
-    ],
-  })
-);
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -32,12 +33,16 @@ app.use("/api/category", require("./routes/categoryRoute"));
 app.use("/api/menu-item", require("./routes/menuItemRoute"));
 app.use("/api/add-on", require("./routes/addOnRoute"));
 app.use("/api/stock-item", require("./routes/stockItemRoute"));
+app.use("/api/order-platform", require("./routes/orderPlatformRoute"));
 
 app.use(globalErrorHandler);
 
+const server = http.createServer(app);
+initSocket(server, corsOptions);
+
 connectDB()
   .then(() => {
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`POS Server is listening on port ${PORT}`);
     });
   })

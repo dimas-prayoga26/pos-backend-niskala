@@ -97,6 +97,12 @@ const seedStockItems = [
   ["Gula Aren Cair", "Sirup", "botol", 3, 2, "UMKM Aren Jaya"],
 ];
 
+const seedOrderPlatforms = [
+  ["GoFood", "/platforms/gofood.png"],
+  ["GrabFood", "/platforms/grabfood.png"],
+  ["ShopeeFood", "/platforms/shopeefood.png"],
+];
+
 const deactivateRowsOutsideList = async (table, column, activeColumn, values) => {
   if (!values.length) return;
 
@@ -132,12 +138,14 @@ const connectDB = async () => {
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(100) NOT NULL UNIQUE,
       icon VARCHAR(20),
+      tax DECIMAL(5,2) NULL,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
   await runSafeMigration("ALTER TABLE categories DROP COLUMN bg_color");
+  await runSafeMigration("ALTER TABLE categories ADD COLUMN tax DECIMAL(5,2) NULL AFTER icon");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS menu_items (
@@ -156,6 +164,27 @@ const connectDB = async () => {
     )
   `);
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN description");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_platforms (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      icon_url VARCHAR(255),
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+  await runSafeMigration("ALTER TABLE order_platforms ADD COLUMN icon_url VARCHAR(255) NULL AFTER name");
+
+  await pool.query(
+    `INSERT INTO order_platforms (name, icon_url)
+     VALUES ?
+     ON DUPLICATE KEY UPDATE
+       icon_url = VALUES(icon_url)`,
+    [seedOrderPlatforms]
+  );
+  await runSafeMigration("DELETE FROM order_platforms WHERE name = 'Maxim Food'");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS stock_items (
@@ -261,6 +290,7 @@ const connectDB = async () => {
       customer_name VARCHAR(100) NOT NULL,
       guests INT NOT NULL,
       order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
+      order_platform VARCHAR(100),
       order_status VARCHAR(50) NOT NULL,
       order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       total DECIMAL(12,2) NOT NULL,
@@ -275,6 +305,7 @@ const connectDB = async () => {
 
   await runSafeMigration("ALTER TABLE orders ADD COLUMN order_code VARCHAR(40) UNIQUE AFTER id");
   await runSafeMigration("ALTER TABLE orders ADD COLUMN order_type VARCHAR(50) NOT NULL DEFAULT 'Offline' AFTER guests");
+  await runSafeMigration("ALTER TABLE orders ADD COLUMN order_platform VARCHAR(100) NULL AFTER order_type");
   await runSafeMigration("ALTER TABLE orders ADD COLUMN online_order_charge DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER total");
   await runSafeMigration("UPDATE orders SET order_type = 'Offline' WHERE order_type = 'Dine In'");
   await runSafeMigration("UPDATE orders SET order_type = 'Online' WHERE order_type = 'Online Order'");

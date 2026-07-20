@@ -8,6 +8,8 @@ const mapCategory = (row) => {
     id: row.id,
     name: row.name,
     icon: row.icon,
+    tax: row.tax === null || row.tax === undefined ? null : Number(row.tax),
+    taxRate: row.tax === null || row.tax === undefined ? null : Number(row.tax),
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -38,20 +40,20 @@ const findById = async (id) => {
   return mapCategory(rows[0]);
 };
 
-const create = async ({ name, icon }) => {
+const create = async ({ name, icon, taxRate }) => {
   const [result] = await pool.query(
-    "INSERT INTO categories (name, icon) VALUES (?, ?)",
-    [name, icon || null]
+    "INSERT INTO categories (name, icon, tax) VALUES (?, ?, ?)",
+    [name, icon || null, taxRate ?? null]
   );
   return findById(result.insertId);
 };
 
-const update = async (id, { name, icon, isActive }) => {
+const update = async (id, { name, icon, taxRate, isActive }) => {
   await pool.query(
     `UPDATE categories
-     SET name = ?, icon = ?, is_active = ?
+     SET name = ?, icon = ?, tax = ?, is_active = ?
      WHERE id = ?`,
-    [name, icon || null, isActive ? 1 : 0, id]
+    [name, icon || null, taxRate ?? null, isActive ? 1 : 0, id]
   );
   return findById(id);
 };

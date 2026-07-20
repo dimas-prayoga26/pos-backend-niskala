@@ -1,5 +1,6 @@
 const createHttpError = require("http-errors");
 const MenuItem = require("../models/menuItemModel");
+const { emitRealtimeEvent } = require("../config/socket");
 
 const requireAdmin = (req, next) => {
   if (req.user?.role?.toLowerCase() !== "admin") {
@@ -29,6 +30,10 @@ const addMenuItem = async (req, res, next) => {
       isAvailable,
     });
 
+    emitRealtimeEvent("menu:changed", {
+      action: "menu-item-created",
+      menuItemId: menuItem.id || menuItem._id,
+    });
     res
       .status(201)
       .json({ success: true, message: "Menu item added!", data: menuItem });
@@ -82,6 +87,10 @@ const updateMenuItem = async (req, res, next) => {
       return next(createHttpError(404, "Menu item not found!"));
     }
 
+    emitRealtimeEvent("menu:changed", {
+      action: "menu-item-updated",
+      menuItemId: menuItem.id || menuItem._id,
+    });
     res
       .status(200)
       .json({ success: true, message: "Menu item updated!", data: menuItem });
@@ -107,6 +116,10 @@ const deleteMenuItem = async (req, res, next) => {
       return next(createHttpError(404, "Menu item not found!"));
     }
 
+    emitRealtimeEvent("menu:changed", {
+      action: "menu-item-deleted",
+      menuItemId: Number(id),
+    });
     res.status(200).json({ success: true, message: "Menu item deleted!" });
   } catch (error) {
     next(error);

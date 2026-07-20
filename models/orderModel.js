@@ -21,6 +21,7 @@ const mapOrder = (row, items = []) => {
       guests: row.guests,
     },
     orderType: row.order_type || "Offline",
+    orderPlatform: row.order_platform || "",
     orderStatus: row.order_status,
     orderDate: row.order_date,
     bills: {
@@ -190,6 +191,7 @@ const create = async (orderData) => {
     const {
       customerDetails,
       orderType = "Offline",
+      orderPlatform,
       orderStatus,
       bills,
       items = [],
@@ -213,13 +215,14 @@ const create = async (orderData) => {
 
     const [result] = await connection.query(
       `INSERT INTO orders
-        (customer_name, guests, order_type, order_status, total, online_order_charge, tax, total_with_tax,
+        (customer_name, guests, order_type, order_platform, order_status, total, online_order_charge, tax, total_with_tax,
          payment_method)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerName,
         customerDetails.guests || 1,
         orderType,
+        orderType === "Online" ? orderPlatform || null : null,
         orderStatus,
         bills.total,
         bills.onlineOrderCharge || 0,
