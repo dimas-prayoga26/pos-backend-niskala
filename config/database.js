@@ -103,6 +103,12 @@ const seedOrderPlatforms = [
   ["ShopeeFood", "/platforms/shopeefood.png"],
 ];
 
+const seedRecapFormats = [
+  ["daily", "Harian", "Rekap operasional harian", true, 1],
+  ["weekly", "Mingguan", "Rekap operasional mingguan", true, 2],
+  ["monthly", "Bulanan", "Rekap operasional bulanan", true, 3],
+];
+
 const deactivateRowsOutsideList = async (table, column, activeColumn, values) => {
   if (!values.length) return;
 
@@ -467,6 +473,171 @@ const connectDB = async () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS meta_data_format_recap (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      code VARCHAR(20) NOT NULL UNIQUE,
+      label VARCHAR(150) NOT NULL,
+      description VARCHAR(255) NULL,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_meta_data_format_recap_active (is_active, sort_order)
+    )
+  `);
+  await runSafeMigration("ALTER TABLE meta_data_format_recap ADD COLUMN code VARCHAR(20) NULL AFTER id");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap ADD COLUMN description VARCHAR(255) NULL AFTER label");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap DROP COLUMN period_type");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap DROP COLUMN field_key");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap DROP COLUMN input_type");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap DROP COLUMN source_table");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap DROP COLUMN source_value_column");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap DROP COLUMN source_label_column");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap DROP COLUMN is_currency");
+  await runSafeMigration("ALTER TABLE meta_data_format_recap DROP COLUMN is_required");
+  await runSafeMigration("CREATE UNIQUE INDEX uniq_meta_data_format_recap_code ON meta_data_format_recap (code)");
+  await runSafeMigration("CREATE INDEX idx_meta_data_format_recap_active ON meta_data_format_recap (is_active, sort_order)");
+
+  await pool.query(
+    `INSERT INTO meta_data_format_recap
+      (code, label, description, is_active, sort_order)
+     VALUES ?
+     ON DUPLICATE KEY UPDATE
+       label = VALUES(label),
+       description = VALUES(description),
+       is_active = VALUES(is_active),
+       sort_order = VALUES(sort_order)`,
+    [seedRecapFormats]
+  );
+  await runSafeMigration("UPDATE meta_data_format_recap SET is_active = FALSE WHERE code IS NULL");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS daily_recaps (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      format_recap_id INT UNSIGNED NOT NULL,
+      recap_date DATE NOT NULL,
+      user_id INT UNSIGNED NULL,
+      shift_officer VARCHAR(150) NULL,
+      transaction_total INT NOT NULL DEFAULT 0,
+      offline_revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
+      online_revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
+      catering_revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
+      total_revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
+      hpp_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+      gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0,
+      daily_expense DECIMAL(12,2) NOT NULL DEFAULT 0,
+      cash_in DECIMAL(12,2) NOT NULL DEFAULT 0,
+      qris_in DECIMAL(12,2) NOT NULL DEFAULT 0,
+      transfer_in DECIMAL(12,2) NOT NULL DEFAULT 0,
+      cash_difference DECIMAL(12,2) NOT NULL DEFAULT 0,
+      best_menu_item_id INT UNSIGNED NULL,
+      best_menu_name VARCHAR(150) NULL,
+      least_menu_item_id INT UNSIGNED NULL,
+      least_menu_name VARCHAR(150) NULL,
+      note TEXT NULL,
+      created_by INT UNSIGNED NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_daily_recaps_format_recap_id (format_recap_id),
+      INDEX idx_daily_recaps_date (recap_date),
+      INDEX idx_daily_recaps_user_id (user_id),
+      CONSTRAINT fk_daily_recaps_format
+        FOREIGN KEY (format_recap_id) REFERENCES meta_data_format_recap(id)
+        ON DELETE RESTRICT,
+      CONSTRAINT fk_daily_recaps_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE SET NULL,
+      CONSTRAINT fk_daily_recaps_best_menu_item
+        FOREIGN KEY (best_menu_item_id) REFERENCES menu_items(id)
+        ON DELETE SET NULL,
+      CONSTRAINT fk_daily_recaps_least_menu_item
+        FOREIGN KEY (least_menu_item_id) REFERENCES menu_items(id)
+        ON DELETE SET NULL,
+      CONSTRAINT fk_daily_recaps_created_by
+        FOREIGN KEY (created_by) REFERENCES users(id)
+        ON DELETE SET NULL
+    )
+  `);
+  await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN total_revenue DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER catering_revenue");
+  await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER hpp_total");
+  await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN cash_difference DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER transfer_in");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS weekly_recaps (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      format_recap_id INT UNSIGNED NOT NULL,
+      period_start_date DATE NOT NULL,
+      period_end_date DATE NOT NULL,
+      total_omzet DECIMAL(12,2) NOT NULL DEFAULT 0,
+      gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0,
+      offline_revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
+      online_revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
+      catering_revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
+      catering_order_count INT NOT NULL DEFAULT 0,
+      top_channel VARCHAR(100) NULL,
+      operational_issues TEXT NULL,
+      team_evaluation TEXT NULL,
+      stock_evaluation TEXT NULL,
+      action_plan TEXT NULL,
+      note TEXT NULL,
+      created_by INT UNSIGNED NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_weekly_recaps_format_recap_id (format_recap_id),
+      UNIQUE KEY uniq_weekly_recaps_period (period_start_date, period_end_date),
+      CONSTRAINT fk_weekly_recaps_format
+        FOREIGN KEY (format_recap_id) REFERENCES meta_data_format_recap(id)
+        ON DELETE RESTRICT,
+      CONSTRAINT fk_weekly_recaps_created_by
+        FOREIGN KEY (created_by) REFERENCES users(id)
+        ON DELETE SET NULL
+    )
+  `);
+  await runSafeMigration("ALTER TABLE weekly_recaps ADD COLUMN catering_revenue DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER online_revenue");
+  await runSafeMigration("ALTER TABLE weekly_recaps ADD COLUMN catering_order_count INT NOT NULL DEFAULT 0 AFTER catering_revenue");
+  await runSafeMigration("ALTER TABLE weekly_recaps ADD COLUMN top_channel VARCHAR(100) NULL AFTER catering_order_count");
+  await runSafeMigration("ALTER TABLE weekly_recaps ADD COLUMN operational_issues TEXT NULL AFTER top_channel");
+  await runSafeMigration("ALTER TABLE weekly_recaps ADD COLUMN team_evaluation TEXT NULL AFTER operational_issues");
+  await runSafeMigration("ALTER TABLE weekly_recaps ADD COLUMN stock_evaluation TEXT NULL AFTER team_evaluation");
+  await runSafeMigration("ALTER TABLE weekly_recaps ADD COLUMN action_plan TEXT NULL AFTER stock_evaluation");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS monthly_recaps (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      format_recap_id INT UNSIGNED NOT NULL,
+      period_month CHAR(7) NOT NULL,
+      omzet DECIMAL(12,2) NOT NULL DEFAULT 0,
+      hpp_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+      gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0,
+      estimated_net_profit DECIMAL(12,2) NOT NULL DEFAULT 0,
+      catering_order_count INT NOT NULL DEFAULT 0,
+      retained_menu TEXT NULL,
+      evaluated_menu TEXT NULL,
+      promotion_evaluation TEXT NULL,
+      supplier_evaluation TEXT NULL,
+      next_month_strategy TEXT NULL,
+      note TEXT NULL,
+      created_by INT UNSIGNED NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_monthly_recaps_format_recap_id (format_recap_id),
+      UNIQUE KEY uniq_monthly_recaps_period (period_month),
+      CONSTRAINT fk_monthly_recaps_format
+        FOREIGN KEY (format_recap_id) REFERENCES meta_data_format_recap(id)
+        ON DELETE RESTRICT,
+      CONSTRAINT fk_monthly_recaps_created_by
+        FOREIGN KEY (created_by) REFERENCES users(id)
+        ON DELETE SET NULL
+    )
+  `);
+  await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN catering_order_count INT NOT NULL DEFAULT 0 AFTER estimated_net_profit");
+  await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN retained_menu TEXT NULL AFTER catering_order_count");
+  await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN evaluated_menu TEXT NULL AFTER retained_menu");
+  await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN promotion_evaluation TEXT NULL AFTER evaluated_menu");
+  await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN supplier_evaluation TEXT NULL AFTER promotion_evaluation");
+  await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN next_month_strategy TEXT NULL AFTER supplier_evaluation");
 
   console.log(`MySQL Connected: ${config.dbHost}/${config.dbName}`);
 };

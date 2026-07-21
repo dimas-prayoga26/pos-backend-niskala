@@ -30,6 +30,16 @@ const findById = async (id) => {
   return mapUser(rows[0]);
 };
 
+const findAll = async () => {
+  const [rows] = await pool.query(
+    `SELECT id, name, phone, email, role, created_at, updated_at
+     FROM users
+     ORDER BY name ASC`
+  );
+
+  return rows.map(mapUser);
+};
+
 const create = async ({ name, phone, email, password, role }) => {
   const [result] = await pool.query(
     "INSERT INTO users (name, phone, email, password, role) VALUES (?, ?, ?, ?, ?)",
@@ -39,4 +49,4 @@ const create = async ({ name, phone, email, password, role }) => {
   return findById(result.insertId);
 };
 
-module.exports = { create, findByEmail, findById, mapUser };
+module.exports = { create, findAll, findByEmail, findById, mapUser };

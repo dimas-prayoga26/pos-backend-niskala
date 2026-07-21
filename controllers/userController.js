@@ -103,6 +103,21 @@ const getUserData = async (req, res, next) => {
     }
 }
 
+const getUsers = async (req, res, next) => {
+    try {
+        if (req.user?.role?.toLowerCase() !== "admin") {
+            const error = createHttpError(403, "Only admin can view users!");
+            return next(error);
+        }
+
+        const users = await User.findAll();
+        res.status(200).json({success: true, data: users});
+
+    } catch (error) {
+        next(error);
+    }
+}
+
 const logout = async (req, res, next) => {
     try {
         
@@ -117,4 +132,4 @@ const logout = async (req, res, next) => {
 
 
 
-module.exports = { register, login, getUserData, logout }
+module.exports = { register, login, getUserData, getUsers, logout }

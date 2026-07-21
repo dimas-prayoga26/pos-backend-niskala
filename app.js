@@ -34,6 +34,7 @@ app.use("/api/menu-item", require("./routes/menuItemRoute"));
 app.use("/api/add-on", require("./routes/addOnRoute"));
 app.use("/api/stock-item", require("./routes/stockItemRoute"));
 app.use("/api/order-platform", require("./routes/orderPlatformRoute"));
+app.use("/api/recap", require("./routes/recapRoute"));
 
 app.use(globalErrorHandler);
 
