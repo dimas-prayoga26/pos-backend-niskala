@@ -27,13 +27,42 @@ CREATE TABLE IF NOT EXISTS menu_items (
   category_id INT UNSIGNED NOT NULL,
   name VARCHAR(150) NOT NULL,
   price DECIMAL(12,2) NOT NULL,
-  image_url VARCHAR(255),
+  image_path VARCHAR(255),
   is_available BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_menu_items_category_id (category_id),
   CONSTRAINT fk_menu_items_category
     FOREIGN KEY (category_id) REFERENCES categories(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS menu_item_sizes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  menu_item_id INT UNSIGNED NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  price DECIMAL(12,2) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_menu_item_sizes_menu_item_id (menu_item_id),
+  UNIQUE KEY uniq_menu_item_sizes_name (menu_item_id, name),
+  CONSTRAINT fk_menu_item_sizes_menu_item
+    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS menu_item_variants (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  menu_item_id INT UNSIGNED NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_menu_item_variants_menu_item_id (menu_item_id),
+  UNIQUE KEY uniq_menu_item_variants_name (menu_item_id, name),
+  CONSTRAINT fk_menu_item_variants_menu_item
+    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
     ON DELETE CASCADE
 );
 

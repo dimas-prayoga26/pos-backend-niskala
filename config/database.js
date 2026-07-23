@@ -44,22 +44,28 @@ const seedCategories = [
 ];
 
 const seedMenuItems = [
-  ["Coffee", "Espresso", 10000, commonsImage("Espresso BW 1.jpg")],
-  ["Coffee", "Americano", 15000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Cappuccino", 18000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Latte", 18000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Lemon Coffee", 20000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Palm Sugar Coffee", 20000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Tubruk Robusta", 8000, commonsImage("Roasted coffee beans.jpg")],
-  ["Coffee", "Tubruk Arabika", 15000, commonsImage("Coffee Beans closeup.jpg")],
-  ["Non-Coffee", "Strawberry Yakult", 18000, commonsImage("Strawberry milk shake (cropped).jpg")],
-  ["Non-Coffee", "Taro", 20000, commonsImage("Strawberry milk shake (cropped).jpg")],
-  ["Non-Coffee", "Matcha", 20000, commonsImage("Matcha latte.jpg")],
-  ["Non-Coffee", "Chocolate", 18000, commonsImage("Hot chocolate.jpg")],
-  ["Non-Coffee", "Tea", 8000, commonsImage("Cup of tea.jpg")],
-  ["Non-Coffee", "Lemon Tea", 15000, commonsImage("Thai iced tea.jpg")],
-  ["Non-Coffee", "Strawberry Tea", 15000, commonsImage("Strawberry cocktail drink (Unsplash).jpg")],
-  ["Non-Coffee", "Thai Tea", 15000, commonsImage("Thai iced tea.jpg")],
+  ["Coffee", "Cappuccino", 18000, 21000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
+  ["Coffee", "Cafe Latte", 18000, 21000, commonsImage("Latte art 3.jpg")],
+  ["Coffee", "Butterscotch Latte", 20000, 23000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
+  ["Coffee", "Caramel Latte", 20000, 23000, commonsImage("Latte art 3.jpg")],
+  ["Coffee", "Vanilla Latte", 20000, 23000, commonsImage("Latte art 3.jpg")],
+  ["Coffee", "Hazelnut Latte", 20000, 23000, commonsImage("Latte art 3.jpg")],
+  ["Coffee", "Aren Latte", 20000, 23000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
+  ["Coffee", "Moccacino", 22000, 25000, commonsImage("Mocha coffee.jpg")],
+  ["Coffee", "Berry Coffee Milk", 22000, 25000, commonsImage("Iced coffee with milk.jpg")],
+  ["Coffee", "Americano", 15000, 18000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
+  ["Coffee", "Longblack", 15000, 18000, commonsImage("Espresso BW 1.jpg")],
+  ["Coffee", "On The Rock Espresso", 15000, 18000, commonsImage("Espresso BW 1.jpg")],
+  ["Coffee", "Tropical Americano", 23000, 26000, commonsImage("Iced coffee with milk.jpg")],
+  ["Coffee", "Elberry Americano", 23000, 26000, commonsImage("Iced coffee with milk.jpg")],
+  ["Coffee", "Berry Summer", 23000, 26000, commonsImage("Strawberry cocktail drink (Unsplash).jpg")],
+  ["Non-Coffee", "Chocolate", 18000, 21000, commonsImage("Hot chocolate.jpg")],
+  ["Non-Coffee", "Matcha", 18000, 21000, commonsImage("Matcha latte.jpg")],
+  ["Non-Coffee", "Cookies and Cream", 18000, 21000, commonsImage("Cookies and cream ice cream.jpg")],
+  ["Non-Coffee", "Lychee Tea", 13000, 16000, commonsImage("Iced tea with lemon.jpg")],
+  ["Non-Coffee", "Lemon Tea", 13000, 16000, commonsImage("Thai iced tea.jpg")],
+  ["Non-Coffee", "Jeruk Nipis Songkit", 13000, 16000, commonsImage("Iced tea with lemon.jpg")],
+  ["Non-Coffee", "Thai Tea", 15000, 18000, commonsImage("Thai iced tea.jpg")],
   ["Main Course", "Fried Egg Rice Bowl", 15000, commonsImage("Nasi Goreng Breakfast in Solo.JPG")],
   ["Main Course", "Chicken Katsu Rice Bowl", 25000, commonsImage("Chicken teriyaki.jpg")],
   ["Main Course", "Chicken Teriyaki Rice Bowl", 23000, commonsImage("Osaka Teriyaki Rice Bowl.jpg")],
@@ -108,6 +114,138 @@ const seedRecapFormats = [
   ["weekly", "Mingguan", "Rekap operasional mingguan", true, 2],
   ["monthly", "Bulanan", "Rekap operasional bulanan", true, 3],
 ];
+
+const parseJsonArray = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+};
+
+const normalizeSizes = (sizes) =>
+  (Array.isArray(sizes) ? sizes : [])
+    .map((size) => ({
+      name: String(size?.name || "").trim(),
+      price: Number(size?.price) || 0,
+    }))
+    .filter((size) => size.name && size.price >= 0);
+
+const normalizeVariants = (variants) =>
+  (Array.isArray(variants) ? variants : [])
+    .map((variant) => String(variant || "").trim())
+    .filter(Boolean);
+
+const replaceMenuItemOptions = async (menuItemId, { sizes, variants }) => {
+  const normalizedSizes = normalizeSizes(sizes);
+  const normalizedVariants = normalizeVariants(variants);
+
+  await pool.query("DELETE FROM menu_item_sizes WHERE menu_item_id = ?", [
+    menuItemId,
+  ]);
+  await pool.query("DELETE FROM menu_item_variants WHERE menu_item_id = ?", [
+    menuItemId,
+  ]);
+
+  if (normalizedSizes.length) {
+    await pool.query(
+      `INSERT INTO menu_item_sizes (menu_item_id, name, price, sort_order)
+       VALUES ?`,
+      [
+        normalizedSizes.map((size, index) => [
+          menuItemId,
+          size.name,
+          size.price,
+          index + 1,
+        ]),
+      ]
+    );
+  }
+
+  if (normalizedVariants.length) {
+    await pool.query(
+      `INSERT INTO menu_item_variants (menu_item_id, name, sort_order)
+       VALUES ?`,
+      [
+        normalizedVariants.map((variant, index) => [
+          menuItemId,
+          variant,
+          index + 1,
+        ]),
+      ]
+    );
+  }
+};
+
+const migrateLegacyMenuOptions = async () => {
+  const [columns] = await pool.query("SHOW COLUMNS FROM menu_items");
+  const columnNames = new Set(columns.map((column) => column.Field));
+  const hasRegularPrice = columnNames.has("regular_price");
+  const hasLargePrice = columnNames.has("large_price");
+  const hasVariantsJson = columnNames.has("variants_json");
+  const hasSizesJson = columnNames.has("sizes_json");
+
+  const [items] = await pool.query(`
+    SELECT id,
+           price
+           ${hasRegularPrice ? ", regular_price" : ""}
+           ${hasLargePrice ? ", large_price" : ""}
+           ${hasVariantsJson ? ", variants_json" : ""}
+           ${hasSizesJson ? ", sizes_json" : ""}
+    FROM menu_items
+  `);
+
+  for (const item of items) {
+    const [[sizeCountRow]] = await pool.query(
+      "SELECT COUNT(*) AS total FROM menu_item_sizes WHERE menu_item_id = ?",
+      [item.id]
+    );
+    const [[variantCountRow]] = await pool.query(
+      "SELECT COUNT(*) AS total FROM menu_item_variants WHERE menu_item_id = ?",
+      [item.id]
+    );
+
+    const sizesFromJson = hasSizesJson ? parseJsonArray(item.sizes_json) : [];
+    const variantsFromJson = hasVariantsJson
+      ? parseJsonArray(item.variants_json)
+      : [];
+    const regularPrice = Number(item.regular_price ?? item.price) || 0;
+    const largePrice = Number(item.large_price) || 0;
+    const fallbackSizes = largePrice
+      ? [
+          { name: "Reguler", price: regularPrice },
+          { name: "Large", price: largePrice },
+        ]
+      : [];
+
+    if (!sizeCountRow.total) {
+      const nextSizes = sizesFromJson.length
+        ? sizesFromJson
+        : fallbackSizes;
+      await replaceMenuItemOptions(item.id, {
+        sizes: nextSizes,
+        variants: variantCountRow.total ? [] : variantsFromJson,
+      });
+    } else if (!variantCountRow.total && variantsFromJson.length) {
+      const normalizedVariants = normalizeVariants(variantsFromJson);
+      await pool.query(
+        `INSERT INTO menu_item_variants (menu_item_id, name, sort_order)
+         VALUES ?`,
+        [
+          normalizedVariants.map((variant, index) => [
+            item.id,
+            variant,
+            index + 1,
+          ]),
+        ]
+      );
+    }
+  }
+};
 
 const deactivateRowsOutsideList = async (table, column, activeColumn, values) => {
   if (!values.length) return;
@@ -159,7 +297,7 @@ const connectDB = async () => {
       category_id INT UNSIGNED NOT NULL,
       name VARCHAR(150) NOT NULL,
       price DECIMAL(12,2) NOT NULL,
-      image_url VARCHAR(255),
+      image_path VARCHAR(255),
       is_available BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -170,6 +308,47 @@ const connectDB = async () => {
     )
   `);
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN description");
+  await runSafeMigration("ALTER TABLE menu_items CHANGE COLUMN image_url image_path VARCHAR(255) NULL");
+  await runSafeMigration("UPDATE menu_items SET image_path = NULL WHERE image_path IS NOT NULL AND image_path NOT LIKE '/uploads/%'");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS menu_item_sizes (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      menu_item_id INT UNSIGNED NOT NULL,
+      name VARCHAR(80) NOT NULL,
+      price DECIMAL(12,2) NOT NULL,
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_menu_item_sizes_menu_item_id (menu_item_id),
+      UNIQUE KEY uniq_menu_item_sizes_name (menu_item_id, name),
+      CONSTRAINT fk_menu_item_sizes_menu_item
+        FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+        ON DELETE CASCADE
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS menu_item_variants (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      menu_item_id INT UNSIGNED NOT NULL,
+      name VARCHAR(80) NOT NULL,
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_menu_item_variants_menu_item_id (menu_item_id),
+      UNIQUE KEY uniq_menu_item_variants_name (menu_item_id, name),
+      CONSTRAINT fk_menu_item_variants_menu_item
+        FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+        ON DELETE CASCADE
+    )
+  `);
+
+  await migrateLegacyMenuOptions();
+  await runSafeMigration("ALTER TABLE menu_items DROP COLUMN regular_price");
+  await runSafeMigration("ALTER TABLE menu_items DROP COLUMN large_price");
+  await runSafeMigration("ALTER TABLE menu_items DROP COLUMN variants_json");
+  await runSafeMigration("ALTER TABLE menu_items DROP COLUMN sizes_json");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_platforms (
@@ -257,7 +436,18 @@ const connectDB = async () => {
     categoryRows.map((category) => [category.name, category.id])
   );
 
-  for (const [categoryName, name, price, imageUrl] of seedMenuItems) {
+  for (const seedMenuItem of seedMenuItems) {
+    const [categoryName, name, regularPrice, largePriceOrImageUrl, maybeImageUrl] =
+      seedMenuItem;
+    const hasLargePrice = typeof largePriceOrImageUrl === "number";
+    const largePrice = hasLargePrice ? largePriceOrImageUrl : null;
+    const variants = hasLargePrice ? ["Cold", "Hot"] : [];
+    const sizes = hasLargePrice
+      ? [
+          { name: "Reguler", price: regularPrice },
+          { name: "Large", price: largePrice },
+        ]
+      : [];
     const categoryId = categoryIdByName.get(categoryName);
     if (!categoryId) continue;
 
@@ -266,21 +456,37 @@ const connectDB = async () => {
       [name]
     );
 
+    let menuItemId;
+
     if (existingRows.length) {
+      menuItemId = existingRows[0].id;
       await pool.query(
         `UPDATE menu_items
-         SET category_id = ?, price = ?, image_url = ?, is_available = TRUE
+         SET category_id = ?,
+             price = ?,
+             is_available = TRUE
          WHERE id = ?`,
-        [categoryId, price, imageUrl, existingRows[0].id]
+        [
+          categoryId,
+          regularPrice,
+          menuItemId,
+        ]
       );
     } else {
-      await pool.query(
+      const [result] = await pool.query(
         `INSERT INTO menu_items
-          (category_id, name, price, image_url, is_available)
-         VALUES (?, ?, ?, ?, TRUE)`,
-        [categoryId, name, price, imageUrl]
+          (category_id, name, price, image_path, is_available)
+         VALUES (?, ?, ?, NULL, TRUE)`,
+        [
+          categoryId,
+          name,
+          regularPrice,
+        ]
       );
+      menuItemId = result.insertId;
     }
+
+    await replaceMenuItemOptions(menuItemId, { sizes, variants });
   }
   await deactivateRowsOutsideList(
     "menu_items",
@@ -288,6 +494,19 @@ const connectDB = async () => {
     "is_available",
     seedMenuItems.map(([, name]) => name)
   );
+  await runSafeMigration(`
+    DELETE mis
+    FROM menu_item_sizes mis
+    JOIN menu_items mi ON mi.id = mis.menu_item_id
+    JOIN (
+      SELECT menu_item_id, COUNT(*) AS total
+      FROM menu_item_sizes
+      GROUP BY menu_item_id
+    ) size_counts ON size_counts.menu_item_id = mis.menu_item_id
+    WHERE size_counts.total = 1
+      AND mis.name = 'Harga'
+      AND mis.price = mi.price
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (

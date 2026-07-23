@@ -10,23 +10,49 @@ const requireAdmin = (req, next) => {
   return null;
 };
 
+const getFirstSizePrice = (sizes) => {
+  if (!Array.isArray(sizes)) return undefined;
+  const firstSize = sizes.find((size) => size?.price !== undefined);
+  return firstSize?.price;
+};
+
 const addMenuItem = async (req, res, next) => {
   try {
     const permissionError = requireAdmin(req, next);
     if (permissionError) return next(permissionError);
 
-    const { categoryId, name, price, imageUrl, isAvailable } =
+    const {
+      categoryId,
+      name,
+      price,
+      regularPrice,
+      largePrice,
+      variants,
+      sizes,
+      imagePath,
+      isAvailable,
+    } =
       req.body;
+    const basePrice =
+      regularPrice === undefined
+        ? price === undefined
+          ? getFirstSizePrice(sizes)
+          : price
+        : regularPrice;
 
-    if (!categoryId || !name || price === undefined) {
+    if (!categoryId || !name || basePrice === undefined) {
       return next(createHttpError(400, "Category, name, and price are required!"));
     }
 
     const menuItem = await MenuItem.create({
       categoryId,
       name,
-      price,
-      imageUrl,
+      price: basePrice,
+      regularPrice: basePrice,
+      largePrice,
+      variants,
+      sizes,
+      imagePath,
       isAvailable,
     });
 
@@ -64,22 +90,42 @@ const updateMenuItem = async (req, res, next) => {
     if (permissionError) return next(permissionError);
 
     const { id } = req.params;
-    const { categoryId, name, price, imageUrl, isAvailable = true } =
+    const {
+      categoryId,
+      name,
+      price,
+      regularPrice,
+      largePrice,
+      variants,
+      sizes,
+      imagePath,
+      isAvailable = true,
+    } =
       req.body;
+    const basePrice =
+      regularPrice === undefined
+        ? price === undefined
+          ? getFirstSizePrice(sizes)
+          : price
+        : regularPrice;
 
     if (!Number(id)) {
       return next(createHttpError(404, "Invalid id!"));
     }
 
-    if (!categoryId || !name || price === undefined) {
+    if (!categoryId || !name || basePrice === undefined) {
       return next(createHttpError(400, "Category, name, and price are required!"));
     }
 
     const menuItem = await MenuItem.update(id, {
       categoryId,
       name,
-      price,
-      imageUrl,
+      price: basePrice,
+      regularPrice: basePrice,
+      largePrice,
+      variants,
+      sizes,
+      imagePath,
       isAvailable,
     });
 
@@ -126,9 +172,31 @@ const deleteMenuItem = async (req, res, next) => {
   }
 };
 
+const uploadMenuImage = async (req, res, next) => {
+  try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
+    if (!req.file) {
+      return next(createHttpError(400, "Image file is required!"));
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Image uploaded!",
+      data: {
+        imagePath: `/uploads/menu/${req.file.filename}`,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   addMenuItem,
   deleteMenuItem,
   getMenuItems,
+  uploadMenuImage,
   updateMenuItem,
 };
