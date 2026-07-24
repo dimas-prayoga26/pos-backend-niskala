@@ -78,11 +78,11 @@ const seedMenuItems = [
   ["Snack", "Cireng", 12000, commonsImage("Cireng indonesian snack.jpg")],
   ["Snack", "Pisang Nugget Keju Coklat", 18000, commonsImage("Pisang keju.jpg")],
   ["Snack", "Roti Bakar", 15000, commonsImage("Roti bakar.jpg")],
-  ["Catering", "Paket 20K / Box", 20000, commonsImage("Nasi Kotak-1.jpg")],
-  ["Catering", "Paket 28K / Box", 28000, commonsImage("Indonesian Rice Box.jpg")],
-  ["Catering", "Paket 30K / Box", 30000, commonsImage("Nasi kuning kotak box.jpg")],
-  ["Catering", "Paket 35K / Box", 35000, commonsImage("Nasi Kotak-2.jpg")],
-  ["Catering", "Paket 40K / Box", 40000, commonsImage("Rice box bento in Indonesia.jpg")],
+  ["Catering", "Paket 20K / Box", 20000, "/uploads/menu/catering-paket-20k.jpg"],
+  ["Catering", "Paket 28K / Box", 28000, "/uploads/menu/catering-paket-28k.jpg"],
+  ["Catering", "Paket 30K / Box", 30000, "/uploads/menu/catering-paket-30k.jpg"],
+  ["Catering", "Paket 35K / Box", 35000, "/uploads/menu/catering-paket-35k.jpg"],
+  ["Catering", "Paket 40K / Box", 40000, "/uploads/menu/catering-paket-40k.jpg"],
 ];
 
 const seedAddOns = [
@@ -441,6 +441,14 @@ const connectDB = async () => {
       seedMenuItem;
     const hasLargePrice = typeof largePriceOrImageUrl === "number";
     const largePrice = hasLargePrice ? largePriceOrImageUrl : null;
+    const imagePathCandidate = hasLargePrice
+      ? maybeImageUrl
+      : largePriceOrImageUrl;
+    const seedImagePath =
+      typeof imagePathCandidate === "string" &&
+      imagePathCandidate.startsWith("/uploads/")
+        ? imagePathCandidate
+        : null;
     const variants = hasLargePrice ? ["Cold", "Hot"] : [];
     const sizes = hasLargePrice
       ? [
@@ -464,11 +472,13 @@ const connectDB = async () => {
         `UPDATE menu_items
          SET category_id = ?,
              price = ?,
+             image_path = COALESCE(?, image_path),
              is_available = TRUE
          WHERE id = ?`,
         [
           categoryId,
           regularPrice,
+          seedImagePath,
           menuItemId,
         ]
       );
@@ -476,11 +486,12 @@ const connectDB = async () => {
       const [result] = await pool.query(
         `INSERT INTO menu_items
           (category_id, name, price, image_path, is_available)
-         VALUES (?, ?, ?, NULL, TRUE)`,
+         VALUES (?, ?, ?, ?, TRUE)`,
         [
           categoryId,
           name,
           regularPrice,
+          seedImagePath,
         ]
       );
       menuItemId = result.insertId;
@@ -629,6 +640,7 @@ const connectDB = async () => {
       code VARCHAR(80) NOT NULL UNIQUE,
       name VARCHAR(120) NOT NULL,
       price DECIMAL(12,2) NOT NULL DEFAULT 0,
+      image_path VARCHAR(255),
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -638,6 +650,7 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE add_ons DROP FOREIGN KEY fk_add_ons_category");
   await runSafeMigration("DROP INDEX idx_add_ons_category_id ON add_ons");
   await runSafeMigration("ALTER TABLE add_ons DROP COLUMN category_id");
+  await runSafeMigration("ALTER TABLE add_ons ADD COLUMN image_path VARCHAR(255) NULL AFTER price");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_item_addons (

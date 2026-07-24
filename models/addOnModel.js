@@ -9,6 +9,7 @@ const mapAddOn = (row) => {
     code: row.code,
     name: row.name,
     price: Number(row.price),
+    imagePath: row.image_path,
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -43,21 +44,21 @@ const findById = async (id) => {
   return mapAddOn(rows[0]);
 };
 
-const create = async ({ code, name, price, isActive = true }) => {
+const create = async ({ code, name, price, imagePath, isActive = true }) => {
   const [result] = await pool.query(
-    `INSERT INTO add_ons (code, name, price, is_active)
-     VALUES (?, ?, ?, ?)`,
-    [toCode(code || name), name, price || 0, isActive ? 1 : 0]
+    `INSERT INTO add_ons (code, name, price, image_path, is_active)
+     VALUES (?, ?, ?, ?, ?)`,
+    [toCode(code || name), name, price || 0, imagePath || null, isActive ? 1 : 0]
   );
   return findById(result.insertId);
 };
 
-const update = async (id, { code, name, price, isActive = true }) => {
+const update = async (id, { code, name, price, imagePath, isActive = true }) => {
   await pool.query(
     `UPDATE add_ons
-     SET code = ?, name = ?, price = ?, is_active = ?
+     SET code = ?, name = ?, price = ?, image_path = ?, is_active = ?
      WHERE id = ?`,
-    [toCode(code || name), name, price || 0, isActive ? 1 : 0, id]
+    [toCode(code || name), name, price || 0, imagePath || null, isActive ? 1 : 0, id]
   );
   return findById(id);
 };

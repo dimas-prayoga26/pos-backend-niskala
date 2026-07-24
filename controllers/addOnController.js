@@ -4,7 +4,7 @@ const { emitRealtimeEvent } = require("../config/socket");
 
 const addAddOn = async (req, res, next) => {
   try {
-    const { code, name, price, isActive } = req.body;
+    const { code, name, price, imagePath, isActive } = req.body;
 
     if (!name) {
       return next(createHttpError(400, "Add-on name is required!"));
@@ -14,6 +14,7 @@ const addAddOn = async (req, res, next) => {
       code,
       name,
       price,
+      imagePath,
       isActive,
     });
     emitRealtimeEvent("menu:changed", {
@@ -41,7 +42,7 @@ const getAddOns = async (req, res, next) => {
 const updateAddOn = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { code, name, price, isActive = true } = req.body;
+    const { code, name, price, imagePath, isActive = true } = req.body;
 
     if (!Number(id)) {
       return next(createHttpError(404, "Invalid id!"));
@@ -55,6 +56,7 @@ const updateAddOn = async (req, res, next) => {
       code,
       name,
       price,
+      imagePath,
       isActive,
     });
 
