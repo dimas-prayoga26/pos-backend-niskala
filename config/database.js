@@ -29,10 +29,7 @@ const runSafeMigration = async (query) => {
   }
 };
 
-const commonsImage = (fileName) =>
-  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(
-    fileName
-  ).replace(/%20/g, "_")}`;
+const menuImage = (fileName) => `/uploads/menu/${fileName}`;
 
 const seedCategories = [
   ["Coffee", "\u2615"],
@@ -44,54 +41,54 @@ const seedCategories = [
 ];
 
 const seedMenuItems = [
-  ["Coffee", "Cappuccino", 18000, 21000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Cafe Latte", 18000, 21000, commonsImage("Latte art 3.jpg")],
-  ["Coffee", "Butterscotch Latte", 20000, 23000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Caramel Latte", 20000, 23000, commonsImage("Latte art 3.jpg")],
-  ["Coffee", "Vanilla Latte", 20000, 23000, commonsImage("Latte art 3.jpg")],
-  ["Coffee", "Hazelnut Latte", 20000, 23000, commonsImage("Latte art 3.jpg")],
-  ["Coffee", "Aren Latte", 20000, 23000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Moccacino", 22000, 25000, commonsImage("Mocha coffee.jpg")],
-  ["Coffee", "Berry Coffee Milk", 22000, 25000, commonsImage("Iced coffee with milk.jpg")],
-  ["Coffee", "Americano", 15000, 18000, commonsImage("Cappuccino at Sightglass Coffee.jpg")],
-  ["Coffee", "Longblack", 15000, 18000, commonsImage("Espresso BW 1.jpg")],
-  ["Coffee", "On The Rock Espresso", 15000, 18000, commonsImage("Espresso BW 1.jpg")],
-  ["Coffee", "Tropical Americano", 23000, 26000, commonsImage("Iced coffee with milk.jpg")],
-  ["Coffee", "Elberry Americano", 23000, 26000, commonsImage("Iced coffee with milk.jpg")],
-  ["Coffee", "Berry Summer", 23000, 26000, commonsImage("Strawberry cocktail drink (Unsplash).jpg")],
-  ["Non-Coffee", "Chocolate", 18000, 21000, commonsImage("Hot chocolate.jpg")],
-  ["Non-Coffee", "Matcha", 18000, 21000, commonsImage("Matcha latte.jpg")],
-  ["Non-Coffee", "Cookies and Cream", 18000, 21000, commonsImage("Cookies and cream ice cream.jpg")],
-  ["Non-Coffee", "Lychee Tea", 13000, 16000, commonsImage("Iced tea with lemon.jpg")],
-  ["Non-Coffee", "Lemon Tea", 13000, 16000, commonsImage("Thai iced tea.jpg")],
-  ["Non-Coffee", "Jeruk Nipis Songkit", 13000, 16000, commonsImage("Iced tea with lemon.jpg")],
-  ["Non-Coffee", "Thai Tea", 15000, 18000, commonsImage("Thai iced tea.jpg")],
-  ["Main Course", "Fried Egg Rice Bowl", 15000, commonsImage("Nasi Goreng Breakfast in Solo.JPG")],
-  ["Main Course", "Chicken Katsu Rice Bowl", 25000, commonsImage("Chicken teriyaki.jpg")],
-  ["Main Course", "Chicken Teriyaki Rice Bowl", 23000, commonsImage("Osaka Teriyaki Rice Bowl.jpg")],
-  ["Main Course", "Ayam Geprek Rice Bowl", 22000, commonsImage("Ayam Geprek.jpg")],
-  ["Main Course", "Beef Teriyaki Rice Bowl", 25000, commonsImage("Bowl of Teriyaki chicken and beef YakinikuCNE.jpg")],
-  ["Main Course", "Indomie Goreng Telur", 15000, commonsImage("Indomie Mie Goreng Iga Penyet 1.JPG")],
-  ["Main Course", "Indomie Rebus Telur", 15000, commonsImage("Indomie Mie Goreng Iga Penyet 2.JPG")],
-  ["Snack", "Kentang Goreng", 12000, commonsImage("McDonalds-French-Fries-Plate.jpg")],
-  ["Snack", "Mix Platter", 22000, commonsImage("McDonalds-French-Fries-Plate.jpg")],
-  ["Snack", "Cireng", 12000, commonsImage("Cireng indonesian snack.jpg")],
-  ["Snack", "Pisang Nugget Keju Coklat", 18000, commonsImage("Pisang keju.jpg")],
-  ["Snack", "Roti Bakar", 15000, commonsImage("Roti bakar.jpg")],
-  ["Catering", "Paket 20K / Box", 20000, "/uploads/menu/catering-paket-20k.jpg"],
-  ["Catering", "Paket 28K / Box", 28000, "/uploads/menu/catering-paket-28k.jpg"],
-  ["Catering", "Paket 30K / Box", 30000, "/uploads/menu/catering-paket-30k.jpg"],
-  ["Catering", "Paket 35K / Box", 35000, "/uploads/menu/catering-paket-35k.jpg"],
-  ["Catering", "Paket 40K / Box", 40000, "/uploads/menu/catering-paket-40k.jpg"],
+  ["Coffee", "Cappuccino", 18000, 21000, menuImage("cappuccino.jpg")],
+  ["Coffee", "Cafe Latte", 18000, 21000, menuImage("cafe-latte.jpg")],
+  ["Coffee", "Butterscotch Latte", 20000, 23000, menuImage("butterscotch-latte.jpg")],
+  ["Coffee", "Caramel Latte", 20000, 23000, menuImage("caramel-latte.jpg")],
+  ["Coffee", "Vanilla Latte", 20000, 23000, menuImage("vanilla-latte.jpg")],
+  ["Coffee", "Hazelnut Latte", 20000, 23000, menuImage("hazelnut-latte.jpg")],
+  ["Coffee", "Aren Latte", 20000, 23000, menuImage("aren-latte.jpg")],
+  ["Coffee", "Moccacino", 22000, 25000, menuImage("moccacino.jpg")],
+  ["Coffee", "Berry Coffee Milk", 22000, 25000, menuImage("berry-coffee-milk.jpg")],
+  ["Coffee", "Americano", 15000, 18000, menuImage("americano.jpg")],
+  ["Coffee", "Longblack", 15000, 18000, menuImage("longblack.jpg")],
+  ["Coffee", "On The Rock Espresso", 15000, 18000, menuImage("on-the-rock-espresso.jpg")],
+  ["Coffee", "Tropical Americano", 23000, 26000, menuImage("tropical-americano.jpg")],
+  ["Coffee", "Elberry Americano", 23000, 26000, menuImage("elberry-americano.jpg")],
+  ["Coffee", "Berry Summer", 23000, 26000, menuImage("berry-summer.jpg")],
+  ["Non-Coffee", "Chocolate", 18000, 21000, menuImage("chocolate.jpg")],
+  ["Non-Coffee", "Matcha", 18000, 21000, menuImage("matcha.jpg")],
+  ["Non-Coffee", "Cookies and Cream", 18000, 21000, menuImage("cookies-and-cream.jpg")],
+  ["Non-Coffee", "Lychee Tea", 13000, 16000, menuImage("lychee-tea.jpg")],
+  ["Non-Coffee", "Lemon Tea", 13000, 16000, menuImage("lemon-tea.jpg")],
+  ["Non-Coffee", "Jeruk Nipis Songkit", 13000, 16000, menuImage("jeruk-nipis-songkit.jpg")],
+  ["Non-Coffee", "Thai Tea", 15000, 18000, menuImage("thai-tea.jpg")],
+  ["Main Course", "Fried Egg Rice Bowl", 15000, menuImage("fried-egg-rice-bowl.jpg")],
+  ["Main Course", "Chicken Katsu Rice Bowl", 25000, menuImage("chicken-katsu-rice-bowl.jpg")],
+  ["Main Course", "Chicken Teriyaki Rice Bowl", 23000, menuImage("chicken-teriyaki-rice-bowl.jpg")],
+  ["Main Course", "Ayam Geprek Rice Bowl", 22000, menuImage("ayam-geprek-rice-bowl.jpg")],
+  ["Main Course", "Beef Teriyaki Rice Bowl", 25000, menuImage("beef-teriyaki-rice-bowl.jpg")],
+  ["Main Course", "Indomie Goreng Telur", 15000, menuImage("indomie-goreng-telur.jpg")],
+  ["Main Course", "Indomie Rebus Telur", 15000, menuImage("indomie-rebus-telur.jpg")],
+  ["Snack", "Kentang Goreng", 12000, menuImage("kentang-goreng.jpg")],
+  ["Snack", "Mix Platter", 22000, menuImage("mix-platter.jpg")],
+  ["Snack", "Cireng", 12000, menuImage("cireng.jpg")],
+  ["Snack", "Pisang Nugget Keju Coklat", 18000, menuImage("pisang-nugget-keju-coklat.jpg")],
+  ["Snack", "Roti Bakar", 15000, menuImage("roti-bakar.jpg")],
+  ["Catering", "Paket 20K / Box", 20000, menuImage("catering-paket-20k.jpg")],
+  ["Catering", "Paket 28K / Box", 28000, menuImage("catering-paket-28k.jpg")],
+  ["Catering", "Paket 30K / Box", 30000, menuImage("catering-paket-30k.jpg")],
+  ["Catering", "Paket 35K / Box", 35000, menuImage("catering-paket-35k.jpg")],
+  ["Catering", "Paket 40K / Box", 40000, menuImage("catering-paket-40k.jpg")],
 ];
 
 const seedAddOns = [
-  ["nasi-putih", "Nasi Putih", 4000],
-  ["telur", "Telur", 5000],
-  ["buah", "Buah", 5000],
-  ["sambal", "Sambal", 4000],
-  ["kerupuk", "Kerupuk", 3000],
-  ["air-mineral", "Air Mineral", 5000],
+  ["nasi-putih", "Nasi Putih", 4000, menuImage("addon-nasi-putih.jpg")],
+  ["telur", "Telur", 5000, menuImage("addon-telur.jpg")],
+  ["buah", "Buah", 5000, menuImage("addon-buah.jpg")],
+  ["sambal", "Sambal", 4000, menuImage("addon-sambal.jpg")],
+  ["kerupuk", "Kerupuk", 3000, menuImage("addon-kerupuk.jpg")],
+  ["air-mineral", "Air Mineral", 5000, menuImage("addon-air-mineral.jpg")],
 ];
 
 const seedStockItems = [
@@ -672,11 +669,12 @@ const connectDB = async () => {
   `);
 
   await pool.query(
-    `INSERT INTO add_ons (code, name, price)
+    `INSERT INTO add_ons (code, name, price, image_path)
      VALUES ?
      ON DUPLICATE KEY UPDATE
        name = VALUES(name),
        price = VALUES(price),
+       image_path = COALESCE(image_path, VALUES(image_path)),
        is_active = TRUE`,
     [seedAddOns]
   );
