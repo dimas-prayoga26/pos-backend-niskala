@@ -2,6 +2,7 @@ const express = require("express");
 const {
   addCateringPayment,
   addOrder,
+  deleteOrder,
   getOrders,
   getOrderById,
   updateOrder,
@@ -21,5 +22,6 @@ router
   .patch(isVerifiedUser, addCateringPayment);
 router.route("/:id").get(isVerifiedUser, getOrderById);
 router.route("/:id").put(isVerifiedUser, updateOrder);
+router.route("/:id").delete(isVerifiedUser, deleteOrder);
 
 module.exports = router;

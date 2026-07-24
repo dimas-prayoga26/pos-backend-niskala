@@ -183,9 +183,46 @@ const addCateringPayment = async (req, res, next) => {
   }
 };
 
+const deleteOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const role = req.user?.role?.toLowerCase();
+
+    if (!Number(id)) {
+      const error = createHttpError(404, "Invalid id!");
+      return next(error);
+    }
+
+    if (!["admin", "cashier"].includes(role)) {
+      const error = createHttpError(403, "Only admin or cashier can delete orders!");
+      return next(error);
+    }
+
+    const deleted = await Order.remove(id);
+
+    if (!deleted) {
+      const error = createHttpError(404, "Order not found!");
+      return next(error);
+    }
+
+    emitRealtimeEvent("orders:changed", {
+      action: "deleted",
+      orderId: Number(id),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Order deleted",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   addOrder,
   addCateringPayment,
+  deleteOrder,
   getOrderById,
   getOrders,
   updateOrder,

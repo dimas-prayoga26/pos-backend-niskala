@@ -7,6 +7,8 @@ const pool = mysql.createPool({
   user: config.dbUser,
   password: config.dbPassword,
   database: config.dbName,
+  timezone: config.dbTimeZone,
+  dateStrings: true,
   waitForConnections: true,
   connectionLimit: 10,
   namedPlaceholders: true,
@@ -17,9 +19,18 @@ const serverPool = mysql.createPool({
   port: config.dbPort,
   user: config.dbUser,
   password: config.dbPassword,
+  timezone: config.dbTimeZone,
+  dateStrings: true,
   waitForConnections: true,
   connectionLimit: 2,
 });
+
+const applyConnectionTimeZone = (connection) => {
+  connection.query(`SET time_zone = '${config.dbTimeZone}'`);
+};
+
+pool.on("connection", applyConnectionTimeZone);
+serverPool.on("connection", applyConnectionTimeZone);
 
 const runSafeMigration = async (query) => {
   try {

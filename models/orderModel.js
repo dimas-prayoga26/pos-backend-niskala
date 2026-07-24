@@ -409,6 +409,12 @@ const updateCateringPaymentAmount = async (id, amount) => {
   return findById(id);
 };
 
+const remove = async (id) => {
+  const [result] = await pool.query("DELETE FROM orders WHERE id = ?", [id]);
+
+  return result.affectedRows > 0;
+};
+
 module.exports = {
   create,
   findAll,
@@ -417,4 +423,5 @@ module.exports = {
   updateCateringPaidStatus,
   addCateringPayment,
   updateCateringPaymentAmount,
+  remove,
 };

@@ -1,5 +1,10 @@
 require("dotenv").config();
 
+process.env.TZ = process.env.TZ || "Asia/Jakarta";
+const dbTimeZone = /^[-+]\d{2}:\d{2}$/.test(process.env.DB_TIMEZONE || "")
+    ? process.env.DB_TIMEZONE
+    : "+07:00";
+
 const config = Object.freeze({
     port: process.env.PORT || 3000,
     dbHost: process.env.DB_HOST || "localhost",
@@ -7,6 +12,8 @@ const config = Object.freeze({
     dbUser: process.env.DB_USER || "root",
     dbPassword: process.env.DB_PASSWORD || "",
     dbName: process.env.DB_NAME || "pos_system",
+    dbTimeZone,
+    appTimeZone: process.env.TZ,
     nodeEnv : process.env.NODE_ENV || "development",
     accessTokenSecret: process.env.JWT_SECRET,
     midtransClientKey: process.env.MIDTRANS_CLIENT_KEY,
