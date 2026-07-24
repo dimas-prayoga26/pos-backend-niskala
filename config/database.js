@@ -472,7 +472,7 @@ const connectDB = async () => {
         `UPDATE menu_items
          SET category_id = ?,
              price = ?,
-             image_path = COALESCE(?, image_path),
+             image_path = COALESCE(image_path, ?),
              is_available = TRUE
          WHERE id = ?`,
         [

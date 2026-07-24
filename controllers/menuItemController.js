@@ -1,6 +1,41 @@
 const createHttpError = require("http-errors");
+const fs = require("fs/promises");
+const path = require("path");
 const MenuItem = require("../models/menuItemModel");
 const { emitRealtimeEvent } = require("../config/socket");
+
+const localMenuImagePrefix = "/uploads/menu/";
+const menuUploadDir = path.resolve(__dirname, "..", "uploads", "menu");
+
+const removeLocalMenuImage = async (imagePath) => {
+  if (
+    typeof imagePath !== "string" ||
+    !imagePath.startsWith(localMenuImagePrefix)
+  ) {
+    return;
+  }
+
+  const fileName = path.posix.basename(imagePath);
+  const filePath = path.resolve(menuUploadDir, fileName);
+
+  if (path.dirname(filePath) !== menuUploadDir) return;
+
+  try {
+    await fs.unlink(filePath);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+};
+
+const removeImageIfUnused = async (oldImagePath, nextImagePath = null) => {
+  if (!oldImagePath || oldImagePath === nextImagePath) return;
+
+  const referenceCount =
+    await MenuItem.countImagePathReferences(oldImagePath);
+  if (referenceCount === 0) {
+    await removeLocalMenuImage(oldImagePath);
+  }
+};
 
 const requireAdmin = (req, next) => {
   if (req.user?.role?.toLowerCase() !== "admin") {
@@ -117,6 +152,11 @@ const updateMenuItem = async (req, res, next) => {
       return next(createHttpError(400, "Category, name, and price are required!"));
     }
 
+    const previousMenuItem = await MenuItem.findById(id);
+    if (!previousMenuItem) {
+      return next(createHttpError(404, "Menu item not found!"));
+    }
+
     const menuItem = await MenuItem.update(id, {
       categoryId,
       name,
@@ -132,6 +172,8 @@ const updateMenuItem = async (req, res, next) => {
     if (!menuItem) {
       return next(createHttpError(404, "Menu item not found!"));
     }
+
+    await removeImageIfUnused(previousMenuItem.imagePath, menuItem.imagePath);
 
     emitRealtimeEvent("menu:changed", {
       action: "menu-item-updated",
@@ -156,11 +198,18 @@ const deleteMenuItem = async (req, res, next) => {
       return next(createHttpError(404, "Invalid id!"));
     }
 
+    const menuItem = await MenuItem.findById(id);
+    if (!menuItem) {
+      return next(createHttpError(404, "Menu item not found!"));
+    }
+
     const deleted = await MenuItem.remove(id);
 
     if (!deleted) {
       return next(createHttpError(404, "Menu item not found!"));
     }
+
+    await removeImageIfUnused(menuItem.imagePath);
 
     emitRealtimeEvent("menu:changed", {
       action: "menu-item-deleted",

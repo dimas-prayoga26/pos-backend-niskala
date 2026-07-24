@@ -235,6 +235,19 @@ const findById = async (id) => {
   return menuItem || null;
 };
 
+const countImagePathReferences = async (imagePath) => {
+  if (!imagePath) return 0;
+
+  const [rows] = await pool.query(
+    `SELECT
+       (SELECT COUNT(*) FROM menu_items WHERE image_path = ?) +
+       (SELECT COUNT(*) FROM add_ons WHERE image_path = ?) AS total`,
+    [imagePath, imagePath]
+  );
+
+  return Number(rows[0]?.total) || 0;
+};
+
 const create = async ({
   categoryId,
   name,
@@ -343,6 +356,7 @@ const remove = async (id) => {
 };
 
 module.exports = {
+  countImagePathReferences,
   create,
   findAll,
   findByCategoryId,
