@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS menu_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   category_id INT UNSIGNED NOT NULL,
   name VARCHAR(150) NOT NULL,
-  price DECIMAL(12,2) NOT NULL,
+  price DECIMAL(12,2) NULL,
+  hpp_cost DECIMAL(12,2) NULL,
+  gross_profit DECIMAL(12,2) NULL,
   image_path VARCHAR(255),
   is_available BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -42,6 +44,8 @@ CREATE TABLE IF NOT EXISTS menu_item_sizes (
   menu_item_id INT UNSIGNED NOT NULL,
   name VARCHAR(80) NOT NULL,
   price DECIMAL(12,2) NOT NULL,
+  hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+  gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0,
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -79,6 +83,28 @@ CREATE TABLE IF NOT EXISTS stock_items (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_stock_items_category (category),
   INDEX idx_stock_items_is_active (is_active)
+);
+
+CREATE TABLE IF NOT EXISTS menu_item_ingredients (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  menu_item_id INT UNSIGNED NOT NULL,
+  stock_item_id INT UNSIGNED NULL,
+  size_name VARCHAR(80) NULL,
+  ingredient_name VARCHAR(150) NOT NULL,
+  quantity DECIMAL(12,3) NOT NULL DEFAULT 0,
+  unit VARCHAR(30) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  note VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_menu_item_ingredients_menu_item_id (menu_item_id),
+  INDEX idx_menu_item_ingredients_stock_item_id (stock_item_id),
+  CONSTRAINT fk_menu_item_ingredients_menu_item
+    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_menu_item_ingredients_stock_item
+    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+    ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS order_platforms (

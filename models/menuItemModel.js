@@ -3,6 +3,8 @@ const { pool } = require("../config/database");
 const normalizeSize = (size) => ({
   name: String(size?.name || "").trim(),
   price: Number(size?.price) || 0,
+  hppCost: Number(size?.hppCost ?? size?.hpp_cost) || 0,
+  grossProfit: Number(size?.grossProfit ?? size?.gross_profit) || 0,
 });
 
 const normalizeSizes = (sizes) =>
@@ -15,17 +17,82 @@ const normalizeVariants = (variants) =>
     .map((variant) => String(variant || "").trim())
     .filter(Boolean);
 
+const normalizeIngredient = (ingredient) => ({
+  stockItemId: ingredient?.stockItemId || ingredient?.stock_item_id || null,
+  sizeName: String(ingredient?.sizeName || ingredient?.size_name || "").trim(),
+  ingredientName: String(
+    ingredient?.ingredientName || ingredient?.ingredient_name || ingredient?.name || ""
+  ).trim(),
+  quantity: Number(ingredient?.quantity) || 0,
+  unit: String(ingredient?.unit || "").trim(),
+  note: String(ingredient?.note || "").trim(),
+});
+
+const normalizeIngredients = (ingredients) =>
+  (Array.isArray(ingredients) ? ingredients : [])
+    .map(normalizeIngredient)
+    .filter(
+      (ingredient) =>
+        ingredient.ingredientName &&
+        ingredient.quantity >= 0 &&
+        ingredient.unit
+    );
+
+const parseNumber = (value, fallback = 0) => {
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+};
+
+const buildProfitFields = ({
+  price,
+  hppCost,
+  grossProfit,
+}) => {
+  const hasFinancialInput =
+    hppCost !== undefined || grossProfit !== undefined;
+
+  if (!hasFinancialInput) {
+    return {
+      hppCost: 0,
+      grossProfit: 0,
+    };
+  }
+
+  const normalizedPrice = parseNumber(price);
+  const normalizedHppCost = parseNumber(hppCost);
+  const calculatedGrossProfit =
+    grossProfit === undefined
+      ? normalizedPrice - normalizedHppCost
+      : parseNumber(grossProfit);
+
+  return {
+    hppCost: normalizedHppCost,
+    grossProfit: calculatedGrossProfit,
+  };
+};
+
 const mapMenuItem = (row) => {
   if (!row) return null;
+
+  const price = row.price === null ? null : Number(row.price);
+  const hppCost = row.hpp_cost === null ? null : Number(row.hpp_cost || 0);
+  const grossProfit =
+    row.gross_profit === null ? null : Number(row.gross_profit || 0);
 
   return {
     _id: row.id,
     id: row.id,
     categoryId: row.category_id,
     name: row.name,
-    price: Number(row.price),
-    regularPrice: Number(row.price),
+    price,
+    regularPrice: price,
     largePrice: null,
+    hppCost,
+    hpp: hppCost,
+    grossProfit,
+    profit: grossProfit,
+    ingredients: [],
     variants: [],
     sizes: [],
     imagePath: row.image_path,
@@ -111,7 +178,7 @@ const attachOptions = async (menuItems) => {
   const ids = menuItems.map((item) => item.id);
   const placeholders = ids.map(() => "?").join(", ");
   const [sizeRows] = await pool.query(
-    `SELECT menu_item_id, name, price
+    `SELECT menu_item_id, name, price, hpp_cost, gross_profit
      FROM menu_item_sizes
      WHERE menu_item_id IN (${placeholders})
      ORDER BY sort_order ASC, id ASC`,
@@ -124,9 +191,20 @@ const attachOptions = async (menuItems) => {
      ORDER BY sort_order ASC, id ASC`,
     ids
   );
+  const [ingredientRows] = await pool.query(
+    `SELECT
+       mii.*,
+       si.name AS stock_item_name
+     FROM menu_item_ingredients mii
+     LEFT JOIN stock_items si ON si.id = mii.stock_item_id
+     WHERE mii.menu_item_id IN (${placeholders})
+     ORDER BY mii.sort_order ASC, mii.id ASC`,
+    ids
+  );
 
   const sizesByMenuItemId = new Map();
   const variantsByMenuItemId = new Map();
+  const ingredientsByMenuItemId = new Map();
 
   for (const row of sizeRows) {
     if (!sizesByMenuItemId.has(row.menu_item_id)) {
@@ -136,6 +214,10 @@ const attachOptions = async (menuItems) => {
     sizesByMenuItemId.get(row.menu_item_id).push({
       name: row.name,
       price: Number(row.price),
+      hppCost: Number(row.hpp_cost || 0),
+      hpp: Number(row.hpp_cost || 0),
+      grossProfit: Number(row.gross_profit || 0),
+      profit: Number(row.gross_profit || 0),
     });
   }
 
@@ -147,26 +229,61 @@ const attachOptions = async (menuItems) => {
     variantsByMenuItemId.get(row.menu_item_id).push(row.name);
   }
 
+  for (const row of ingredientRows) {
+    if (!ingredientsByMenuItemId.has(row.menu_item_id)) {
+      ingredientsByMenuItemId.set(row.menu_item_id, []);
+    }
+
+    ingredientsByMenuItemId.get(row.menu_item_id).push({
+      _id: row.id,
+      id: row.id,
+      stockItemId: row.stock_item_id,
+      stockItemName: row.stock_item_name,
+      sizeName: row.size_name || "",
+      ingredientName: row.ingredient_name,
+      name: row.ingredient_name,
+      quantity: Number(row.quantity),
+      unit: row.unit,
+      note: row.note || "",
+    });
+  }
+
   return menuItems.map((item) => {
     const sizes = sizesByMenuItemId.get(item.id) || [];
     const variants = variantsByMenuItemId.get(item.id) || [];
+    const ingredients = ingredientsByMenuItemId.get(item.id) || [];
+    const primarySize = sizes[0];
 
     return {
       ...item,
-      regularPrice: sizes[0]?.price ?? item.price,
+      price: primarySize?.price ?? item.price,
+      regularPrice: primarySize?.price ?? item.regularPrice,
       largePrice:
         sizes.find((size) => size.name.toLowerCase() === "large")?.price ??
         sizes[1]?.price ??
         null,
+      hppCost: primarySize?.hppCost ?? item.hppCost,
+      hpp: primarySize?.hpp ?? item.hpp,
+      grossProfit: primarySize?.grossProfit ?? item.grossProfit,
+      profit: primarySize?.profit ?? item.profit,
       sizes,
       variants,
+      ingredients,
     };
   });
 };
 
-const replaceOptions = async (connection, menuItemId, { sizes, variants }) => {
+const replaceOptions = async (
+  connection,
+  menuItemId,
+  { sizes, variants, ingredients }
+) => {
   const normalizedSizes = normalizeSizes(sizes);
   const normalizedVariants = normalizeVariants(variants);
+  const shouldReplaceIngredients = Array.isArray(ingredients);
+  const normalizedIngredients = shouldReplaceIngredients
+    ? normalizeIngredients(ingredients)
+    : [];
 
   await connection.query("DELETE FROM menu_item_sizes WHERE menu_item_id = ?", [
     menuItemId,
@@ -175,16 +292,25 @@ const replaceOptions = async (connection, menuItemId, { sizes, variants }) => {
     "DELETE FROM menu_item_variants WHERE menu_item_id = ?",
     [menuItemId]
   );
+  if (shouldReplaceIngredients) {
+    await connection.query(
+      "DELETE FROM menu_item_ingredients WHERE menu_item_id = ?",
+      [menuItemId]
+    );
+  }
 
   if (normalizedSizes.length) {
     await connection.query(
-      `INSERT INTO menu_item_sizes (menu_item_id, name, price, sort_order)
+      `INSERT INTO menu_item_sizes
+        (menu_item_id, name, price, hpp_cost, gross_profit, sort_order)
        VALUES ?`,
       [
         normalizedSizes.map((size, index) => [
           menuItemId,
           size.name,
           size.price,
+          size.hppCost,
+          size.grossProfit,
           index + 1,
         ]),
       ]
@@ -200,6 +326,27 @@ const replaceOptions = async (connection, menuItemId, { sizes, variants }) => {
           menuItemId,
           variant,
           index + 1,
+        ]),
+      ]
+    );
+  }
+
+  if (shouldReplaceIngredients && normalizedIngredients.length) {
+    await connection.query(
+      `INSERT INTO menu_item_ingredients
+        (menu_item_id, stock_item_id, size_name, ingredient_name, quantity, unit,
+         sort_order, note)
+       VALUES ?`,
+      [
+        normalizedIngredients.map((ingredient, index) => [
+          menuItemId,
+          ingredient.stockItemId || null,
+          ingredient.sizeName || null,
+          ingredient.ingredientName,
+          ingredient.quantity,
+          ingredient.unit,
+          index + 1,
+          ingredient.note || null,
         ]),
       ]
     );
@@ -254,26 +401,46 @@ const create = async ({
   price,
   regularPrice,
   largePrice,
+  hppCost,
+  hpp,
+  grossProfit,
+  profit,
+  ingredients = [],
   variants = [],
   sizes = [],
   imagePath,
   isAvailable = true,
 }) => {
   const normalizedSizes = normalizeSizes(sizes);
+  const normalizedIngredients = normalizeIngredients(ingredients);
   const basePrice =
-    normalizedSizes[0]?.price ?? (regularPrice === undefined ? price : regularPrice);
+    normalizedSizes.length > 0
+      ? null
+      : regularPrice === undefined
+        ? price
+        : regularPrice;
+  const profitFields = normalizedSizes.length
+    ? { hppCost: null, grossProfit: null }
+    : buildProfitFields({
+        price: basePrice,
+        hppCost: hppCost ?? hpp,
+        grossProfit: grossProfit ?? profit,
+      });
   const connection = await pool.getConnection();
 
   try {
     await connection.beginTransaction();
     const [result] = await connection.query(
       `INSERT INTO menu_items
-        (category_id, name, price, image_path, is_available)
-       VALUES (?, ?, ?, ?, ?)`,
+        (category_id, name, price, hpp_cost, gross_profit, image_path,
+         is_available)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         categoryId,
         name,
         basePrice,
+        profitFields.hppCost,
+        profitFields.grossProfit,
         imagePath || null,
         isAvailable ? 1 : 0,
       ]
@@ -282,6 +449,7 @@ const create = async ({
     await replaceOptions(connection, result.insertId, {
       sizes: normalizedSizes,
       variants,
+      ingredients: normalizedIngredients,
     });
 
     await connection.commit();
@@ -302,6 +470,11 @@ const update = async (
     price,
     regularPrice,
     largePrice,
+    hppCost,
+    hpp,
+    grossProfit,
+    profit,
+    ingredients = [],
     variants = [],
     sizes = [],
     imagePath,
@@ -309,8 +482,20 @@ const update = async (
   }
 ) => {
   const normalizedSizes = normalizeSizes(sizes);
+  const normalizedIngredients = normalizeIngredients(ingredients);
   const basePrice =
-    normalizedSizes[0]?.price ?? (regularPrice === undefined ? price : regularPrice);
+    normalizedSizes.length > 0
+      ? null
+      : regularPrice === undefined
+        ? price
+        : regularPrice;
+  const profitFields = normalizedSizes.length
+    ? { hppCost: null, grossProfit: null }
+    : buildProfitFields({
+        price: basePrice,
+        hppCost: hppCost ?? hpp,
+        grossProfit: grossProfit ?? profit,
+      });
   const connection = await pool.getConnection();
 
   try {
@@ -320,6 +505,8 @@ const update = async (
        SET category_id = ?,
            name = ?,
            price = ?,
+           hpp_cost = ?,
+           gross_profit = ?,
            image_path = ?,
            is_available = ?
        WHERE id = ?`,
@@ -327,6 +514,8 @@ const update = async (
         categoryId,
         name,
         basePrice,
+        profitFields.hppCost,
+        profitFields.grossProfit,
         imagePath || null,
         isAvailable ? 1 : 0,
         id,
@@ -336,6 +525,7 @@ const update = async (
     await replaceOptions(connection, id, {
       sizes: normalizedSizes,
       variants,
+      ingredients: normalizedIngredients,
     });
 
     await connection.commit();

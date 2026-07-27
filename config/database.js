@@ -103,12 +103,29 @@ const seedAddOns = [
 ];
 
 const seedStockItems = [
-  ["Ayam Fillet", "Makanan", "kg", 4, 5, "Supplier Ayam Segar"],
-  ["Kentang Beku", "Snack", "kg", 2.5, 3, "Frozen Food Mandiri"],
-  ["Powder Matcha", "Powder", "kg", 0.3, 0.5, "Toko Bahan Minuman"],
-  ["Beras", "Makanan", "kg", 17, 15, "Toko Beras Makmur"],
-  ["Cup 16 oz + tutup", "Packaging", "pak(50)", 5, 4, "Toko Kemasan"],
-  ["Gula Aren Cair", "Sirup", "botol", 3, 2, "UMKM Aren Jaya"],
+  ["ESPRESSO", "Coffee", "gr", 999, 0, ""],
+  ["WATER", "Beverage", "ml", 999, 0, ""],
+  ["CUP", "Packaging", "pcs", 999, 0, ""],
+  ["SYRUP BUTTERSCOTH", "Syrup", "ml", 999, 0, ""],
+  ["CREAMER", "Dairy", "gr", 999, 0, ""],
+  ["FRESHMILK", "Dairy", "ml", 999, 0, ""],
+  ["SYRUP CLASSC CARAMEL", "Syrup", "ml", 999, 0, ""],
+  ["SYRUP VANILLA TRADITIO", "Syrup", "ml", 999, 0, ""],
+  ["SYRUP HAZELNUT", "Syrup", "ml", 999, 0, ""],
+  ["SYRUP AREN", "Syrup", "ml", 999, 0, ""],
+  ["POWDER CHOCOLATE", "Powder", "gr", 999, 0, ""],
+  ["POWDER MATCHA", "Powder", "gr", 999, 0, ""],
+  ["SYRUP STRAWBERRY", "Syrup", "ml", 999, 0, ""],
+  ["SYRUP LYCHEE", "Syrup", "ml", 999, 0, ""],
+  ["SYRUP PINEAPPLE", "Syrup", "ml", 999, 0, ""],
+  ["SYRUP LEMON", "Syrup", "ml", 999, 0, ""],
+  ["SYRUP VANILLA", "Syrup", "ml", 999, 0, ""],
+  ["POWDER COOKIES AND CREAM", "Powder", "gr", 999, 0, ""],
+  ["POWDER LYCHEE TEA", "Powder", "gr", 999, 0, ""],
+  ["POWDER LEMON TEA", "Powder", "gr", 999, 0, ""],
+  ["POWDER SONGKIT", "Powder", "gr", 999, 0, ""],
+  ["POWDER THAI TEA", "Powder", "gr", 999, 0, ""],
+  ["SKM", "Dairy", "ml", 999, 0, ""],
 ];
 
 const seedOrderPlatforms = [
@@ -304,7 +321,9 @@ const connectDB = async () => {
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       category_id INT UNSIGNED NOT NULL,
       name VARCHAR(150) NOT NULL,
-      price DECIMAL(12,2) NOT NULL,
+      price DECIMAL(12,2) NULL,
+      hpp_cost DECIMAL(12,2) NULL,
+      gross_profit DECIMAL(12,2) NULL,
       image_path VARCHAR(255),
       is_available BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -318,6 +337,12 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN description");
   await runSafeMigration("ALTER TABLE menu_items CHANGE COLUMN image_url image_path VARCHAR(255) NULL");
   await runSafeMigration("UPDATE menu_items SET image_path = NULL WHERE image_path IS NOT NULL AND image_path NOT LIKE '/uploads/%'");
+  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN hpp_cost DECIMAL(12,2) NULL AFTER price");
+  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN gross_profit DECIMAL(12,2) NULL AFTER hpp_cost");
+  await runSafeMigration("ALTER TABLE menu_items DROP COLUMN gross_profit_margin");
+  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN price DECIMAL(12,2) NULL");
+  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN hpp_cost DECIMAL(12,2) NULL");
+  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN gross_profit DECIMAL(12,2) NULL");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS menu_item_sizes (
@@ -325,6 +350,8 @@ const connectDB = async () => {
       menu_item_id INT UNSIGNED NOT NULL,
       name VARCHAR(80) NOT NULL,
       price DECIMAL(12,2) NOT NULL,
+      hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+      gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0,
       sort_order INT NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -333,6 +360,19 @@ const connectDB = async () => {
       CONSTRAINT fk_menu_item_sizes_menu_item
         FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
         ON DELETE CASCADE
+    )
+  `);
+  await runSafeMigration("ALTER TABLE menu_item_sizes ADD COLUMN hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER price");
+  await runSafeMigration("ALTER TABLE menu_item_sizes ADD COLUMN gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER hpp_cost");
+  await runSafeMigration(`
+    UPDATE menu_items mi
+    SET mi.price = NULL,
+        mi.hpp_cost = NULL,
+        mi.gross_profit = NULL
+    WHERE EXISTS (
+      SELECT 1
+      FROM menu_item_sizes mis
+      WHERE mis.menu_item_id = mi.id
     )
   `);
 
@@ -401,12 +441,47 @@ const connectDB = async () => {
       (name, category, unit, stock, minimum_stock, supplier)
      VALUES ?
      ON DUPLICATE KEY UPDATE
+       name = VALUES(name),
        category = VALUES(category),
        unit = VALUES(unit),
+       stock = VALUES(stock),
+       minimum_stock = VALUES(minimum_stock),
        supplier = VALUES(supplier),
        is_active = TRUE`,
     [seedStockItems]
   );
+  await deactivateRowsOutsideList(
+    "stock_items",
+    "name",
+    "is_active",
+    seedStockItems.map(([name]) => name)
+  );
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS menu_item_ingredients (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      menu_item_id INT UNSIGNED NOT NULL,
+      stock_item_id INT UNSIGNED NULL,
+      size_name VARCHAR(80) NULL,
+      ingredient_name VARCHAR(150) NOT NULL,
+      quantity DECIMAL(12,3) NOT NULL DEFAULT 0,
+      unit VARCHAR(30) NOT NULL,
+      sort_order INT NOT NULL DEFAULT 0,
+      note VARCHAR(255) NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_menu_item_ingredients_menu_item_id (menu_item_id),
+      INDEX idx_menu_item_ingredients_stock_item_id (stock_item_id),
+      CONSTRAINT fk_menu_item_ingredients_menu_item
+        FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+        ON DELETE CASCADE,
+      CONSTRAINT fk_menu_item_ingredients_stock_item
+        FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+        ON DELETE SET NULL
+    )
+  `);
+  await runSafeMigration("ALTER TABLE menu_item_ingredients ADD COLUMN size_name VARCHAR(80) NULL AFTER stock_item_id");
+  await runSafeMigration("ALTER TABLE menu_item_ingredients DROP COLUMN unit_cost");
 
   const defaultCategories = [
     ["Starters", "🍲"],
@@ -480,12 +555,16 @@ const connectDB = async () => {
         `UPDATE menu_items
          SET category_id = ?,
              price = ?,
+             hpp_cost = ?,
+             gross_profit = ?,
              image_path = COALESCE(image_path, ?),
              is_available = TRUE
          WHERE id = ?`,
         [
           categoryId,
-          regularPrice,
+          sizes.length ? null : regularPrice,
+          sizes.length ? null : 0,
+          sizes.length ? null : 0,
           seedImagePath,
           menuItemId,
         ]
@@ -493,12 +572,14 @@ const connectDB = async () => {
     } else {
       const [result] = await pool.query(
         `INSERT INTO menu_items
-          (category_id, name, price, image_path, is_available)
-         VALUES (?, ?, ?, ?, TRUE)`,
+          (category_id, name, price, hpp_cost, gross_profit, image_path, is_available)
+         VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
         [
           categoryId,
           name,
-          regularPrice,
+          sizes.length ? null : regularPrice,
+          sizes.length ? null : 0,
+          sizes.length ? null : 0,
           seedImagePath,
         ]
       );

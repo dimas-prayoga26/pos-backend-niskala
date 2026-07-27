@@ -45,11 +45,9 @@ const requireAdmin = (req, next) => {
   return null;
 };
 
-const getFirstSizePrice = (sizes) => {
-  if (!Array.isArray(sizes)) return undefined;
-  const firstSize = sizes.find((size) => size?.price !== undefined);
-  return firstSize?.price;
-};
+const hasSizeOptions = (sizes) =>
+  Array.isArray(sizes) &&
+  sizes.some((size) => String(size?.name || "").trim());
 
 const addMenuItem = async (req, res, next) => {
   try {
@@ -62,20 +60,22 @@ const addMenuItem = async (req, res, next) => {
       price,
       regularPrice,
       largePrice,
+      hppCost,
+      hpp,
+      grossProfit,
+      profit,
+      ingredients,
       variants,
       sizes,
       imagePath,
       isAvailable,
     } =
       req.body;
+    const hasSizes = hasSizeOptions(sizes);
     const basePrice =
-      regularPrice === undefined
-        ? price === undefined
-          ? getFirstSizePrice(sizes)
-          : price
-        : regularPrice;
+      hasSizes ? null : regularPrice === undefined ? price : regularPrice;
 
-    if (!categoryId || !name || basePrice === undefined) {
+    if (!categoryId || !name || (!hasSizes && basePrice === undefined)) {
       return next(createHttpError(400, "Category, name, and price are required!"));
     }
 
@@ -85,6 +85,11 @@ const addMenuItem = async (req, res, next) => {
       price: basePrice,
       regularPrice: basePrice,
       largePrice,
+      hppCost,
+      hpp,
+      grossProfit,
+      profit,
+      ingredients,
       variants,
       sizes,
       imagePath,
@@ -131,24 +136,26 @@ const updateMenuItem = async (req, res, next) => {
       price,
       regularPrice,
       largePrice,
+      hppCost,
+      hpp,
+      grossProfit,
+      profit,
+      ingredients,
       variants,
       sizes,
       imagePath,
       isAvailable = true,
     } =
       req.body;
+    const hasSizes = hasSizeOptions(sizes);
     const basePrice =
-      regularPrice === undefined
-        ? price === undefined
-          ? getFirstSizePrice(sizes)
-          : price
-        : regularPrice;
+      hasSizes ? null : regularPrice === undefined ? price : regularPrice;
 
     if (!Number(id)) {
       return next(createHttpError(404, "Invalid id!"));
     }
 
-    if (!categoryId || !name || basePrice === undefined) {
+    if (!categoryId || !name || (!hasSizes && basePrice === undefined)) {
       return next(createHttpError(400, "Category, name, and price are required!"));
     }
 
@@ -163,6 +170,11 @@ const updateMenuItem = async (req, res, next) => {
       price: basePrice,
       regularPrice: basePrice,
       largePrice,
+      hppCost,
+      hpp,
+      grossProfit,
+      profit,
+      ingredients,
       variants,
       sizes,
       imagePath,
