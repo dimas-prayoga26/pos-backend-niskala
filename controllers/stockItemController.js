@@ -9,6 +9,7 @@ const normalizeStockPayload = (body) => ({
   stock: Math.max(Number(body.stock) || 0, 0),
   minimumStock: Math.max(Number(body.minimumStock) || 0, 0),
   supplier: String(body.supplier || "").trim(),
+  isUnlimited: Boolean(body.isUnlimited),
 });
 
 const validateStockPayload = ({ name, category, unit }) => {

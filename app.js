@@ -33,7 +33,6 @@ app.use("/api/order", require("./routes/orderRoute"));
 app.use("/api/payment", require("./routes/paymentRoute"));
 app.use("/api/category", require("./routes/categoryRoute"));
 app.use("/api/menu-item", require("./routes/menuItemRoute"));
-app.use("/api/add-on", require("./routes/addOnRoute"));
 app.use("/api/stock-item", require("./routes/stockItemRoute"));
 app.use("/api/order-platform", require("./routes/orderPlatformRoute"));
 app.use("/api/recap", require("./routes/recapRoute"));

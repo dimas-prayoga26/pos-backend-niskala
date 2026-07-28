@@ -387,9 +387,8 @@ const countImagePathReferences = async (imagePath) => {
 
   const [rows] = await pool.query(
     `SELECT
-       (SELECT COUNT(*) FROM menu_items WHERE image_path = ?) +
-       (SELECT COUNT(*) FROM add_ons WHERE image_path = ?) AS total`,
-    [imagePath, imagePath]
+       (SELECT COUNT(*) FROM menu_items WHERE image_path = ?) AS total`,
+    [imagePath]
   );
 
   return Number(rows[0]?.total) || 0;

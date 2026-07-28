@@ -13,6 +13,10 @@ const addOrder = async (req, res, next) => {
       action: "created",
       orderId: order.id || order._id,
     });
+    emitRealtimeEvent("stock:changed", {
+      action: "stock-deducted-by-order",
+      orderId: order.id || order._id,
+    });
     res
       .status(201)
       .json({ success: true, message: "Order created!", data: order });
@@ -207,6 +211,10 @@ const deleteOrder = async (req, res, next) => {
 
     emitRealtimeEvent("orders:changed", {
       action: "deleted",
+      orderId: Number(id),
+    });
+    emitRealtimeEvent("stock:changed", {
+      action: "stock-restored-by-order-delete",
       orderId: Number(id),
     });
 

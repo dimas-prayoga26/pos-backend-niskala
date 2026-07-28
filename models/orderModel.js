@@ -64,28 +64,267 @@ const mapOrder = (row, items = []) => {
 const mapItem = (row) => ({
   id: row.item_key || row.id,
   _id: row.id,
+  menuItemId: row.menu_item_id,
+  sourceMenuItemId: row.menu_item_id,
+  sizeName: row.size_name || "",
+  sizeVariant: row.size_name || "",
   name: row.name,
   variant: row.variant,
   quantity: row.quantity,
   pricePerQuantity: Number(row.price_per_quantity),
+  hppCost: Number(row.hpp_cost || 0),
+  hpp: Number(row.hpp_cost || 0),
   price: Number(row.price),
   addOns: row.addOns || [],
 });
 
-const mapAddOn = (row) => ({
-  id: row.add_on_code || row.add_on_id || row.id,
-  _id: row.add_on_id,
-  code: row.add_on_code,
-  name: row.name,
-  price: Number(row.price),
-});
+const getSourceMenuItemId = (item) => {
+  const directId = Number(
+    item.sourceMenuItemId || item.menuItemSourceId || item.menuId
+  );
 
-const getAddOnCode = (addOn) =>
-  String(addOn.code || addOn.id || addOn.name)
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  if (Number.isFinite(directId) && directId > 0) return directId;
+
+  const menuItemId = Number(item.menuItemId);
+  if (Number.isFinite(menuItemId) && menuItemId > 0) return menuItemId;
+
+  const [categoryId, parsedMenuItemId] = String(item.id || "")
+    .split("-")
+    .map(Number);
+
+  if (
+    Number.isFinite(categoryId) &&
+    Number.isFinite(parsedMenuItemId) &&
+    parsedMenuItemId > 0
+  ) {
+    return parsedMenuItemId;
+  }
+
+  return null;
+};
+
+const findMenuItemSnapshot = async (connection, menuItemId, sizeName = "") => {
+  if (!menuItemId) return { menuItemId: null, hppCost: 0 };
+
+  const [rows] = await connection.query(
+    `SELECT mi.id,
+            COALESCE(
+       (
+         SELECT mis.hpp_cost
+         FROM menu_item_sizes mis
+         WHERE mis.menu_item_id = mi.id
+           AND LOWER(mis.name) = LOWER(?)
+         LIMIT 1
+       ),
+       (
+         SELECT mis.hpp_cost
+         FROM menu_item_sizes mis
+         WHERE mis.menu_item_id = mi.id
+         ORDER BY mis.sort_order ASC, mis.id ASC
+         LIMIT 1
+       ),
+       mi.hpp_cost,
+       0
+     ) AS hpp_cost
+     FROM menu_items mi
+     WHERE mi.id = ?
+     LIMIT 1`,
+    [sizeName, menuItemId]
+  );
+
+  if (!rows.length) return { menuItemId: null, hppCost: 0 };
+
+  return {
+    menuItemId: rows[0].id,
+    hppCost: Number(rows[0].hpp_cost || 0),
+  };
+};
+
+const createStockValidationError = (insufficientStock) => {
+  const error = new Error("Stok bahan tidak mencukupi.");
+  error.statusCode = 409;
+  error.details = { insufficientStock };
+
+  return error;
+};
+
+const createRecapLockedError = (
+  message = "Pesanan sudah masuk rekap harian dan tidak bisa diubah."
+) => {
+  const error = new Error(message);
+  error.statusCode = 409;
+
+  return error;
+};
+
+const assertNoDailyRecapForDate = async (connection, dateExpression, message) => {
+  const [rows] = await connection.query(
+    `SELECT dr.id
+     FROM daily_recaps dr
+     WHERE dr.recap_date = DATE(${dateExpression})
+     LIMIT 1`
+  );
+
+  if (rows.length) {
+    throw createRecapLockedError(message);
+  }
+};
+
+const assertOrderIsNotRecapped = async (connection, orderId) => {
+  const [rows] = await connection.query(
+    `SELECT dr.id
+     FROM orders o
+     JOIN daily_recaps dr ON dr.recap_date = DATE(o.order_date)
+     WHERE o.id = ?
+     LIMIT 1`,
+    [orderId]
+  );
+
+  if (rows.length) {
+    throw createRecapLockedError();
+  }
+};
+
+const normalizeOrderItemsForStock = (items = []) =>
+  items
+    .map((item) => ({
+      menuItemId: getSourceMenuItemId(item),
+      sizeName: String(item.sizeVariant || item.sizeName || "").trim(),
+      quantity: Math.max(Number(item.quantity) || 0, 0),
+    }))
+    .filter((item) => item.menuItemId && item.quantity > 0);
+
+const buildStockDeductions = async (connection, items = []) => {
+  const orderItems = items
+    ? normalizeOrderItemsForStock(items)
+    : [];
+
+  if (!orderItems.length) return new Map();
+
+  const menuItemIds = [...new Set(orderItems.map((item) => item.menuItemId))];
+  const [ingredientRows] = await connection.query(
+    `SELECT
+       mii.menu_item_id,
+       mii.stock_item_id,
+       mii.size_name,
+       mii.quantity,
+       si.name AS stock_name,
+       si.stock,
+       si.unit,
+       si.is_unlimited
+     FROM menu_item_ingredients mii
+     JOIN stock_items si ON si.id = mii.stock_item_id
+     WHERE mii.menu_item_id IN (?)
+       AND mii.stock_item_id IS NOT NULL`,
+    [menuItemIds]
+  );
+
+  if (!ingredientRows.length) return new Map();
+
+  const deductions = new Map();
+
+  for (const orderItem of orderItems) {
+    const matchingIngredients = ingredientRows.filter((ingredient) => {
+      if (Number(ingredient.menu_item_id) !== orderItem.menuItemId) return false;
+
+      const ingredientSizeName = String(ingredient.size_name || "").trim();
+
+      return (
+        !ingredientSizeName ||
+        (orderItem.sizeName &&
+          ingredientSizeName.toLowerCase() === orderItem.sizeName.toLowerCase())
+      );
+    });
+
+    for (const ingredient of matchingIngredients) {
+      const stockItemId = Number(ingredient.stock_item_id);
+      const deduction =
+        (Number(ingredient.quantity) || 0) * orderItem.quantity;
+
+      if (!stockItemId || deduction <= 0) continue;
+
+      const currentDeduction = deductions.get(stockItemId) || {
+        stockItemId,
+        name: ingredient.stock_name,
+        stock: Number(ingredient.stock || 0),
+        unit: ingredient.unit || "",
+        isUnlimited: Boolean(ingredient.is_unlimited),
+        required: 0,
+      };
+
+      currentDeduction.required += deduction;
+      deductions.set(stockItemId, currentDeduction);
+    }
+  }
+
+  return deductions;
+};
+
+const getInsufficientStock = (deductions) =>
+  Array.from(deductions.values())
+    .filter(
+      (deduction) =>
+        !deduction.isUnlimited && deduction.required > deduction.stock
+    )
+    .map((deduction) => ({
+      stockItemId: deduction.stockItemId,
+      name: deduction.name,
+      stock: deduction.stock,
+      required: deduction.required,
+      shortage: deduction.required - deduction.stock,
+      unit: deduction.unit,
+    }));
+
+const applyStockDeductions = async (connection, deductions) => {
+  for (const deduction of deductions.values()) {
+    await connection.query(
+      `UPDATE stock_items
+       SET stock = CASE
+         WHEN is_unlimited = TRUE THEN stock
+         ELSE stock - ?
+       END
+       WHERE id = ?`,
+      [deduction.required, deduction.stockItemId]
+    );
+  }
+
+  return deductions.size;
+};
+
+const deductIngredientStock = async (
+  connection,
+  items = [],
+  { allowNegativeStock = false } = {}
+) => {
+  const deductions = await buildStockDeductions(connection, items);
+  if (!deductions.size) return 0;
+
+  const insufficientStock = getInsufficientStock(deductions);
+  if (insufficientStock.length && !allowNegativeStock) {
+    throw createStockValidationError(insufficientStock);
+  }
+
+  return applyStockDeductions(connection, deductions);
+};
+
+const restoreIngredientStock = async (connection, items = []) => {
+  const deductions = await buildStockDeductions(connection, items);
+  if (!deductions.size) return 0;
+
+  for (const deduction of deductions.values()) {
+    await connection.query(
+      `UPDATE stock_items
+       SET stock = CASE
+         WHEN is_unlimited = TRUE THEN stock
+         ELSE stock + ?
+       END
+       WHERE id = ?`,
+      [deduction.required, deduction.stockItemId]
+    );
+  }
+
+  return deductions.size;
+};
 
 const findItemsByOrderIds = async (orderIds) => {
   if (!orderIds.length) return new Map();
@@ -94,9 +333,6 @@ const findItemsByOrderIds = async (orderIds) => {
     `SELECT * FROM order_items WHERE order_id IN (?) ORDER BY id ASC`,
     [orderIds]
   );
-  const addOnsByOrderItemId = await findAddOnsByOrderItemIds(
-    rows.map((row) => row.id)
-  );
   const itemsByOrderId = new Map();
 
   rows.forEach((row) => {
@@ -104,42 +340,11 @@ const findItemsByOrderIds = async (orderIds) => {
       itemsByOrderId.set(row.order_id, []);
     }
     itemsByOrderId.get(row.order_id).push(
-      mapItem({
-        ...row,
-        addOns: addOnsByOrderItemId.get(row.id) || [],
-      })
+      mapItem(row)
     );
   });
 
   return itemsByOrderId;
-};
-
-const findAddOnsByOrderItemIds = async (orderItemIds) => {
-  if (!orderItemIds.length) return new Map();
-
-  const [rows] = await pool.query(
-    `SELECT
-       oia.order_item_id,
-       oia.add_on_id,
-       ao.code AS add_on_code,
-       oia.name,
-       oia.price
-     FROM order_item_addons oia
-     LEFT JOIN add_ons ao ON ao.id = oia.add_on_id
-     WHERE oia.order_item_id IN (?)
-     ORDER BY oia.id ASC`,
-    [orderItemIds]
-  );
-  const addOnsByOrderItemId = new Map();
-
-  rows.forEach((row) => {
-    if (!addOnsByOrderItemId.has(row.order_item_id)) {
-      addOnsByOrderItemId.set(row.order_item_id, []);
-    }
-    addOnsByOrderItemId.get(row.order_item_id).push(mapAddOn(row));
-  });
-
-  return addOnsByOrderItemId;
 };
 
 const baseOrderQuery = `
@@ -198,7 +403,16 @@ const create = async (orderData) => {
       paymentMethod,
       paymentData = {},
       cateringDetails,
+      allowNegativeStock = false,
     } = orderData;
+
+    await assertNoDailyRecapForDate(
+      connection,
+      "CURRENT_DATE()",
+      "Rekap harian hari ini sudah dibuat. Pesanan baru tidak bisa ditambahkan ke tanggal yang sudah closing."
+    );
+
+    await deductIngredientStock(connection, items, { allowNegativeStock });
 
     let customerName = String(customerDetails.name || "").trim();
 
@@ -292,43 +506,32 @@ const create = async (orderData) => {
     }
 
     for (const item of items) {
-      const [itemResult] = await connection.query(
+      const sourceMenuItemId = getSourceMenuItemId(item);
+      const sizeName = String(item.sizeVariant || item.sizeName || "").trim();
+      const menuItemSnapshot = await findMenuItemSnapshot(
+        connection,
+        sourceMenuItemId,
+        sizeName
+      );
+
+      await connection.query(
         `INSERT INTO order_items
-          (order_id, item_key, name, variant, quantity, price_per_quantity, price)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          (order_id, item_key, menu_item_id, size_name, name, variant, quantity,
+           price_per_quantity, hpp_cost, price)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           orderId,
           item.id || null,
+          menuItemSnapshot.menuItemId,
+          sizeName || null,
           item.name,
           item.variant || null,
           item.quantity,
           item.pricePerQuantity,
+          menuItemSnapshot.hppCost,
           item.price,
         ]
       );
-
-      const orderItemId = itemResult.insertId;
-
-      for (const addOn of item.addOns || []) {
-        const code = getAddOnCode(addOn);
-
-        const [addOnResult] = await connection.query(
-          `INSERT INTO add_ons (code, name, price)
-           VALUES (?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             name = VALUES(name),
-             price = VALUES(price),
-             id = LAST_INSERT_ID(id)`,
-          [code, addOn.name, addOn.price || 0]
-        );
-
-        await connection.query(
-          `INSERT INTO order_item_addons
-            (order_item_id, add_on_id, name, price)
-           VALUES (?, ?, ?, ?)`,
-          [orderItemId, addOnResult.insertId, addOn.name, addOn.price || 0]
-        );
-      }
     }
 
     await connection.commit();
@@ -343,50 +546,71 @@ const create = async (orderData) => {
 };
 
 const updateStatus = async (id, orderStatus) => {
-  await pool.query("UPDATE orders SET order_status = ? WHERE id = ?", [
-    orderStatus,
-    id,
-  ]);
-  return findById(id);
+  const connection = await pool.getConnection();
+
+  try {
+    await assertOrderIsNotRecapped(connection, id);
+    await connection.query("UPDATE orders SET order_status = ? WHERE id = ?", [
+      orderStatus,
+      id,
+    ]);
+    return findById(id);
+  } finally {
+    connection.release();
+  }
 };
 
 const updateCateringPaidStatus = async (id, isPaid) => {
-  const [result] = await pool.query(
-    `UPDATE order_catering_details cod
-     JOIN orders o ON o.id = cod.order_id
-     SET
-       cod.is_paid = ?,
-       cod.dp_received = CASE
-         WHEN ? = 1 THEN o.total_with_tax
-         ELSE cod.dp_received
-       END
-     WHERE cod.order_id = ?`,
-    [isPaid ? 1 : 0, isPaid ? 1 : 0, id]
-  );
+  const connection = await pool.getConnection();
 
-  if (!result.affectedRows) return null;
+  try {
+    await assertOrderIsNotRecapped(connection, id);
+    const [result] = await connection.query(
+      `UPDATE order_catering_details cod
+       JOIN orders o ON o.id = cod.order_id
+       SET
+         cod.is_paid = ?,
+         cod.dp_received = CASE
+           WHEN ? = 1 THEN o.total_with_tax
+           ELSE cod.dp_received
+         END
+       WHERE cod.order_id = ?`,
+      [isPaid ? 1 : 0, isPaid ? 1 : 0, id]
+    );
 
-  return findById(id);
+    if (!result.affectedRows) return null;
+
+    return findById(id);
+  } finally {
+    connection.release();
+  }
 };
 
 const addCateringPayment = async (id, amount) => {
-  const [result] = await pool.query(
-    `UPDATE order_catering_details cod
-     JOIN orders o ON o.id = cod.order_id
-     SET
-       cod.dp_received = LEAST(cod.dp_received + ?, o.total_with_tax),
-       cod.is_paid = CASE
-         WHEN LEAST(cod.dp_received + ?, o.total_with_tax) >= o.total_with_tax
-         THEN 1
-         ELSE 0
-       END
-     WHERE cod.order_id = ?`,
-    [amount, amount, id]
-  );
+  const connection = await pool.getConnection();
 
-  if (!result.affectedRows) return null;
+  try {
+    await assertOrderIsNotRecapped(connection, id);
+    const [result] = await connection.query(
+      `UPDATE order_catering_details cod
+       JOIN orders o ON o.id = cod.order_id
+       SET
+         cod.dp_received = LEAST(cod.dp_received + ?, o.total_with_tax),
+         cod.is_paid = CASE
+           WHEN LEAST(cod.dp_received + ?, o.total_with_tax) >= o.total_with_tax
+           THEN 1
+           ELSE 0
+         END
+       WHERE cod.order_id = ?`,
+      [amount, amount, id]
+    );
 
-  return findById(id);
+    if (!result.affectedRows) return null;
+
+    return findById(id);
+  } finally {
+    connection.release();
+  }
 };
 
 const updateCateringPaymentAmount = async (id, amount) => {
@@ -410,9 +634,48 @@ const updateCateringPaymentAmount = async (id, amount) => {
 };
 
 const remove = async (id) => {
-  const [result] = await pool.query("DELETE FROM orders WHERE id = ?", [id]);
+  const connection = await pool.getConnection();
 
-  return result.affectedRows > 0;
+  try {
+    await connection.beginTransaction();
+
+    const [orderRows] = await connection.query(
+      "SELECT id FROM orders WHERE id = ? LIMIT 1",
+      [id]
+    );
+
+    if (!orderRows.length) {
+      await connection.rollback();
+      return false;
+    }
+
+    await assertOrderIsNotRecapped(connection, id);
+
+    const [itemRows] = await connection.query(
+      `SELECT
+         item_key AS id,
+         menu_item_id AS menuItemId,
+         size_name AS sizeName,
+         quantity
+       FROM order_items
+       WHERE order_id = ?`,
+      [id]
+    );
+
+    await restoreIngredientStock(connection, itemRows);
+
+    const [result] = await connection.query("DELETE FROM orders WHERE id = ?", [
+      id,
+    ]);
+
+    await connection.commit();
+    return result.affectedRows > 0;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 module.exports = {

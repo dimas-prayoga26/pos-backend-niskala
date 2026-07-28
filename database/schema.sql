@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS stock_items (
   stock DECIMAL(12,2) NOT NULL DEFAULT 0,
   minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
   supplier VARCHAR(150),
+  is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -189,57 +190,24 @@ CREATE TABLE IF NOT EXISTS order_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_id INT UNSIGNED NOT NULL,
   item_key VARCHAR(100),
+  menu_item_id INT UNSIGNED NULL,
+  size_name VARCHAR(80) NULL,
   name VARCHAR(150) NOT NULL,
   variant VARCHAR(50) NULL,
   quantity INT NOT NULL,
   price_per_quantity DECIMAL(12,2) NOT NULL,
+  hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
   price DECIMAL(12,2) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_order_items_order_id (order_id),
+  INDEX idx_order_items_menu_item_id (menu_item_id),
   CONSTRAINT fk_order_items_order
     FOREIGN KEY (order_id) REFERENCES orders(id)
-    ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS add_ons (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(80) NOT NULL UNIQUE,
-    name VARCHAR(120) NOT NULL,
-    price DECIMAL(12,2) NOT NULL DEFAULT 0,
-    image_path VARCHAR(255),
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS order_item_addons (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  order_item_id INT UNSIGNED NOT NULL,
-  add_on_id INT UNSIGNED NULL,
-  name VARCHAR(120) NOT NULL,
-  price DECIMAL(12,2) NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_order_item_addons_order_item_id (order_item_id),
-  INDEX idx_order_item_addons_add_on_id (add_on_id),
-  CONSTRAINT fk_order_item_addons_order_item
-    FOREIGN KEY (order_item_id) REFERENCES order_items(id)
     ON DELETE CASCADE,
-  CONSTRAINT fk_order_item_addons_add_on
-    FOREIGN KEY (add_on_id) REFERENCES add_ons(id)
+  CONSTRAINT fk_order_items_menu_item
+    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
     ON DELETE SET NULL
 );
-
-INSERT INTO add_ons (code, name, price) VALUES
-  ('nasi-putih', 'Nasi Putih', 4000),
-  ('telur', 'Telur', 5000),
-  ('buah', 'Buah', 5000),
-  ('sambal', 'Sambal', 4000),
-  ('kerupuk', 'Kerupuk', 3000),
-  ('air-mineral', 'Air Mineral', 5000)
-ON DUPLICATE KEY UPDATE
-  name = VALUES(name),
-  price = VALUES(price),
-  is_active = TRUE;
 
 CREATE TABLE IF NOT EXISTS payments (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -306,6 +274,7 @@ CREATE TABLE IF NOT EXISTS daily_recaps (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_daily_recaps_format_recap_id (format_recap_id),
   INDEX idx_daily_recaps_date (recap_date),
+  UNIQUE KEY uniq_daily_recaps_date (recap_date),
   INDEX idx_daily_recaps_user_id (user_id),
   CONSTRAINT fk_daily_recaps_format
     FOREIGN KEY (format_recap_id) REFERENCES meta_data_format_recap(id)

@@ -203,7 +203,25 @@ const findByName = async (table, name) => {
   return rows[0] || null;
 };
 
+const createDuplicateDailyRecapError = (recapDate) => {
+  const error = new Error(
+    `Rekap harian tanggal ${recapDate} sudah dibuat. Satu tanggal hanya bisa memiliki satu rekap harian.`
+  );
+  error.statusCode = 409;
+
+  return error;
+};
+
 const createDaily = async (format, payload) => {
+  const [existingRows] = await pool.query(
+    "SELECT id FROM daily_recaps WHERE recap_date = ? LIMIT 1",
+    [payload.recapDate]
+  );
+
+  if (existingRows.length) {
+    throw createDuplicateDailyRecapError(payload.recapDate);
+  }
+
   const user = payload.userId ? null : await findByName("users", payload.shiftOfficer);
   const bestMenu = payload.bestMenuItemId
     ? null

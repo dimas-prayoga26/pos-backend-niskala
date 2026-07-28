@@ -102,31 +102,279 @@ const seedAddOns = [
   ["air-mineral", "Air Mineral", 5000, menuImage("addon-air-mineral.jpg")],
 ];
 
-const seedStockItems = [
-  ["ESPRESSO", "Coffee", "gr", 999, 0, ""],
-  ["WATER", "Beverage", "ml", 999, 0, ""],
-  ["CUP", "Packaging", "pcs", 999, 0, ""],
-  ["SYRUP BUTTERSCOTH", "Syrup", "ml", 999, 0, ""],
-  ["CREAMER", "Dairy", "gr", 999, 0, ""],
-  ["FRESHMILK", "Dairy", "ml", 999, 0, ""],
-  ["SYRUP CLASSC CARAMEL", "Syrup", "ml", 999, 0, ""],
-  ["SYRUP VANILLA TRADITIO", "Syrup", "ml", 999, 0, ""],
-  ["SYRUP HAZELNUT", "Syrup", "ml", 999, 0, ""],
-  ["SYRUP AREN", "Syrup", "ml", 999, 0, ""],
-  ["POWDER CHOCOLATE", "Powder", "gr", 999, 0, ""],
-  ["POWDER MATCHA", "Powder", "gr", 999, 0, ""],
-  ["SYRUP STRAWBERRY", "Syrup", "ml", 999, 0, ""],
-  ["SYRUP LYCHEE", "Syrup", "ml", 999, 0, ""],
-  ["SYRUP PINEAPPLE", "Syrup", "ml", 999, 0, ""],
-  ["SYRUP LEMON", "Syrup", "ml", 999, 0, ""],
-  ["SYRUP VANILLA", "Syrup", "ml", 999, 0, ""],
-  ["POWDER COOKIES AND CREAM", "Powder", "gr", 999, 0, ""],
-  ["POWDER LYCHEE TEA", "Powder", "gr", 999, 0, ""],
-  ["POWDER LEMON TEA", "Powder", "gr", 999, 0, ""],
-  ["POWDER SONGKIT", "Powder", "gr", 999, 0, ""],
-  ["POWDER THAI TEA", "Powder", "gr", 999, 0, ""],
-  ["SKM", "Dairy", "ml", 999, 0, ""],
+const seedMenuCatalog = [
+  ...seedMenuItems,
+  ...seedAddOns.map(([, name, price, imagePath]) => [
+    "Add Ons",
+    name,
+    price,
+    imagePath,
+  ]),
 ];
+
+const seedStockItems = [
+  ["ESPRESSO", "Coffee", "gr", 999, 0, "", false],
+  ["WATER", "Beverage", "ml", 999, 0, "", true],
+  ["CUP", "Packaging", "pcs", 999, 0, "", false],
+  ["SYRUP BUTTERSCOTH", "Syrup", "ml", 999, 0, "", false],
+  ["CREAMER", "Dairy", "gr", 999, 0, "", false],
+  ["FRESHMILK", "Dairy", "ml", 999, 0, "", false],
+  ["SYRUP CLASSC CARAMEL", "Syrup", "ml", 999, 0, "", false],
+  ["SYRUP VANILLA TRADITIO", "Syrup", "ml", 999, 0, "", false],
+  ["SYRUP HAZELNUT", "Syrup", "ml", 999, 0, "", false],
+  ["SYRUP AREN", "Syrup", "ml", 999, 0, "", false],
+  ["POWDER CHOCOLATE", "Powder", "gr", 999, 0, "", false],
+  ["POWDER MATCHA", "Powder", "gr", 999, 0, "", false],
+  ["SYRUP STRAWBERRY", "Syrup", "ml", 999, 0, "", false],
+  ["SYRUP LYCHEE", "Syrup", "ml", 999, 0, "", false],
+  ["SYRUP PINEAPPLE", "Syrup", "ml", 999, 0, "", false],
+  ["SYRUP LEMON", "Syrup", "ml", 999, 0, "", false],
+  ["SYRUP VANILLA", "Syrup", "ml", 999, 0, "", false],
+  ["POWDER COOKIES AND CREAM", "Powder", "gr", 999, 0, "", false],
+  ["POWDER LYCHEE TEA", "Powder", "gr", 999, 0, "", false],
+  ["POWDER LEMON TEA", "Powder", "gr", 999, 0, "", false],
+  ["POWDER SONGKIT", "Powder", "gr", 999, 0, "", false],
+  ["POWDER THAI TEA", "Powder", "gr", 999, 0, "", false],
+  ["SKM", "Dairy", "ml", 999, 0, "", false],
+];
+
+const seedMenuIngredients = {
+  Americano: [
+    ["ESPRESSO", "", 8, "gr"],
+    ["WATER", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  "Aren Latte": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP AREN", "", 15, "ml"],
+    ["CREAMER", "", 15, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "Berry Coffee Milk": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP STRAWBERRY", "", 10, "ml"],
+    ["SYRUP LYCHEE", "", 5, "ml"],
+    ["SYRUP BUTTERSCOTH", "", 5, "ml"],
+    ["FRESHMILK", "", 80, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "Berry Summer": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP STRAWBERRY", "", 10, "ml"],
+    ["SYRUP VANILLA", "", 5, "ml"],
+    ["SYRUP PINEAPPLE", "", 5, "ml"],
+    ["WATER", "", 80, "ml"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  "Butterscotch Latte": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP BUTTERSCOTH", "", 15, "ml"],
+    ["CREAMER", "", 15, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "Cafe Latte": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  Cappuccino: [
+    ["ESPRESSO", "", 8, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "Caramel Latte": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP CLASSC CARAMEL", "", 15, "ml"],
+    ["CREAMER", "", 15, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  Chocolate: [
+    ["POWDER CHOCOLATE", "", 15, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "Cookies and Cream": [
+    ["POWDER COOKIES AND CREAM", "", 15, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "Elberry Americano": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP STRAWBERRY", "", 10, "ml"],
+    ["SYRUP LYCHEE", "", 5, "ml"],
+    ["SYRUP LEMON", "", 5, "ml"],
+    ["WATER", "", 80, "ml"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  "Hazelnut Latte": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP HAZELNUT", "", 15, "ml"],
+    ["CREAMER", "", 15, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "Jeruk Nipis Songkit": [
+    ["POWDER SONGKIT", "", 15, "gr"],
+    ["WATER", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  "Lemon Tea": [
+    ["POWDER LEMON TEA", "", 15, "gr"],
+    ["WATER", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  Longblack: [
+    ["ESPRESSO", "", 15, "gr"],
+    ["WATER", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  "Lychee Tea": [
+    ["POWDER LYCHEE TEA", "", 15, "gr"],
+    ["WATER", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  Matcha: [
+    ["POWDER MATCHA", "", 15, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  Moccacino: [
+    ["ESPRESSO", "", 8, "gr"],
+    ["POWDER CHOCOLATE", "", 10, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "On The Rock Espresso": [
+    ["ESPRESSO", "", 15, "gr"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  "Thai Tea": [
+    ["POWDER THAI TEA", "", 15, "gr"],
+    ["SKM", "", 5, "ml"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+  "Tropical Americano": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP PINEAPPLE", "", 10, "ml"],
+    ["SYRUP LYCHEE", "", 5, "ml"],
+    ["SYRUP LEMON", "", 5, "ml"],
+    ["WATER", "", 80, "ml"],
+    ["CUP", "", 1, "pcs"],
+  ],
+  "Vanilla Latte": [
+    ["ESPRESSO", "", 8, "gr"],
+    ["SYRUP VANILLA TRADITIO", "", 15, "ml"],
+    ["CREAMER", "", 15, "gr"],
+    ["FRESHMILK", "", 100, "ml"],
+    ["CUP", "", 1, "pcs"],
+    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+  ],
+};
+
+const seedMenuFinancials = {
+  Americano: { hppCost: 3009.5, grossProfit: 11990.5 },
+  Longblack: { hppCost: 4875, grossProfit: 10125 },
+  "On The Rock Espresso": { hppCost: 4745, grossProfit: 10255 },
+  "Butterscotch Latte": {
+    hppCost: 9134.029411764706,
+    grossProfit: 10865.970588235294,
+  },
+  "Caramel Latte": {
+    hppCost: 9134.029411764706,
+    grossProfit: 10865.970588235294,
+  },
+  "Vanilla Latte": {
+    hppCost: 9134.029411764706,
+    grossProfit: 10865.970588235294,
+  },
+  "Hazelnut Latte": {
+    hppCost: 9134.029411764706,
+    grossProfit: 10865.970588235294,
+  },
+  "Aren Latte": { hppCost: 7720.500000000001, grossProfit: 12279.5 },
+  "Cafe Latte": { hppCost: 5440.5, grossProfit: 12559.5 },
+  Cappuccino: { hppCost: 5440.5, grossProfit: 12559.5 },
+  Moccacino: { hppCost: 8121.75, grossProfit: 13878.25 },
+  "Berry Coffee Milk": {
+    hppCost: 8293.005882352942,
+    grossProfit: 13706.994117647058,
+  },
+  "Tropical Americano": {
+    hppCost: 6348.205882352941,
+    grossProfit: 16651.79411764706,
+  },
+  "Elberry Americano": {
+    hppCost: 6348.205882352941,
+    grossProfit: 16651.79411764706,
+  },
+  "Berry Summer": {
+    hppCost: 6348.205882352941,
+    grossProfit: 16651.79411764706,
+  },
+  Chocolate: { hppCost: 7330.375, grossProfit: 10669.625 },
+  Matcha: { hppCost: 7427.875, grossProfit: 10572.125 },
+  "Cookies and Cream": { hppCost: 7135.375, grossProfit: 10864.625 },
+  "Lychee Tea": { hppCost: 2320.5, grossProfit: 10679.5 },
+  "Lemon Tea": { hppCost: 2184, grossProfit: 10816 },
+  "Jeruk Nipis Songkit": { hppCost: 3081, grossProfit: 9919 },
+  "Thai Tea": {
+    hppCost: 5227.368421052632,
+    grossProfit: 9772.631578947368,
+  },
+};
+
+const seedIngredientHppUnitCosts = {
+  FRESHMILK: 25.61,
+};
+
+const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
+
+const getLargeHppAdjustment = (menuName) =>
+  (seedMenuIngredients[menuName] || [])
+    .filter(([, sizeName]) => String(sizeName || "").toLowerCase() === "large")
+    .reduce((total, [stockName, , quantity]) => {
+      const unitCost = seedIngredientHppUnitCosts[stockName] || 0;
+      return total + Number(quantity || 0) * unitCost;
+    }, 0);
+
+const getSeedSizeFinancials = (menuName, sizeName, price) => {
+  const financials = seedMenuFinancials[menuName];
+  if (!financials) {
+    return { hppCost: 0, grossProfit: 0 };
+  }
+
+  if (String(sizeName).toLowerCase() !== "large") {
+    return {
+      hppCost: roundCurrency(financials.hppCost),
+      grossProfit: roundCurrency(financials.grossProfit),
+    };
+  }
+
+  const hppCost = roundCurrency(
+    financials.hppCost + getLargeHppAdjustment(menuName)
+  );
+
+  return {
+    hppCost,
+    grossProfit: roundCurrency(Number(price || 0) - hppCost),
+  };
+};
 
 const seedOrderPlatforms = [
   ["GoFood", "/platforms/gofood.png"],
@@ -157,6 +405,8 @@ const normalizeSizes = (sizes) =>
     .map((size) => ({
       name: String(size?.name || "").trim(),
       price: Number(size?.price) || 0,
+      hppCost: Number(size?.hppCost ?? size?.hpp_cost) || 0,
+      grossProfit: Number(size?.grossProfit ?? size?.gross_profit) || 0,
     }))
     .filter((size) => size.name && size.price >= 0);
 
@@ -178,13 +428,16 @@ const replaceMenuItemOptions = async (menuItemId, { sizes, variants }) => {
 
   if (normalizedSizes.length) {
     await pool.query(
-      `INSERT INTO menu_item_sizes (menu_item_id, name, price, sort_order)
+      `INSERT INTO menu_item_sizes
+        (menu_item_id, name, price, hpp_cost, gross_profit, sort_order)
        VALUES ?`,
       [
         normalizedSizes.map((size, index) => [
           menuItemId,
           size.name,
           size.price,
+          size.hppCost,
+          size.grossProfit,
           index + 1,
         ]),
       ]
@@ -280,6 +533,65 @@ const deactivateRowsOutsideList = async (table, column, activeColumn, values) =>
     `UPDATE ${table} SET ${activeColumn} = FALSE WHERE ${column} NOT IN (${placeholders})`,
     values
   );
+};
+
+const seedDefaultMenuIngredients = async () => {
+  const menuNames = Object.keys(seedMenuIngredients);
+  if (!menuNames.length) return;
+
+  const stockNames = [
+    ...new Set(
+      Object.values(seedMenuIngredients)
+        .flat()
+        .map(([stockName]) => stockName)
+    ),
+  ];
+
+  const [menuRows] = await pool.query(
+    `SELECT id, name FROM menu_items
+     WHERE name IN (${menuNames.map(() => "?").join(", ")})`,
+    menuNames
+  );
+  const [stockRows] = await pool.query(
+    `SELECT id, name FROM stock_items
+     WHERE name IN (${stockNames.map(() => "?").join(", ")})`,
+    stockNames
+  );
+
+  const menuIdByName = new Map(menuRows.map((menu) => [menu.name, menu.id]));
+  const stockIdByName = new Map(stockRows.map((stock) => [stock.name, stock.id]));
+
+  for (const [menuName, ingredients] of Object.entries(seedMenuIngredients)) {
+    const menuItemId = menuIdByName.get(menuName);
+    if (!menuItemId) continue;
+
+    const [[ingredientCount]] = await pool.query(
+      "SELECT COUNT(*) AS total FROM menu_item_ingredients WHERE menu_item_id = ?",
+      [menuItemId]
+    );
+    if (Number(ingredientCount.total) > 0) continue;
+
+    await pool.query(
+      `INSERT INTO menu_item_ingredients
+        (menu_item_id, stock_item_id, size_name, ingredient_name, quantity, unit,
+         sort_order, note)
+       VALUES ?`,
+      [
+        ingredients.map(
+          ([stockName, sizeName, quantity, unit, note], index) => [
+            menuItemId,
+            stockIdByName.get(stockName) || null,
+            sizeName || null,
+            stockName,
+            quantity,
+            unit,
+            index + 1,
+            note || null,
+          ]
+        ),
+      ]
+    );
+  }
 };
 
 const connectDB = async () => {
@@ -428,6 +740,7 @@ const connectDB = async () => {
       stock DECIMAL(12,2) NOT NULL DEFAULT 0,
       minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
       supplier VARCHAR(150),
+      is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -435,18 +748,19 @@ const connectDB = async () => {
       INDEX idx_stock_items_is_active (is_active)
     )
   `);
+  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN is_unlimited BOOLEAN NOT NULL DEFAULT FALSE AFTER supplier");
 
   await pool.query(
     `INSERT INTO stock_items
-      (name, category, unit, stock, minimum_stock, supplier)
+      (name, category, unit, stock, minimum_stock, supplier, is_unlimited)
      VALUES ?
      ON DUPLICATE KEY UPDATE
        name = VALUES(name),
        category = VALUES(category),
        unit = VALUES(unit),
-       stock = VALUES(stock),
        minimum_stock = VALUES(minimum_stock),
        supplier = VALUES(supplier),
+       is_unlimited = VALUES(is_unlimited),
        is_active = TRUE`,
     [seedStockItems]
   );
@@ -519,7 +833,7 @@ const connectDB = async () => {
     categoryRows.map((category) => [category.name, category.id])
   );
 
-  for (const seedMenuItem of seedMenuItems) {
+  for (const seedMenuItem of seedMenuCatalog) {
     const [categoryName, name, regularPrice, largePriceOrImageUrl, maybeImageUrl] =
       seedMenuItem;
     const hasLargePrice = typeof largePriceOrImageUrl === "number";
@@ -535,11 +849,23 @@ const connectDB = async () => {
     const variants = hasLargePrice ? ["Cold", "Hot"] : [];
     const sizes = hasLargePrice
       ? [
-          { name: "Reguler", price: regularPrice },
-          { name: "Large", price: largePrice },
+          {
+            name: "Reguler",
+            price: regularPrice,
+            ...getSeedSizeFinancials(name, "Reguler", regularPrice),
+          },
+          {
+            name: "Large",
+            price: largePrice,
+            ...getSeedSizeFinancials(name, "Large", largePrice),
+          },
         ]
       : [];
     const categoryId = categoryIdByName.get(categoryName);
+    const baseFinancials = seedMenuFinancials[name] || {
+      hppCost: 0,
+      grossProfit: 0,
+    };
     if (!categoryId) continue;
 
     const [existingRows] = await pool.query(
@@ -563,8 +889,8 @@ const connectDB = async () => {
         [
           categoryId,
           sizes.length ? null : regularPrice,
-          sizes.length ? null : 0,
-          sizes.length ? null : 0,
+          sizes.length ? null : roundCurrency(baseFinancials.hppCost),
+          sizes.length ? null : roundCurrency(baseFinancials.grossProfit),
           seedImagePath,
           menuItemId,
         ]
@@ -578,8 +904,8 @@ const connectDB = async () => {
           categoryId,
           name,
           sizes.length ? null : regularPrice,
-          sizes.length ? null : 0,
-          sizes.length ? null : 0,
+          sizes.length ? null : roundCurrency(baseFinancials.hppCost),
+          sizes.length ? null : roundCurrency(baseFinancials.grossProfit),
           seedImagePath,
         ]
       );
@@ -592,7 +918,7 @@ const connectDB = async () => {
     "menu_items",
     "name",
     "is_available",
-    seedMenuItems.map(([, name]) => name)
+    seedMenuCatalog.map(([, name]) => name)
   );
   await runSafeMigration(`
     DELETE mis
@@ -607,6 +933,7 @@ const connectDB = async () => {
       AND mis.name = 'Harga'
       AND mis.price = mi.price
   `);
+  await seedDefaultMenuIngredients();
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
@@ -709,73 +1036,79 @@ const connectDB = async () => {
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       order_id INT UNSIGNED NOT NULL,
       item_key VARCHAR(100),
+      menu_item_id INT UNSIGNED NULL,
+      size_name VARCHAR(80) NULL,
       name VARCHAR(150) NOT NULL,
       variant VARCHAR(50) NULL,
       quantity INT NOT NULL,
       price_per_quantity DECIMAL(12,2) NOT NULL,
+      hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
       price DECIMAL(12,2) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_order_items_order_id (order_id),
+      INDEX idx_order_items_menu_item_id (menu_item_id),
       CONSTRAINT fk_order_items_order
         FOREIGN KEY (order_id) REFERENCES orders(id)
-        ON DELETE CASCADE
-    )
-  `);
-  await runSafeMigration("ALTER TABLE order_items ADD COLUMN variant VARCHAR(50) NULL AFTER name");
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS add_ons (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      code VARCHAR(80) NOT NULL UNIQUE,
-      name VARCHAR(120) NOT NULL,
-      price DECIMAL(12,2) NOT NULL DEFAULT 0,
-      image_path VARCHAR(255),
-      is_active BOOLEAN NOT NULL DEFAULT TRUE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-  `);
-
-  await runSafeMigration("ALTER TABLE add_ons DROP FOREIGN KEY fk_add_ons_category");
-  await runSafeMigration("DROP INDEX idx_add_ons_category_id ON add_ons");
-  await runSafeMigration("ALTER TABLE add_ons DROP COLUMN category_id");
-  await runSafeMigration("ALTER TABLE add_ons ADD COLUMN image_path VARCHAR(255) NULL AFTER price");
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS order_item_addons (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      order_item_id INT UNSIGNED NOT NULL,
-      add_on_id INT UNSIGNED NULL,
-      name VARCHAR(120) NOT NULL,
-      price DECIMAL(12,2) NOT NULL DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_order_item_addons_order_item_id (order_item_id),
-      INDEX idx_order_item_addons_add_on_id (add_on_id),
-      CONSTRAINT fk_order_item_addons_order_item
-        FOREIGN KEY (order_item_id) REFERENCES order_items(id)
         ON DELETE CASCADE,
-      CONSTRAINT fk_order_item_addons_add_on
-        FOREIGN KEY (add_on_id) REFERENCES add_ons(id)
+      CONSTRAINT fk_order_items_menu_item
+        FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
         ON DELETE SET NULL
     )
   `);
+  await runSafeMigration("ALTER TABLE order_items ADD COLUMN menu_item_id INT UNSIGNED NULL AFTER item_key");
+  await runSafeMigration("ALTER TABLE order_items ADD COLUMN size_name VARCHAR(80) NULL AFTER menu_item_id");
+  await runSafeMigration("ALTER TABLE order_items ADD COLUMN variant VARCHAR(50) NULL AFTER name");
+  await runSafeMigration("ALTER TABLE order_items ADD COLUMN hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER price_per_quantity");
+  await runSafeMigration("CREATE INDEX idx_order_items_menu_item_id ON order_items (menu_item_id)");
+  await runSafeMigration(`
+    UPDATE order_items oi
+    JOIN menu_items mi
+      ON mi.id = CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(oi.item_key, '-', 2), '-', -1) AS UNSIGNED)
+    SET oi.menu_item_id = mi.id
+    WHERE oi.menu_item_id IS NULL
+      AND oi.item_key REGEXP '^[0-9]+-[0-9]+'
+  `);
+  await runSafeMigration(`
+    UPDATE order_items oi
+    SET oi.size_name = NULLIF(
+      TRIM(SUBSTRING(oi.item_key, LENGTH(SUBSTRING_INDEX(oi.item_key, '-', 2)) + 2)),
+      ''
+    )
+    WHERE oi.size_name IS NULL
+      AND oi.item_key REGEXP '^[0-9]+-[0-9]+-.+'
+  `);
+  await runSafeMigration(`
+    UPDATE order_items oi
+    LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
+    SET oi.hpp_cost = COALESCE(
+      (
+        SELECT mis.hpp_cost
+        FROM menu_item_sizes mis
+        WHERE mis.menu_item_id = oi.menu_item_id
+          AND LOWER(mis.name) = LOWER(oi.size_name)
+        LIMIT 1
+      ),
+      (
+        SELECT mis.hpp_cost
+        FROM menu_item_sizes mis
+        WHERE mis.menu_item_id = oi.menu_item_id
+        ORDER BY mis.sort_order ASC, mis.id ASC
+        LIMIT 1
+      ),
+      mi.hpp_cost,
+      0
+    )
+    WHERE oi.hpp_cost = 0
+  `);
+  await runSafeMigration(`
+    ALTER TABLE order_items
+    ADD CONSTRAINT fk_order_items_menu_item
+      FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+      ON DELETE SET NULL
+  `);
 
-  await pool.query(
-    `INSERT INTO add_ons (code, name, price, image_path)
-     VALUES ?
-     ON DUPLICATE KEY UPDATE
-       name = VALUES(name),
-       price = VALUES(price),
-       image_path = COALESCE(image_path, VALUES(image_path)),
-       is_active = TRUE`,
-    [seedAddOns]
-  );
-  await deactivateRowsOutsideList(
-    "add_ons",
-    "code",
-    "is_active",
-    seedAddOns.map(([code]) => code)
-  );
+  await runSafeMigration("DROP TABLE IF EXISTS order_item_addons");
+  await runSafeMigration("DROP TABLE IF EXISTS add_ons");
 
   await runSafeMigration("ALTER TABLE order_items DROP COLUMN addons");
   await runSafeMigration("ALTER TABLE order_items DROP COLUMN note");
@@ -864,6 +1197,7 @@ const connectDB = async () => {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       INDEX idx_daily_recaps_format_recap_id (format_recap_id),
       INDEX idx_daily_recaps_date (recap_date),
+      UNIQUE KEY uniq_daily_recaps_date (recap_date),
       INDEX idx_daily_recaps_user_id (user_id),
       CONSTRAINT fk_daily_recaps_format
         FOREIGN KEY (format_recap_id) REFERENCES meta_data_format_recap(id)
@@ -885,6 +1219,7 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN total_revenue DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER catering_revenue");
   await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER hpp_total");
   await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN cash_difference DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER transfer_in");
+  await runSafeMigration("CREATE UNIQUE INDEX uniq_daily_recaps_date ON daily_recaps (recap_date)");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS weekly_recaps (
