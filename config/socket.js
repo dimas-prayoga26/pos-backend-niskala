@@ -5,6 +5,7 @@ let io;
 const initSocket = (server, corsOptions) => {
   io = new Server(server, {
     cors: corsOptions,
+    perMessageDeflate: false,
   });
 
   io.on("connection", (socket) => {
