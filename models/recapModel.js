@@ -205,11 +205,84 @@ const findByName = async (table, name) => {
 
 const createDuplicateDailyRecapError = (recapDate) => {
   const error = new Error(
-    `Rekap harian tanggal ${recapDate} sudah dibuat. Satu tanggal hanya bisa memiliki satu rekap harian.`
+    `Rekap harian tanggal ${recapDate} sudah dibuat. Kamu tidak bisa membuat rekap harian lagi di tanggal yang sama.`
   );
   error.statusCode = 409;
 
   return error;
+};
+
+const addDailyCash = async ({ recapId, method, amount, note }) => {
+  const cashColumnByMethod = {
+    cash: "cash_in",
+    qris: "qris_in",
+    transfer: "transfer_in",
+  };
+  const cashColumn = cashColumnByMethod[method];
+
+  if (!cashColumn) {
+    const error = new Error("Metode kas tidak valid.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedAmount = Number(amount) || 0;
+  if (normalizedAmount <= 0) {
+    const error = new Error("Nominal kas harus lebih dari 0.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(
+      `UPDATE daily_recaps
+       SET ${cashColumn} = ${cashColumn} + ?
+       WHERE id = ?`,
+      [normalizedAmount, recapId]
+    );
+
+    if (!result.affectedRows) {
+      await connection.rollback();
+      return null;
+    }
+
+    const cleanNote = String(note || "").trim();
+    const cashLabel =
+      method === "qris" ? "QRIS" : method === "transfer" ? "Transfer" : "Cash";
+    const kasNote = cleanNote
+      ? `Tambah kas ${cashLabel} Rp ${normalizedAmount}: ${cleanNote}`
+      : "";
+
+    if (kasNote) {
+      await connection.query(
+        `UPDATE daily_recaps
+         SET note = CONCAT_WS('\n', NULLIF(note, ''), ?)
+         WHERE id = ?`,
+        [kasNote, recapId]
+      );
+    }
+
+    await connection.query(
+      `UPDATE daily_recaps
+       SET cash_difference = cash_in + qris_in + transfer_in - total_revenue
+       WHERE id = ?`,
+      [recapId]
+    );
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+
+  const recaps = await findDailyRecaps();
+  return recaps.find((recap) => Number(recap.id) === Number(recapId)) || null;
 };
 
 const createDaily = async (format, payload) => {
@@ -377,6 +450,7 @@ const create = async (periodType, payload) => {
 };
 
 module.exports = {
+  addDailyCash,
   allowedPeriodTypes,
   create,
   findAll,

@@ -69,6 +69,45 @@ const getRecaps = async (req, res, next) => {
   }
 };
 
+const addDailyCash = async (req, res, next) => {
+  try {
+    const role = req.user?.role?.toLowerCase();
+
+    if (role !== "admin") {
+      return next(createHttpError(403, "Hanya admin yang bisa menambahkan kas."));
+    }
+
+    const recapId = Number(req.params.id);
+    if (!recapId) {
+      return next(createHttpError(400, "Rekap harian tidak valid."));
+    }
+
+    const method = String(req.body.method || "cash").toLowerCase();
+    const amount = parseNumber(req.body.amount);
+    const note = String(req.body.note || "").trim();
+
+    const recap = await Recap.addDailyCash({ recapId, method, amount, note });
+
+    if (!recap) {
+      return next(createHttpError(404, "Rekap harian tidak ditemukan."));
+    }
+
+    emitRealtimeEvent("recaps:changed", {
+      action: "daily-cash-added",
+      periodType: "daily",
+      recapId: recap.id || recap._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Kas berhasil ditambahkan.",
+      data: recap,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const normalizeDailyPayload = (body, createdBy) => {
   const recapDate = normalizeDate(body.recapDate || body.date);
   const offlineRevenue = parseNumber(body.offlineRevenue);
@@ -224,6 +263,7 @@ const addRecap = async (req, res, next) => {
 };
 
 module.exports = {
+  addDailyCash,
   addRecap,
   getRecapMeta,
   getRecaps,
