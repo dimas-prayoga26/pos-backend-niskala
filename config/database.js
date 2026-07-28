@@ -883,7 +883,7 @@ const connectDB = async () => {
              price = ?,
              hpp_cost = ?,
              gross_profit = ?,
-             image_path = COALESCE(image_path, ?),
+             image_path = ?,
              is_available = TRUE
          WHERE id = ?`,
         [
