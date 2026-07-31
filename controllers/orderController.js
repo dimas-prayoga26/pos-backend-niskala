@@ -1,6 +1,22 @@
 const createHttpError = require("http-errors");
 const Order = require("../models/orderModel");
 const { emitRealtimeEvent } = require("../config/socket");
+const {
+  RECEIPT_PRINT_TTL_MS,
+  createReceiptPrintJob,
+  consumeReceiptPrintJob,
+} = require("../utils/receiptPrintStore");
+
+const getRequestOrigin = (req) => {
+  const forwardedProto = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = req.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const protocol = forwardedProto || req.protocol;
+  const host = forwardedHost || req.get("host");
+
+  if (!host) return "";
+
+  return `${protocol}://${host}`;
+};
 
 const addOrder = async (req, res, next) => {
   try {
@@ -50,6 +66,75 @@ const getOrders = async (req, res, next) => {
   try {
     const orders = await Order.findAll();
     res.status(200).json({ data: orders });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createReceiptPrintUrl = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { documentHtml } = req.body || {};
+
+    if (!Number(id)) {
+      const error = createHttpError(404, "Invalid id!");
+      return next(error);
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      const error = createHttpError(404, "Order not found!");
+      return next(error);
+    }
+
+    const token = createReceiptPrintJob({
+      orderId: id,
+      documentHtml,
+      userId: req.user?._id || req.user?.id,
+    });
+    const origin = getRequestOrigin(req);
+
+    if (!origin) {
+      const error = createHttpError(500, "Unable to build receipt print URL.");
+      return next(error);
+    }
+
+    res.status(201).json({
+      success: true,
+      data: {
+        expiresInSeconds: Math.floor(RECEIPT_PRINT_TTL_MS / 1000),
+        url: `${origin}/api/order/${id}/receipt-print/${token}`,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getReceiptPrintDocument = async (req, res, next) => {
+  try {
+    const { id, token } = req.params;
+
+    if (!Number(id)) {
+      const error = createHttpError(404, "Invalid id!");
+      return next(error);
+    }
+
+    const job = consumeReceiptPrintJob({ orderId: id, token });
+
+    if (!job) {
+      const error = createHttpError(404, "Receipt print URL expired or invalid.");
+      return next(error);
+    }
+
+    res.set({
+      "Cache-Control": "no-store, private",
+      "Content-Security-Policy":
+        "default-src 'none'; img-src 'self' data: https: http:; style-src 'unsafe-inline';",
+      "Content-Type": "text/html; charset=utf-8",
+      "X-Robots-Tag": "noindex, nofollow",
+    });
+    res.status(200).send(job.documentHtml);
   } catch (error) {
     next(error);
   }
@@ -230,7 +315,9 @@ const deleteOrder = async (req, res, next) => {
 module.exports = {
   addOrder,
   addCateringPayment,
+  createReceiptPrintUrl,
   deleteOrder,
+  getReceiptPrintDocument,
   getOrderById,
   getOrders,
   updateOrder,
