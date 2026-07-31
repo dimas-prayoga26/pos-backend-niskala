@@ -2,9 +2,11 @@ const express = require("express");
 const {
   addCateringPayment,
   addOrder,
+  createThermalPrintUrl,
   deleteOrder,
   getOrders,
   getOrderById,
+  getThermalPrintDocument,
   updateOrder,
   updateCateringPaymentStatus,
 } = require("../controllers/orderController");
@@ -14,6 +16,10 @@ const router = express.Router();
 
 router.route("/").post(isVerifiedUser, addOrder);
 router.route("/").get(isVerifiedUser, getOrders);
+router
+  .route("/:id/thermal-print-url")
+  .post(isVerifiedUser, createThermalPrintUrl);
+router.route("/:id/thermal-print/:token").get(getThermalPrintDocument);
 router
   .route("/:id/catering-payment")
   .put(isVerifiedUser, updateCateringPaymentStatus);
