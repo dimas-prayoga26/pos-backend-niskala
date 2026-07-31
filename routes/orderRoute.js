@@ -2,9 +2,7 @@ const express = require("express");
 const {
   addCateringPayment,
   addOrder,
-  createReceiptPrintUrl,
   deleteOrder,
-  getReceiptPrintDocument,
   getOrders,
   getOrderById,
   updateOrder,
@@ -16,10 +14,6 @@ const router = express.Router();
 
 router.route("/").post(isVerifiedUser, addOrder);
 router.route("/").get(isVerifiedUser, getOrders);
-router
-  .route("/:id/receipt-print-url")
-  .post(isVerifiedUser, createReceiptPrintUrl);
-router.route("/:id/receipt-print/:token").get(getReceiptPrintDocument);
 router
   .route("/:id/catering-payment")
   .put(isVerifiedUser, updateCateringPaymentStatus);
