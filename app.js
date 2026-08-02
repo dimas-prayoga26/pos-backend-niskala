@@ -10,13 +10,26 @@ const { initSocket } = require("./config/socket");
 
 const app = express();
 const PORT = config.port;
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://demo.kopiniskala.com",
+  "https://demo.kopiniskala.com",
+];
+const isLocalViteOrigin = (origin = "") =>
+  /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]):517\d$/.test(origin) ||
+  /^http:\/\/(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}):517\d$/.test(
+    origin
+  );
 const corsOptions = {
   credentials: true,
-  origin: [
-    "http://localhost:5173",
-    "http://demo.kopiniskala.com",
-    "https://demo.kopiniskala.com",
-  ],
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || isLocalViteOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error("Not allowed by CORS"));
+  },
 };
 
 app.use(cors(corsOptions));

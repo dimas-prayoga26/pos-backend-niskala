@@ -4,6 +4,13 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const config = require("../config/config");
 
+const authCookieOptions = {
+    maxAge: 1000 * 60 * 60 * 24 * 30,
+    httpOnly: true,
+    sameSite: config.nodeEnv === "production" ? "none" : "lax",
+    secure: config.nodeEnv === "production"
+};
+
 const register = async (req, res, next) => {
     try {
 
@@ -74,12 +81,7 @@ const login = async (req, res, next) => {
             expiresIn : '1d'
         });
 
-        res.cookie('accessToken', accessToken, {
-            maxAge: 1000 * 60 * 60 *24 * 30,
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true
-        })
+        res.cookie('accessToken', accessToken, authCookieOptions)
 
         res.status(200).json({success: true, message: "User login successfully!", 
             data: isUserPresent
@@ -121,7 +123,7 @@ const getUsers = async (req, res, next) => {
 const logout = async (req, res, next) => {
     try {
         
-        res.clearCookie('accessToken');
+        res.clearCookie('accessToken', authCookieOptions);
         res.status(200).json({success: true, message: "User logout successfully!"});
 
     } catch (error) {
