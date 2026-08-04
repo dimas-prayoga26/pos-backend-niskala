@@ -16,6 +16,10 @@ const config = Object.freeze({
     dbTimeZone,
     appTimeZone: process.env.TZ,
     nodeEnv : process.env.NODE_ENV || "development",
+    corsOrigins: (process.env.CORS_ORIGINS || "")
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean),
     accessTokenSecret: process.env.JWT_SECRET,
     midtransClientKey: process.env.MIDTRANS_CLIENT_KEY,
     midtransServerKey: process.env.MIDTRANS_SERVER_KEY,

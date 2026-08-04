@@ -13,10 +13,11 @@ const PORT = config.port;
 const HOST = config.host;
 const isLocalViteOrigin = (origin = "") =>
   /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]):517\d$/.test(origin);
+const allowedCorsOrigins = new Set(config.corsOrigins);
 const corsOptions = {
   credentials: true,
   origin(origin, callback) {
-    if (!origin || isLocalViteOrigin(origin)) {
+    if (!origin || isLocalViteOrigin(origin) || allowedCorsOrigins.has(origin)) {
       callback(null, true);
       return;
     }
