@@ -10,20 +10,13 @@ const { initSocket } = require("./config/socket");
 
 const app = express();
 const PORT = config.port;
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://demo.kopiniskala.com",
-  "https://demo.kopiniskala.com",
-];
+const HOST = config.host;
 const isLocalViteOrigin = (origin = "") =>
-  /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]):517\d$/.test(origin) ||
-  /^http:\/\/(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}):517\d$/.test(
-    origin
-  );
+  /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]):517\d$/.test(origin);
 const corsOptions = {
   credentials: true,
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || isLocalViteOrigin(origin)) {
+    if (!origin || isLocalViteOrigin(origin)) {
       callback(null, true);
       return;
     }
@@ -57,8 +50,8 @@ initSocket(server, corsOptions);
 
 connectDB()
   .then(() => {
-    server.listen(PORT, () => {
-      console.log(`POS Server is listening on port ${PORT}`);
+    server.listen(PORT, HOST, () => {
+      console.log(`POS Server is listening on http://${HOST}:${PORT}`);
     });
   })
   .catch((error) => {
