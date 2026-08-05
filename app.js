@@ -13,11 +13,20 @@ const PORT = config.port;
 const HOST = config.host;
 const isLocalViteOrigin = (origin = "") =>
   /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]):517\d$/.test(origin);
+const isPrivateLanViteOrigin = (origin = "") =>
+  /^http:\/\/(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}):517\d$/.test(
+    origin
+  );
 const allowedCorsOrigins = new Set(config.corsOrigins);
 const corsOptions = {
   credentials: true,
   origin(origin, callback) {
-    if (!origin || isLocalViteOrigin(origin) || allowedCorsOrigins.has(origin)) {
+    if (
+      !origin ||
+      isLocalViteOrigin(origin) ||
+      isPrivateLanViteOrigin(origin) ||
+      allowedCorsOrigins.has(origin)
+    ) {
       callback(null, true);
       return;
     }
