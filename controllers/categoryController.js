@@ -22,6 +22,21 @@ const parseCategoryTax = (value) => {
   return taxRate;
 };
 
+const parseCategoryStatus = (value) => {
+  if (value === undefined || value === null || value === "") return true;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+
+  const normalizedValue = String(value).toLowerCase();
+
+  if (["true", "1", "active", "aktif"].includes(normalizedValue)) return true;
+  if (["false", "0", "inactive", "nonaktif"].includes(normalizedValue)) {
+    return false;
+  }
+
+  return Boolean(value);
+};
+
 const addCategory = async (req, res, next) => {
   try {
     const permissionError = requireAdmin(req, next);
@@ -69,7 +84,8 @@ const updateCategory = async (req, res, next) => {
     if (permissionError) return next(permissionError);
 
     const { id } = req.params;
-    const { name, icon, isActive = true } = req.body;
+    const { name, icon } = req.body;
+    const isActive = parseCategoryStatus(req.body.isActive);
     const taxRate = parseCategoryTax(req.body.taxRate ?? req.body.tax);
 
     if (!Number(id)) {

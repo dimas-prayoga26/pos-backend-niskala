@@ -49,12 +49,34 @@ const create = async ({ name, icon, taxRate }) => {
 };
 
 const update = async (id, { name, icon, taxRate, isActive }) => {
-  await pool.query(
-    `UPDATE categories
-     SET name = ?, icon = ?, tax = ?, is_active = ?
-     WHERE id = ?`,
-    [name, icon || null, taxRate ?? null, isActive ? 1 : 0, id]
-  );
+  const connection = await pool.getConnection();
+  const normalizedIsActive = isActive ? 1 : 0;
+
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      `UPDATE categories
+       SET name = ?, icon = ?, tax = ?, is_active = ?
+       WHERE id = ?`,
+      [name, icon || null, taxRate ?? null, normalizedIsActive, id]
+    );
+
+    await connection.query(
+      `UPDATE menu_items
+       SET is_available = ?
+       WHERE category_id = ?`,
+      [normalizedIsActive, id]
+    );
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+
   return findById(id);
 };
 
