@@ -18,8 +18,10 @@ CREATE TABLE IF NOT EXISTS categories (
   icon VARCHAR(20),
   tax DECIMAL(5,2) NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_categories_sort_order (sort_order, name)
 );
 
 CREATE TABLE IF NOT EXISTS menu_items (
@@ -134,6 +136,18 @@ INSERT INTO categories (name, icon) VALUES
 ON DUPLICATE KEY UPDATE
   icon = VALUES(icon),
   is_active = TRUE;
+
+UPDATE categories
+SET sort_order = CASE name
+  WHEN 'Coffee' THEN 10
+  WHEN 'Non-Coffee' THEN 20
+  WHEN 'Main Course' THEN 30
+  WHEN 'Snack' THEN 40
+  WHEN 'Add Ons' THEN 50
+  WHEN 'Catering' THEN 60
+  ELSE 1000 + id
+END
+WHERE sort_order = 0;
 
 CREATE TABLE IF NOT EXISTS orders (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

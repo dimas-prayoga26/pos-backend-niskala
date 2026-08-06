@@ -4,6 +4,7 @@ const {
   deleteCategory,
   getCategories,
   updateCategory,
+  updateCategoryPositions,
 } = require("../controllers/categoryController");
 const { isVerifiedUser } = require("../middlewares/tokenVerification");
 
@@ -11,6 +12,7 @@ const router = express.Router();
 
 router.route("/").get(isVerifiedUser, getCategories);
 router.route("/").post(isVerifiedUser, addCategory);
+router.route("/positions").put(isVerifiedUser, updateCategoryPositions);
 router.route("/:id").put(isVerifiedUser, updateCategory);
 router.route("/:id").delete(isVerifiedUser, deleteCategory);
 

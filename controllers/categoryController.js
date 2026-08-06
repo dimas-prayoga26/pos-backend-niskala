@@ -123,6 +123,34 @@ const updateCategory = async (req, res, next) => {
   }
 };
 
+const updateCategoryPositions = async (req, res, next) => {
+  try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
+    const categoryIds = Array.isArray(req.body.categoryIds)
+      ? req.body.categoryIds.map(Number).filter(Boolean)
+      : [];
+
+    if (!categoryIds.length) {
+      return next(createHttpError(400, "Category positions are required!"));
+    }
+
+    const categories = await Category.updatePositions(categoryIds);
+
+    emitRealtimeEvent("menu:changed", {
+      action: "category-positions-updated",
+    });
+    res.status(200).json({
+      success: true,
+      message: "Category positions updated!",
+      data: categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteCategory = async (req, res, next) => {
   try {
     const permissionError = requireAdmin(req, next);
@@ -155,4 +183,5 @@ module.exports = {
   deleteCategory,
   getCategories,
   updateCategory,
+  updateCategoryPositions,
 };

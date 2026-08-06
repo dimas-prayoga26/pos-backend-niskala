@@ -621,12 +621,29 @@ const connectDB = async () => {
       icon VARCHAR(20),
       tax DECIMAL(5,2) NULL,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      sort_order INT NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_categories_sort_order (sort_order, name)
     )
   `);
   await runSafeMigration("ALTER TABLE categories DROP COLUMN bg_color");
   await runSafeMigration("ALTER TABLE categories ADD COLUMN tax DECIMAL(5,2) NULL AFTER icon");
+  await runSafeMigration("ALTER TABLE categories ADD COLUMN sort_order INT NOT NULL DEFAULT 0 AFTER is_active");
+  await runSafeMigration("CREATE INDEX idx_categories_sort_order ON categories (sort_order, name)");
+  await runSafeMigration(`
+    UPDATE categories
+    SET sort_order = CASE name
+      WHEN 'Coffee' THEN 10
+      WHEN 'Non-Coffee' THEN 20
+      WHEN 'Main Course' THEN 30
+      WHEN 'Snack' THEN 40
+      WHEN 'Add Ons' THEN 50
+      WHEN 'Catering' THEN 60
+      ELSE 1000 + id
+    END
+    WHERE sort_order = 0
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS menu_items (
@@ -816,6 +833,19 @@ const connectDB = async () => {
        is_active = TRUE`,
     [seedCategories]
   );
+  await runSafeMigration(`
+    UPDATE categories
+    SET sort_order = CASE name
+      WHEN 'Coffee' THEN 10
+      WHEN 'Non-Coffee' THEN 20
+      WHEN 'Main Course' THEN 30
+      WHEN 'Snack' THEN 40
+      WHEN 'Add Ons' THEN 50
+      WHEN 'Catering' THEN 60
+      ELSE 1000 + id
+    END
+    WHERE sort_order = 0
+  `);
 
   await deactivateRowsOutsideList(
     "categories",

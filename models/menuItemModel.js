@@ -105,6 +105,8 @@ const mapMenuItem = (row) => {
           icon: row.category_icon,
           tax: row.category_tax === null ? null : Number(row.category_tax),
           taxRate: row.category_tax === null ? null : Number(row.category_tax),
+          sortOrder: Number(row.category_sort_order || 0),
+          position: Number(row.category_sort_order || 0),
         }
       : null,
     createdAt: row.created_at,
@@ -117,19 +119,14 @@ const baseQuery = `
     mi.*,
     c.name AS category_name,
     c.icon AS category_icon,
-    c.tax AS category_tax
+    c.tax AS category_tax,
+    c.sort_order AS category_sort_order
   FROM menu_items mi
   JOIN categories c ON c.id = mi.category_id
 `;
 
 const categoryOrder = `
-  CASE c.name
-    WHEN 'Coffee' THEN 1
-    WHEN 'Non-Coffee' THEN 2
-    WHEN 'Main Course' THEN 3
-    WHEN 'Snack' THEN 4
-    ELSE 99
-  END
+  CASE WHEN c.sort_order > 0 THEN c.sort_order ELSE 9999 END
 `;
 
 const menuItemOrder = `
