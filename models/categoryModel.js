@@ -50,10 +50,21 @@ const create = async ({ name, icon, taxRate }) => {
 
 const update = async (id, { name, icon, taxRate, isActive }) => {
   const connection = await pool.getConnection();
-  const normalizedIsActive = isActive ? 1 : 0;
 
   try {
     await connection.beginTransaction();
+    const [existingRows] = await connection.query(
+      "SELECT is_active FROM categories WHERE id = ? FOR UPDATE",
+      [id]
+    );
+    const existingCategory = existingRows[0];
+    const normalizedIsActive =
+      isActive === undefined
+        ? (existingCategory?.is_active ? 1 : 0)
+        : (isActive ? 1 : 0);
+    const statusChanged =
+      existingCategory &&
+      Boolean(existingCategory.is_active) !== Boolean(normalizedIsActive);
 
     await connection.query(
       `UPDATE categories
@@ -62,12 +73,14 @@ const update = async (id, { name, icon, taxRate, isActive }) => {
       [name, icon || null, taxRate ?? null, normalizedIsActive, id]
     );
 
-    await connection.query(
-      `UPDATE menu_items
-       SET is_available = ?
-       WHERE category_id = ?`,
-      [normalizedIsActive, id]
-    );
+    if (statusChanged) {
+      await connection.query(
+        `UPDATE menu_items
+         SET is_available = ?
+         WHERE category_id = ?`,
+        [normalizedIsActive, id]
+      );
+    }
 
     await connection.commit();
   } catch (error) {

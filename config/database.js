@@ -905,9 +905,8 @@ const connectDB = async () => {
              price = ?,
              hpp_cost = ?,
              gross_profit = ?,
-             image_path = ?,
-             is_available = TRUE
-         WHERE id = ?`,
+             image_path = ?
+          WHERE id = ?`,
         [
           categoryId,
           sizes.length ? null : regularPrice,
@@ -936,12 +935,6 @@ const connectDB = async () => {
 
     await replaceMenuItemOptions(menuItemId, { sizes, variants });
   }
-  await deactivateRowsOutsideList(
-    "menu_items",
-    "name",
-    "is_available",
-    seedMenuCatalog.map(([, name]) => name)
-  );
   await runSafeMigration(`
     DELETE mis
     FROM menu_item_sizes mis

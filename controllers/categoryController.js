@@ -85,7 +85,9 @@ const updateCategory = async (req, res, next) => {
 
     const { id } = req.params;
     const { name, icon } = req.body;
-    const isActive = parseCategoryStatus(req.body.isActive);
+    const isActive = Object.prototype.hasOwnProperty.call(req.body, "isActive")
+      ? parseCategoryStatus(req.body.isActive)
+      : undefined;
     const taxRate = parseCategoryTax(req.body.taxRate ?? req.body.tax);
 
     if (!Number(id)) {
