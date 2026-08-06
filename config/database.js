@@ -829,8 +829,7 @@ const connectDB = async () => {
     `INSERT INTO categories (name, icon)
      VALUES ?
      ON DUPLICATE KEY UPDATE
-       icon = VALUES(icon),
-       is_active = TRUE`,
+       icon = COALESCE(NULLIF(icon, ''), VALUES(icon))`,
     [seedCategories]
   );
   await runSafeMigration(`
@@ -846,13 +845,6 @@ const connectDB = async () => {
     END
     WHERE sort_order = 0
   `);
-
-  await deactivateRowsOutsideList(
-    "categories",
-    "name",
-    "is_active",
-    seedCategories.map(([name]) => name)
-  );
 
   const [categoryRows] = await pool.query(
     `SELECT id, name FROM categories

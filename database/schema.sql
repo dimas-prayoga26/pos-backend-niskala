@@ -134,8 +134,7 @@ INSERT INTO categories (name, icon) VALUES
   ('Catering', '🍱'),
   ('Add Ons', '➕')
 ON DUPLICATE KEY UPDATE
-  icon = VALUES(icon),
-  is_active = TRUE;
+  icon = COALESCE(NULLIF(icon, ''), VALUES(icon));
 
 UPDATE categories
 SET sort_order = CASE name
