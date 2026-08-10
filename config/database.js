@@ -937,7 +937,7 @@ const connectDB = async () => {
              price = ?,
              hpp_cost = ?,
              gross_profit = ?,
-             image_path = ?
+             image_path = COALESCE(NULLIF(image_path, ''), ?)
           WHERE id = ?`,
         [
           categoryId,
