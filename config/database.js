@@ -112,6 +112,24 @@ const seedMenuCatalog = [
   ]),
 ];
 
+const singlePriceCategories = new Set(["Coffee", "Non-Coffee"]);
+const noTemperatureVariantMenuItems = new Set([
+  "On The Rock Espresso",
+  "Tropical Americano",
+  "Elberry Americano",
+  "Berry Summer",
+  "Cookies and Cream",
+]);
+
+const shouldUseSinglePrice = (categoryName) =>
+  singlePriceCategories.has(categoryName);
+
+const getSeedTemperatureVariants = (categoryName, menuName) =>
+  singlePriceCategories.has(categoryName) &&
+  !noTemperatureVariantMenuItems.has(menuName)
+    ? ["Cold", "Hot"]
+    : [];
+
 const seedStockItems = [
   ["ESPRESSO", "Coffee", "gr", 999, 0, "", false],
   ["WATER", "Beverage", "ml", 999, 0, "", true],
@@ -594,6 +612,18 @@ const seedDefaultMenuIngredients = async () => {
   }
 };
 
+const removeSinglePriceSizeSpecificIngredients = async () => {
+  await pool.query(`
+    DELETE mii
+    FROM menu_item_ingredients mii
+    JOIN menu_items mi ON mi.id = mii.menu_item_id
+    JOIN categories c ON c.id = mi.category_id
+    WHERE c.name IN ('Coffee', 'Non-Coffee')
+      AND mii.size_name IS NOT NULL
+      AND TRIM(mii.size_name) <> ''
+  `);
+};
+
 const connectDB = async () => {
   await serverPool.query(
     `CREATE DATABASE IF NOT EXISTS \`${config.dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
@@ -858,9 +888,11 @@ const connectDB = async () => {
   for (const seedMenuItem of seedMenuCatalog) {
     const [categoryName, name, regularPrice, largePriceOrImageUrl, maybeImageUrl] =
       seedMenuItem;
-    const hasLargePrice = typeof largePriceOrImageUrl === "number";
+    const seedHasLargePrice = typeof largePriceOrImageUrl === "number";
+    const usesSinglePrice = shouldUseSinglePrice(categoryName);
+    const hasLargePrice = seedHasLargePrice && !usesSinglePrice;
     const largePrice = hasLargePrice ? largePriceOrImageUrl : null;
-    const imagePathCandidate = hasLargePrice
+    const imagePathCandidate = seedHasLargePrice
       ? maybeImageUrl
       : largePriceOrImageUrl;
     const seedImagePath =
@@ -868,7 +900,7 @@ const connectDB = async () => {
       imagePathCandidate.startsWith("/uploads/")
         ? imagePathCandidate
         : null;
-    const variants = hasLargePrice ? ["Cold", "Hot"] : [];
+    const variants = getSeedTemperatureVariants(categoryName, name);
     const sizes = hasLargePrice
       ? [
           {
@@ -949,6 +981,7 @@ const connectDB = async () => {
       AND mis.price = mi.price
   `);
   await seedDefaultMenuIngredients();
+  await removeSinglePriceSizeSpecificIngredients();
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
