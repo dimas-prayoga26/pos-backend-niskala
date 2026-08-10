@@ -391,6 +391,21 @@ const countImagePathReferences = async (imagePath) => {
   return Number(rows[0]?.total) || 0;
 };
 
+const excludeFromDefaultSeed = async (names) => {
+  const normalizedNames = [...new Set(
+    (Array.isArray(names) ? names : [names])
+      .map((name) => String(name || "").trim())
+      .filter(Boolean)
+  )];
+
+  if (!normalizedNames.length) return;
+
+  await pool.query(
+    "INSERT IGNORE INTO menu_seed_exclusions (name) VALUES ?",
+    [normalizedNames.map((name) => [name])]
+  );
+};
+
 const create = async ({
   categoryId,
   name,
@@ -544,6 +559,7 @@ const remove = async (id) => {
 module.exports = {
   countImagePathReferences,
   create,
+  excludeFromDefaultSeed,
   findAll,
   findByCategoryId,
   findById,

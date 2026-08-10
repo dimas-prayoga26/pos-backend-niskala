@@ -704,6 +704,14 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN gross_profit DECIMAL(12,2) NULL");
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS menu_seed_exclusions (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(150) NOT NULL UNIQUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS menu_item_sizes (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       menu_item_id INT UNSIGNED NOT NULL,
@@ -884,10 +892,18 @@ const connectDB = async () => {
   const categoryIdByName = new Map(
     categoryRows.map((category) => [category.name, category.id])
   );
+  const [seedExclusionRows] = await pool.query(
+    "SELECT name FROM menu_seed_exclusions"
+  );
+  const seedExcludedMenuNames = new Set(
+    seedExclusionRows.map((row) => String(row.name || "").trim()).filter(Boolean)
+  );
 
   for (const seedMenuItem of seedMenuCatalog) {
     const [categoryName, name, regularPrice, largePriceOrImageUrl, maybeImageUrl] =
       seedMenuItem;
+    if (seedExcludedMenuNames.has(name)) continue;
+
     const seedHasLargePrice = typeof largePriceOrImageUrl === "number";
     const usesSinglePrice = shouldUseSinglePrice(categoryName);
     const hasLargePrice = seedHasLargePrice && !usesSinglePrice;
@@ -934,9 +950,9 @@ const connectDB = async () => {
       await pool.query(
         `UPDATE menu_items
          SET category_id = ?,
-             price = ?,
-             hpp_cost = ?,
-             gross_profit = ?,
+             price = COALESCE(price, ?),
+             hpp_cost = COALESCE(hpp_cost, ?),
+             gross_profit = COALESCE(gross_profit, ?),
              image_path = COALESCE(NULLIF(image_path, ''), ?)
           WHERE id = ?`,
         [

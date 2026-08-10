@@ -185,6 +185,10 @@ const updateMenuItem = async (req, res, next) => {
       return next(createHttpError(404, "Menu item not found!"));
     }
 
+    await MenuItem.excludeFromDefaultSeed([
+      previousMenuItem.name,
+      menuItem.name,
+    ]);
     await removeImageIfUnused(previousMenuItem.imagePath, menuItem.imagePath);
 
     emitRealtimeEvent("menu:changed", {
@@ -221,6 +225,7 @@ const deleteMenuItem = async (req, res, next) => {
       return next(createHttpError(404, "Menu item not found!"));
     }
 
+    await MenuItem.excludeFromDefaultSeed(menuItem.name);
     await removeImageIfUnused(menuItem.imagePath);
 
     emitRealtimeEvent("menu:changed", {
