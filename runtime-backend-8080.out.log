@@ -1,0 +1,7 @@
+
+> pos-backend@1.0.0 start
+> node app.js
+
+MySQL Connected: 127.0.0.1/pos_system
+POS Server is listening on http://0.0.0.0:8080
+Realtime client connected: wIqS1QZgNjmQyHQqAAAB
