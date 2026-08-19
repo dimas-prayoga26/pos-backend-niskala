@@ -37,6 +37,7 @@ const mapOrder = (row, items = []) => {
     },
     items,
     paymentMethod: row.payment_method,
+    note: row.note || "",
     cateringDetails: row.catering_order_id
       ? {
           institution: row.catering_institution || "",
@@ -404,6 +405,7 @@ const create = async (orderData) => {
       paymentData = {},
       cateringDetails,
       allowNegativeStock = false,
+      note = "",
     } = orderData;
 
     await assertNoDailyRecapForDate(
@@ -430,8 +432,8 @@ const create = async (orderData) => {
     const [result] = await connection.query(
       `INSERT INTO orders
         (customer_name, guests, order_type, order_platform, order_status, total, online_order_charge, tax, total_with_tax,
-         payment_method)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         payment_method, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerName,
         customerDetails.guests || 1,
@@ -443,6 +445,7 @@ const create = async (orderData) => {
         bills.tax,
         bills.totalWithTax,
         paymentMethod,
+        note || null,
       ]
     );
 

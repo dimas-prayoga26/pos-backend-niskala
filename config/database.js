@@ -1014,11 +1014,13 @@ const connectDB = async () => {
       tax DECIMAL(12,2) NOT NULL,
       total_with_tax DECIMAL(12,2) NOT NULL,
       payment_method VARCHAR(50),
+      note TEXT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
 
+  await runSafeMigration("ALTER TABLE orders ADD COLUMN note TEXT NULL AFTER payment_method");
   await runSafeMigration("ALTER TABLE orders ADD COLUMN order_code VARCHAR(40) UNIQUE AFTER id");
   await runSafeMigration("ALTER TABLE orders ADD COLUMN order_type VARCHAR(50) NOT NULL DEFAULT 'Offline' AFTER guests");
   await runSafeMigration("ALTER TABLE orders ADD COLUMN order_platform VARCHAR(100) NULL AFTER order_type");
