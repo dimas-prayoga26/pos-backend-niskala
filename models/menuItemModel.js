@@ -44,6 +44,14 @@ const parseNumber = (value, fallback = 0) => {
   return Number.isFinite(numericValue) ? numericValue : fallback;
 };
 
+const parseNullableNumber = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue) ? numericValue : null;
+};
+
 const buildProfitFields = ({
   price,
   hppCost,
@@ -75,7 +83,15 @@ const buildProfitFields = ({
 const mapMenuItem = (row) => {
   if (!row) return null;
 
-  const price = row.price === null ? null : Number(row.price);
+  const regularPriceValue = row.regular_price ?? row.price;
+  const regularPrice =
+    regularPriceValue === null || regularPriceValue === undefined
+      ? null
+      : Number(regularPriceValue);
+  const onlinePrice =
+    row.online_price === null || row.online_price === undefined
+      ? null
+      : Number(row.online_price);
   const hppCost = row.hpp_cost === null ? null : Number(row.hpp_cost || 0);
   const grossProfit =
     row.gross_profit === null ? null : Number(row.gross_profit || 0);
@@ -85,8 +101,10 @@ const mapMenuItem = (row) => {
     id: row.id,
     categoryId: row.category_id,
     name: row.name,
-    price,
-    regularPrice: price,
+    price: regularPrice,
+    regularPrice,
+    onlinePrice,
+    includeOnlinePlatform: Boolean(row.include_online_platform),
     largePrice: null,
     hppCost,
     hpp: hppCost,
@@ -411,6 +429,8 @@ const create = async ({
   name,
   price,
   regularPrice,
+  includeOnlinePlatform,
+  onlinePrice,
   largePrice,
   hppCost,
   hpp,
@@ -430,6 +450,11 @@ const create = async ({
       : regularPrice === undefined
         ? price
         : regularPrice;
+  const shouldIncludeOnlinePlatform =
+    normalizedSizes.length === 0 && Boolean(includeOnlinePlatform);
+  const baseOnlinePrice = shouldIncludeOnlinePlatform
+    ? parseNullableNumber(onlinePrice)
+    : null;
   const profitFields = normalizedSizes.length
     ? { hppCost: null, grossProfit: null }
     : buildProfitFields({
@@ -443,13 +468,16 @@ const create = async ({
     await connection.beginTransaction();
     const [result] = await connection.query(
       `INSERT INTO menu_items
-        (category_id, name, price, hpp_cost, gross_profit, image_path,
+        (category_id, name, regular_price, online_price, include_online_platform,
+         hpp_cost, gross_profit, image_path,
          is_available)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         categoryId,
         name,
         basePrice,
+        baseOnlinePrice,
+        shouldIncludeOnlinePlatform ? 1 : 0,
         profitFields.hppCost,
         profitFields.grossProfit,
         imagePath || null,
@@ -480,6 +508,8 @@ const update = async (
     name,
     price,
     regularPrice,
+    includeOnlinePlatform,
+    onlinePrice,
     largePrice,
     hppCost,
     hpp,
@@ -500,6 +530,11 @@ const update = async (
       : regularPrice === undefined
         ? price
         : regularPrice;
+  const shouldIncludeOnlinePlatform =
+    normalizedSizes.length === 0 && Boolean(includeOnlinePlatform);
+  const baseOnlinePrice = shouldIncludeOnlinePlatform
+    ? parseNullableNumber(onlinePrice)
+    : null;
   const profitFields = normalizedSizes.length
     ? { hppCost: null, grossProfit: null }
     : buildProfitFields({
@@ -515,7 +550,9 @@ const update = async (
       `UPDATE menu_items
        SET category_id = ?,
            name = ?,
-           price = ?,
+           regular_price = ?,
+           online_price = ?,
+           include_online_platform = ?,
            hpp_cost = ?,
            gross_profit = ?,
            image_path = ?,
@@ -525,6 +562,8 @@ const update = async (
         categoryId,
         name,
         basePrice,
+        baseOnlinePrice,
+        shouldIncludeOnlinePlatform ? 1 : 0,
         profitFields.hppCost,
         profitFields.grossProfit,
         imagePath || null,

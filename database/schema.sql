@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS menu_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   category_id INT UNSIGNED NOT NULL,
   name VARCHAR(150) NOT NULL,
-  price DECIMAL(12,2) NULL,
+  regular_price DECIMAL(12,2) NULL,
+  online_price DECIMAL(12,2) NULL,
+  include_online_platform BOOLEAN NOT NULL DEFAULT FALSE,
   hpp_cost DECIMAL(12,2) NULL,
   gross_profit DECIMAL(12,2) NULL,
   image_path VARCHAR(255),
@@ -110,21 +112,23 @@ CREATE TABLE IF NOT EXISTS menu_item_ingredients (
     ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS order_platforms (
+CREATE TABLE IF NOT EXISTS meta_data_platform (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
   icon_url VARCHAR(255),
+  tax DECIMAL(12,2) NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-INSERT INTO order_platforms (name, icon_url) VALUES
-    ('GoFood', '/platforms/gofood.png'),
-    ('GrabFood', '/platforms/grabfood.png'),
-    ('ShopeeFood', '/platforms/shopeefood.png')
+INSERT INTO meta_data_platform (name, icon_url, tax) VALUES
+    ('GoFood', '/platforms/gofood.png', 0),
+    ('GrabFood', '/platforms/grabfood.png', 0),
+    ('ShopeeFood', '/platforms/shopeefood.png', 0)
   ON DUPLICATE KEY UPDATE
-  icon_url = VALUES(icon_url);
+  icon_url = VALUES(icon_url),
+  tax = VALUES(tax);
 
 INSERT INTO categories (name, icon) VALUES
   ('Coffee', '☕'),
@@ -165,6 +169,23 @@ CREATE TABLE IF NOT EXISTS orders (
   note TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS order_platforms (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id INT UNSIGNED NOT NULL UNIQUE,
+  meta_data_platform_id INT UNSIGNED NULL,
+  platform_name VARCHAR(100) NOT NULL,
+  platform_tax DECIMAL(12,2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_order_platforms_meta_data_platform_id (meta_data_platform_id),
+  CONSTRAINT fk_order_platforms_order
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_order_platforms_meta_data_platform
+    FOREIGN KEY (meta_data_platform_id) REFERENCES meta_data_platform(id)
+    ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS order_online_transactions (
@@ -364,4 +385,3 @@ CREATE TABLE IF NOT EXISTS monthly_recaps (
     FOREIGN KEY (created_by) REFERENCES users(id)
     ON DELETE SET NULL
 );
-

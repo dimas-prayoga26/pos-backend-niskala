@@ -40,6 +40,20 @@ const runSafeMigration = async (query) => {
   }
 };
 
+const tableExists = async (tableName) => {
+  const [rows] = await pool.query("SHOW TABLES LIKE ?", [tableName]);
+
+  return rows.length > 0;
+};
+
+const getColumnNames = async (tableName) => {
+  if (!(await tableExists(tableName))) return new Set();
+
+  const [columns] = await pool.query(`SHOW COLUMNS FROM \`${tableName}\``);
+
+  return new Set(columns.map((column) => column.Field));
+};
+
 const menuImage = (fileName) => `/uploads/menu/${fileName}`;
 
 const seedCategories = [
@@ -395,9 +409,9 @@ const getSeedSizeFinancials = (menuName, sizeName, price) => {
 };
 
 const seedOrderPlatforms = [
-  ["GoFood", "/platforms/gofood.png"],
-  ["GrabFood", "/platforms/grabfood.png"],
-  ["ShopeeFood", "/platforms/shopeefood.png"],
+  ["GoFood", "/platforms/gofood.png", 0],
+  ["GrabFood", "/platforms/grabfood.png", 0],
+  ["ShopeeFood", "/platforms/shopeefood.png", 0],
 ];
 
 const seedRecapFormats = [
@@ -481,14 +495,19 @@ const migrateLegacyMenuOptions = async () => {
   const [columns] = await pool.query("SHOW COLUMNS FROM menu_items");
   const columnNames = new Set(columns.map((column) => column.Field));
   const hasRegularPrice = columnNames.has("regular_price");
+  const hasPrice = columnNames.has("price");
   const hasLargePrice = columnNames.has("large_price");
   const hasVariantsJson = columnNames.has("variants_json");
   const hasSizesJson = columnNames.has("sizes_json");
+  const regularPriceColumn = hasRegularPrice
+    ? "regular_price"
+    : hasPrice
+      ? "price"
+      : "NULL AS regular_price";
 
   const [items] = await pool.query(`
     SELECT id,
-           price
-           ${hasRegularPrice ? ", regular_price" : ""}
+           ${regularPriceColumn}
            ${hasLargePrice ? ", large_price" : ""}
            ${hasVariantsJson ? ", variants_json" : ""}
            ${hasSizesJson ? ", sizes_json" : ""}
@@ -624,6 +643,105 @@ const removeSinglePriceSizeSpecificIngredients = async () => {
   `);
 };
 
+const createMetaDataPlatformTable = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS meta_data_platform (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      icon_url VARCHAR(255),
+      tax DECIMAL(12,2) NOT NULL DEFAULT 0,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+  await runSafeMigration("ALTER TABLE meta_data_platform ADD COLUMN icon_url VARCHAR(255) NULL AFTER name");
+  await runSafeMigration("ALTER TABLE meta_data_platform ADD COLUMN tax DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER icon_url");
+  await runSafeMigration("ALTER TABLE meta_data_platform MODIFY COLUMN tax DECIMAL(12,2) NOT NULL DEFAULT 0");
+  await runSafeMigration("ALTER TABLE meta_data_platform ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE AFTER tax");
+};
+
+const migrateLegacyOrderPlatformMaster = async () => {
+  const columnNames = await getColumnNames("order_platforms");
+
+  if (!columnNames.size || columnNames.has("order_id")) return;
+
+  const legacyIconColumn = columnNames.has("icon_url") ? "icon_url" : "NULL";
+  const legacyTaxColumn = columnNames.has("tax") ? "tax" : "0";
+  const legacyActiveColumn = columnNames.has("is_active") ? "is_active" : "TRUE";
+
+  await pool.query(`
+    INSERT INTO meta_data_platform (name, icon_url, tax, is_active)
+    SELECT name, ${legacyIconColumn}, COALESCE(${legacyTaxColumn}, 0), ${legacyActiveColumn}
+    FROM order_platforms
+    WHERE name IS NOT NULL AND name <> ''
+    ON DUPLICATE KEY UPDATE
+      icon_url = COALESCE(NULLIF(VALUES(icon_url), ''), meta_data_platform.icon_url),
+      tax = VALUES(tax),
+      is_active = VALUES(is_active)
+  `);
+  await pool.query("DROP TABLE order_platforms");
+};
+
+const seedMetaDataPlatforms = async () => {
+  await pool.query(
+    `INSERT INTO meta_data_platform (name, icon_url, tax)
+     VALUES ?
+     ON DUPLICATE KEY UPDATE
+       icon_url = VALUES(icon_url)`,
+    [seedOrderPlatforms]
+  );
+  await runSafeMigration("DELETE FROM meta_data_platform WHERE name = 'Maxim Food'");
+};
+
+const createOrderPlatformRelationTable = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_platforms (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      order_id INT UNSIGNED NOT NULL UNIQUE,
+      meta_data_platform_id INT UNSIGNED NULL,
+      platform_name VARCHAR(100) NOT NULL,
+      platform_tax DECIMAL(12,2) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_order_platforms_meta_data_platform_id (meta_data_platform_id),
+      CONSTRAINT fk_order_platforms_order
+        FOREIGN KEY (order_id) REFERENCES orders(id)
+        ON DELETE CASCADE,
+      CONSTRAINT fk_order_platforms_meta_data_platform
+        FOREIGN KEY (meta_data_platform_id) REFERENCES meta_data_platform(id)
+        ON DELETE SET NULL
+    )
+  `);
+  await runSafeMigration("ALTER TABLE order_platforms ADD COLUMN meta_data_platform_id INT UNSIGNED NULL AFTER order_id");
+  await runSafeMigration("ALTER TABLE order_platforms ADD COLUMN platform_name VARCHAR(100) NOT NULL AFTER meta_data_platform_id");
+  await runSafeMigration("ALTER TABLE order_platforms ADD COLUMN platform_tax DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER platform_name");
+  await runSafeMigration("ALTER TABLE order_platforms MODIFY COLUMN platform_tax DECIMAL(12,2) NOT NULL DEFAULT 0");
+  await runSafeMigration("CREATE INDEX idx_order_platforms_meta_data_platform_id ON order_platforms (meta_data_platform_id)");
+  await runSafeMigration("ALTER TABLE order_platforms ADD CONSTRAINT fk_order_platforms_meta_data_platform FOREIGN KEY (meta_data_platform_id) REFERENCES meta_data_platform(id) ON DELETE SET NULL");
+};
+
+const backfillOrderPlatformRelations = async () => {
+  const orderColumnNames = await getColumnNames("orders");
+
+  if (!orderColumnNames.has("order_platform")) return;
+
+  await pool.query(`
+    INSERT IGNORE INTO order_platforms
+      (order_id, meta_data_platform_id, platform_name, platform_tax)
+    SELECT
+      o.id,
+      mdp.id,
+      o.order_platform,
+      COALESCE(mdp.tax, 0)
+    FROM orders o
+    LEFT JOIN meta_data_platform mdp ON LOWER(mdp.name) = LOWER(o.order_platform)
+    WHERE o.order_type = 'Online'
+      AND o.order_platform IS NOT NULL
+      AND o.order_platform <> ''
+  `);
+};
+
 const connectDB = async () => {
   await serverPool.query(
     `CREATE DATABASE IF NOT EXISTS \`${config.dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
@@ -680,7 +798,9 @@ const connectDB = async () => {
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       category_id INT UNSIGNED NOT NULL,
       name VARCHAR(150) NOT NULL,
-      price DECIMAL(12,2) NULL,
+      regular_price DECIMAL(12,2) NULL,
+      online_price DECIMAL(12,2) NULL,
+      include_online_platform BOOLEAN NOT NULL DEFAULT FALSE,
       hpp_cost DECIMAL(12,2) NULL,
       gross_profit DECIMAL(12,2) NULL,
       image_path VARCHAR(255),
@@ -696,10 +816,15 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN description");
   await runSafeMigration("ALTER TABLE menu_items CHANGE COLUMN image_url image_path VARCHAR(255) NULL");
   await runSafeMigration("UPDATE menu_items SET image_path = NULL WHERE image_path IS NOT NULL AND image_path NOT LIKE '/uploads/%'");
-  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN hpp_cost DECIMAL(12,2) NULL AFTER price");
+  await runSafeMigration("ALTER TABLE menu_items CHANGE COLUMN price regular_price DECIMAL(12,2) NULL");
+  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN online_price DECIMAL(12,2) NULL AFTER regular_price");
+  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN include_online_platform BOOLEAN NOT NULL DEFAULT FALSE AFTER online_price");
+  await runSafeMigration("UPDATE menu_items SET include_online_platform = TRUE WHERE online_price IS NOT NULL");
+  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN hpp_cost DECIMAL(12,2) NULL AFTER include_online_platform");
   await runSafeMigration("ALTER TABLE menu_items ADD COLUMN gross_profit DECIMAL(12,2) NULL AFTER hpp_cost");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN gross_profit_margin");
-  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN price DECIMAL(12,2) NULL");
+  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN regular_price DECIMAL(12,2) NULL");
+  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN online_price DECIMAL(12,2) NULL");
   await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN hpp_cost DECIMAL(12,2) NULL");
   await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN gross_profit DECIMAL(12,2) NULL");
 
@@ -733,7 +858,7 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE menu_item_sizes ADD COLUMN gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER hpp_cost");
   await runSafeMigration(`
     UPDATE menu_items mi
-    SET mi.price = NULL,
+    SET mi.regular_price = NULL,
         mi.hpp_cost = NULL,
         mi.gross_profit = NULL
     WHERE EXISTS (
@@ -760,31 +885,13 @@ const connectDB = async () => {
   `);
 
   await migrateLegacyMenuOptions();
-  await runSafeMigration("ALTER TABLE menu_items DROP COLUMN regular_price");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN large_price");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN variants_json");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN sizes_json");
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS order_platforms (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(100) NOT NULL UNIQUE,
-      icon_url VARCHAR(255),
-      is_active BOOLEAN NOT NULL DEFAULT TRUE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-  `);
-  await runSafeMigration("ALTER TABLE order_platforms ADD COLUMN icon_url VARCHAR(255) NULL AFTER name");
-
-  await pool.query(
-    `INSERT INTO order_platforms (name, icon_url)
-     VALUES ?
-     ON DUPLICATE KEY UPDATE
-       icon_url = VALUES(icon_url)`,
-    [seedOrderPlatforms]
-  );
-  await runSafeMigration("DELETE FROM order_platforms WHERE name = 'Maxim Food'");
+  await createMetaDataPlatformTable();
+  await migrateLegacyOrderPlatformMaster();
+  await seedMetaDataPlatforms();
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS stock_items (
@@ -950,7 +1057,7 @@ const connectDB = async () => {
       await pool.query(
         `UPDATE menu_items
          SET category_id = ?,
-             price = COALESCE(price, ?),
+             regular_price = COALESCE(regular_price, ?),
              hpp_cost = COALESCE(hpp_cost, ?),
              gross_profit = COALESCE(gross_profit, ?),
              image_path = COALESCE(NULLIF(image_path, ''), ?)
@@ -966,13 +1073,15 @@ const connectDB = async () => {
       );
     } else {
       const [result] = await pool.query(
-        `INSERT INTO menu_items
-          (category_id, name, price, hpp_cost, gross_profit, image_path, is_available)
-         VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
+      `INSERT INTO menu_items
+          (category_id, name, regular_price, online_price, include_online_platform, hpp_cost, gross_profit, image_path, is_available)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
         [
           categoryId,
           name,
           sizes.length ? null : regularPrice,
+          null,
+          false,
           sizes.length ? null : roundCurrency(baseFinancials.hppCost),
           sizes.length ? null : roundCurrency(baseFinancials.grossProfit),
           seedImagePath,
@@ -994,7 +1103,7 @@ const connectDB = async () => {
     ) size_counts ON size_counts.menu_item_id = mis.menu_item_id
     WHERE size_counts.total = 1
       AND mis.name = 'Harga'
-      AND mis.price = mi.price
+      AND mis.price = mi.regular_price
   `);
   await seedDefaultMenuIngredients();
   await removeSinglePriceSizeSpecificIngredients();
@@ -1032,6 +1141,9 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE orders DROP FOREIGN KEY fk_orders_table");
   await runSafeMigration("DROP INDEX idx_orders_table_id ON orders");
   await runSafeMigration("ALTER TABLE orders DROP COLUMN table_id");
+
+  await createOrderPlatformRelationTable();
+  await backfillOrderPlatformRelations();
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_online_transactions (

@@ -21,7 +21,11 @@ const getRequestOrigin = (req) => {
 
 const addOrder = async (req, res, next) => {
   try {
-    if (req.body?.orderType === "Online" && !req.body?.orderPlatform) {
+    if (
+      req.body?.orderType === "Online" &&
+      !req.body?.orderPlatformId &&
+      !req.body?.orderPlatform
+    ) {
       return next(createHttpError(400, "Online order platform is required!"));
     }
 

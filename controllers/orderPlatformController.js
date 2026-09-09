@@ -13,6 +13,7 @@ const requireAdmin = (req, next) => {
 const normalizePlatformPayload = (body) => ({
   name: String(body.name || "").trim(),
   iconUrl: String(body.iconUrl || body.icon_url || "").trim(),
+  tax: body.tax ?? body.taxRate ?? body.platformTax ?? 0,
   isActive: body.isActive !== false,
 });
 

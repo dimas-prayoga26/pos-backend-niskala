@@ -1,5 +1,15 @@
 const { pool } = require("../config/database");
 
+const parseNominal = (value) => {
+  if (typeof value === "string") {
+    const digitsOnly = value.replace(/\D/g, "");
+
+    return Number(digitsOnly) || 0;
+  }
+
+  return Number(value) || 0;
+};
+
 const mapOrder = (row, items = []) => {
   if (!row) return null;
 
@@ -21,7 +31,9 @@ const mapOrder = (row, items = []) => {
       guests: row.guests,
     },
     orderType: row.order_type || "Offline",
-    orderPlatform: row.order_platform || "",
+    orderPlatform: row.order_platform_name || row.order_platform || "",
+    orderPlatformId: row.order_platform_meta_id || null,
+    platformTax: Number(row.order_platform_tax || 0),
     orderStatus: row.order_status,
     orderDate: row.order_date,
     bills: {
@@ -139,6 +151,68 @@ const findMenuItemSnapshot = async (connection, menuItemId, sizeName = "") => {
     menuItemId: rows[0].id,
     hppCost: Number(rows[0].hpp_cost || 0),
   };
+};
+
+const findPlatformSnapshot = async (
+  connection,
+  { platformId, platformName, platformTax }
+) => {
+  const normalizedPlatformId = Number(platformId);
+
+  if (Number.isFinite(normalizedPlatformId) && normalizedPlatformId > 0) {
+    const [rows] = await connection.query(
+      `SELECT id, name, tax
+       FROM meta_data_platform
+       WHERE id = ?
+       LIMIT 1`,
+      [normalizedPlatformId]
+    );
+
+    if (rows.length) {
+      const submittedTax =
+        platformTax === null || platformTax === undefined || platformTax === ""
+          ? null
+          : parseNominal(platformTax);
+
+      return {
+        id: rows[0].id,
+        name: rows[0].name,
+        tax: submittedTax ?? Number(rows[0].tax || 0),
+      };
+    }
+  }
+
+  const normalizedPlatformName = String(platformName || "").trim();
+  if (normalizedPlatformName) {
+    const [rows] = await connection.query(
+      `SELECT id, name, tax
+       FROM meta_data_platform
+       WHERE LOWER(name) = LOWER(?)
+       LIMIT 1`,
+      [normalizedPlatformName]
+    );
+
+    if (rows.length) {
+      const submittedTax =
+        platformTax === null || platformTax === undefined || platformTax === ""
+          ? null
+          : parseNominal(platformTax);
+
+      return {
+        id: rows[0].id,
+        name: rows[0].name,
+        tax: submittedTax ?? Number(rows[0].tax || 0),
+      };
+    }
+
+    return {
+      id: null,
+      name: normalizedPlatformName,
+      tax: parseNominal(platformTax),
+    };
+  }
+
+  return null;
 };
 
 const createStockValidationError = (insufficientStock) => {
@@ -355,6 +429,9 @@ const baseOrderQuery = `
     oot.midtrans_transaction_id AS online_midtrans_transaction_id,
     oot.midtrans_payment_type AS online_midtrans_payment_type,
     oot.midtrans_transaction_status AS online_midtrans_transaction_status,
+    op.meta_data_platform_id AS order_platform_meta_id,
+    op.platform_name AS order_platform_name,
+    op.platform_tax AS order_platform_tax,
     cod.order_id AS catering_order_id,
     cod.institution AS catering_institution,
     cod.whatsapp AS catering_whatsapp,
@@ -367,6 +444,7 @@ const baseOrderQuery = `
     cod.note AS catering_note
   FROM orders o
   LEFT JOIN order_online_transactions oot ON oot.order_id = o.id
+  LEFT JOIN order_platforms op ON op.order_id = o.id
   LEFT JOIN order_catering_details cod ON cod.order_id = o.id
 `;
 
@@ -397,7 +475,9 @@ const create = async (orderData) => {
     const {
       customerDetails,
       orderType = "Offline",
+      orderPlatformId,
       orderPlatform,
+      platformTax,
       orderStatus,
       bills,
       items = [],
@@ -429,6 +509,15 @@ const create = async (orderData) => {
       customerName = `Guest-${Number(guestRows[0]?.total || 0) + 1}`;
     }
 
+    const platformSnapshot =
+      orderType === "Online"
+        ? await findPlatformSnapshot(connection, {
+            platformId: orderPlatformId,
+            platformName: orderPlatform,
+            platformTax,
+          })
+        : null;
+
     const [result] = await connection.query(
       `INSERT INTO orders
         (customer_name, guests, order_type, order_platform, order_status, total, online_order_charge, tax, total_with_tax,
@@ -438,7 +527,7 @@ const create = async (orderData) => {
         customerName,
         customerDetails.guests || 1,
         orderType,
-        orderType === "Online" ? orderPlatform || null : null,
+        platformSnapshot?.name || null,
         orderStatus,
         bills.total,
         bills.onlineOrderCharge || 0,
@@ -456,6 +545,20 @@ const create = async (orderData) => {
       orderCode,
       orderId,
     ]);
+
+    if (platformSnapshot) {
+      await connection.query(
+        `INSERT INTO order_platforms
+          (order_id, meta_data_platform_id, platform_name, platform_tax)
+         VALUES (?, ?, ?, ?)`,
+        [
+          orderId,
+          platformSnapshot.id,
+          platformSnapshot.name,
+          platformSnapshot.tax,
+        ]
+      );
+    }
 
     if (
       paymentData.midtrans_order_id ||
