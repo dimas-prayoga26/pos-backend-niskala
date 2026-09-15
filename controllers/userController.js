@@ -65,13 +65,14 @@ const login = async (req, res, next) => {
             return next(error);
         }
 
-        const isUserPresent = await User.findByEmail(email);
+        const isUserPresent = await User.findByEmailForAuth(email);
         if(!isUserPresent){
             const error = createHttpError(401, "Invalid Credentials");
             return next(error);
         }
 
-        const isMatch = await bcrypt.compare(password, isUserPresent.password);
+        const { password: passwordHash, ...publicUser } = isUserPresent;
+        const isMatch = await bcrypt.compare(password, passwordHash);
         if(!isMatch){
             const error = createHttpError(401, "Invalid Credentials");
             return next(error);
@@ -84,7 +85,7 @@ const login = async (req, res, next) => {
         res.cookie('accessToken', accessToken, authCookieOptions)
 
         res.status(200).json({success: true, message: "User login successfully!", 
-            data: isUserPresent
+            data: publicUser
         });
 
 

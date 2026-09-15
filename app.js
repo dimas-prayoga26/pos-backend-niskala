@@ -1,12 +1,14 @@
 const express = require("express");
 const http = require("http");
 const path = require("path");
-const { connectDB } = require("./config/database");
+const { connectDB, pool } = require("./config/database");
+const { ensureShoppingSchema } = require("./config/shoppingSchema");
 const config = require("./config/config");
 const globalErrorHandler = require("./middlewares/globalErrorHandler");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const { initSocket } = require("./config/socket");
+const { getLocalAccessUrls, printLocalAccessUrls } = require("./utils/networkAddresses");
 
 const app = express();
 const PORT = config.port;
@@ -44,12 +46,20 @@ app.get("/", (req, res) => {
   res.json({ message: "Hello from POS Server!" });
 });
 
+if (config.nodeEnv === "development") {
+  app.get("/api/network-info", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json(getLocalAccessUrls());
+  });
+}
+
 app.use("/api/user", require("./routes/userRoute"));
 app.use("/api/order", require("./routes/orderRoute"));
 app.use("/api/payment", require("./routes/paymentRoute"));
 app.use("/api/category", require("./routes/categoryRoute"));
 app.use("/api/menu-item", require("./routes/menuItemRoute"));
 app.use("/api/stock-item", require("./routes/stockItemRoute"));
+app.use("/api/shopping", require("./routes/shoppingRoute"));
 app.use("/api/order-platform", require("./routes/orderPlatformRoute"));
 app.use("/api/recap", require("./routes/recapRoute"));
 
@@ -59,9 +69,11 @@ const server = http.createServer(app);
 initSocket(server, corsOptions);
 
 connectDB()
+  .then(() => ensureShoppingSchema(pool))
   .then(() => {
     server.listen(PORT, HOST, () => {
       console.log(`POS Server is listening on http://${HOST}:${PORT}`);
+      if (config.nodeEnv === "development") printLocalAccessUrls();
     });
   })
   .catch((error) => {

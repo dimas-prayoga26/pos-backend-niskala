@@ -315,7 +315,42 @@ const deleteOrder = async (req, res, next) => {
   }
 };
 
+// Draft receipts are temporary print jobs; they never create orders or change stock.
+const createDraftThermalPrintUrl = (req, res, next) => {
+  try {
+    const token = createThermalPrintJob({
+      orderId: 0,
+      payload: req.body?.payload,
+      userId: req.user?._id || req.user?.id,
+    });
+    const origin = getRequestOrigin(req);
+    if (!origin) throw createHttpError(500, "Unable to build thermal print URL.");
+    res.status(201).json({
+      success: true,
+      data: {
+        expiresInSeconds: Math.floor(THERMAL_PRINT_TTL_MS / 1000),
+        url: `${origin}/api/order/draft/thermal-print/${token}`,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDraftThermalPrintDocument = (req, res, next) => {
+  const job = getThermalPrintJob({ orderId: 0, token: req.params.token });
+  if (!job) return next(createHttpError(404, "Thermal print URL expired or invalid."));
+  res.set({
+    "Cache-Control": "no-store, private",
+    "Content-Type": "application/json; charset=utf-8",
+    "X-Robots-Tag": "noindex, nofollow",
+  });
+  return res.status(200).json(toBluetoothPrintResponse(job.payload));
+};
+
 module.exports = {
+  createDraftThermalPrintUrl,
+  getDraftThermalPrintDocument,
   addOrder,
   addCateringPayment,
   createThermalPrintUrl,

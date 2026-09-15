@@ -9,7 +9,6 @@ const mapUser = (row) => {
     name: row.name,
     phone: row.phone,
     email: row.email,
-    password: row.password,
     role: row.role,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -21,6 +20,13 @@ const findByEmail = async (email) => {
     email,
   ]);
   return mapUser(rows[0]);
+};
+
+// Password hashes are available only to the authentication path.
+const findByEmailForAuth = async (email) => {
+  const [rows] = await pool.query("SELECT * FROM users WHERE email = ? LIMIT 1", [email]);
+  if (!rows[0]) return null;
+  return { ...mapUser(rows[0]), password: rows[0].password };
 };
 
 const findById = async (id) => {
@@ -49,4 +55,4 @@ const create = async ({ name, phone, email, password, role }) => {
   return findById(result.insertId);
 };
 
-module.exports = { create, findAll, findByEmail, findById, mapUser };
+module.exports = { create, findAll, findByEmail, findByEmailForAuth, findById, mapUser };

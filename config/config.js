@@ -6,8 +6,8 @@ const dbTimeZone = /^[-+]\d{2}:\d{2}$/.test(process.env.DB_TIMEZONE || "")
     : "+07:00";
 
 const config = Object.freeze({
-    port: process.env.PORT || 3000,
-    host: process.env.HOST || "127.0.0.1",
+    port: process.env.PORT || 8080,
+    host: process.env.HOST || "0.0.0.0",
     dbHost: process.env.DB_HOST || "localhost",
     dbPort: Number(process.env.DB_PORT) || 3306,
     dbUser: process.env.DB_USER || "root",

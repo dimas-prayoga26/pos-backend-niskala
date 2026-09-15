@@ -3,6 +3,8 @@ const {
   addCateringPayment,
   addOrder,
   createThermalPrintUrl,
+  createDraftThermalPrintUrl,
+  getDraftThermalPrintDocument,
   deleteOrder,
   getOrders,
   getOrderById,
@@ -16,6 +18,8 @@ const router = express.Router();
 
 router.route("/").post(isVerifiedUser, addOrder);
 router.route("/").get(isVerifiedUser, getOrders);
+router.route("/draft/thermal-print-url").post(isVerifiedUser, createDraftThermalPrintUrl);
+router.route("/draft/thermal-print/:token").get(getDraftThermalPrintDocument);
 router
   .route("/:id/thermal-print-url")
   .post(isVerifiedUser, createThermalPrintUrl);
