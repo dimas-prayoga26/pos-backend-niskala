@@ -16,6 +16,8 @@ const number = (value, min, max, precision, label) => {
   return rounded;
 };
 const unit = value => clean(value, 30, "Satuan").toLowerCase();
+const roundCurrency = value => Math.round((Number(value) || 0) * 100) / 100;
+const roundCost = value => Math.round((Number(value) || 0) * 10000) / 10000;
 const reference = (id, name, idKey, nameKey, label) => {
   if (id != null && id !== "") {
     if (name != null && name !== "") throw createError(400, `${label}: pilih ID atau nama baru.`);
@@ -126,13 +128,25 @@ const createShoppingModel = db => {
           stock.unit = item.unit;
         }
         const stockQty = convertQuantity(item.quantity, item.unit, stock.unit);
+        const previousStock = Math.max(Number(stock.stock || 0), 0);
+        const previousAverageCost = Number(stock.average_cost || 0);
+        const previousValue = Math.max(
+          Number(stock.stock_value || 0),
+          roundCurrency(previousStock * previousAverageCost)
+        );
+        const purchaseValue = roundCurrency(item.quantity * item.unitPrice);
         stock.stock = Math.round((Number(stock.stock) + stockQty) * 100) / 100;
         number(stock.stock, -9999999999.99, 9999999999.99, 2, "Jumlah stok akhir");
-        await connection.query("UPDATE stock_items SET stock = ?, unit = ?, supplier = ? WHERE id = ?", [stock.stock, stock.unit, supplier.name, stock.id]);
+        stock.stock_value = roundCurrency(previousValue + purchaseValue);
+        stock.average_cost = stock.stock > 0 ? roundCost(stock.stock_value / stock.stock) : 0;
+        await connection.query(
+          "UPDATE stock_items SET stock = ?, unit = ?, average_cost = ?, stock_value = ?, supplier = ? WHERE id = ?",
+          [stock.stock, stock.unit, stock.average_cost, stock.stock_value, supplier.name, stock.id]
+        );
         await connection.query(`INSERT INTO stock_purchase_items
-          (purchase_id, stock_item_id, item_name, quantity, unit, unit_price, total, stock_quantity, stock_unit)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [header.insertId, stock.id, stock.name, item.quantity, item.unit, item.unitPrice, Math.round(item.quantity * item.unitPrice * 100) / 100, stockQty, stock.unit]);
+          (purchase_id, stock_item_id, item_name, quantity, unit, unit_price, total, stock_quantity, stock_unit, stock_average_cost, stock_value_after)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [header.insertId, stock.id, stock.name, item.quantity, item.unit, item.unitPrice, purchaseValue, stockQty, stock.unit, stock.average_cost, stock.stock_value]);
       }
       await connection.commit();
       return { id: header.insertId, total, duplicate: false };
@@ -152,13 +166,74 @@ const createShoppingModel = db => {
     page = Math.max(1, Math.floor(Number(page) || 1));
     const keyword = `%${String(search).slice(0,150)}%`;
     const where = `WHERE p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM stock_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?)`;
+    const itemWhere = `WHERE p.suplier_name LIKE ? OR i.item_name LIKE ?`;
     const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM stock_purchases p ${where}`, [keyword, keyword]);
     const [rows] = await db.query(`SELECT p.* FROM stock_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [keyword, keyword, (page-1)*10]);
     if (rows.length) {
       const [items] = await db.query(`SELECT * FROM stock_purchase_items WHERE purchase_id IN (${rows.map(()=>"?").join(",")}) ORDER BY id`, rows.map(row=>row.id));
       rows.forEach(row => { delete row.payload_hash; delete row.request_id; row.items = items.filter(item=>item.purchase_id===row.id); });
     }
-    return { purchases: rows, total: Number(count.total), page };
+    const [itemRows] = await db.query(
+      `SELECT
+         i.*,
+         p.purchase_date,
+         p.suplier_name,
+         p.payment_method,
+         p.note,
+         si.stock,
+         si.unit AS current_unit,
+         si.average_cost,
+         si.stock_value
+       FROM stock_purchase_items i
+       JOIN stock_purchases p ON p.id = i.purchase_id
+       LEFT JOIN stock_items si ON si.id = i.stock_item_id
+       ${itemWhere}
+       ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
+      [keyword, keyword]
+    );
+    const groupedItems = Array.from(
+      itemRows.reduce((groups, row) => {
+        const key = row.stock_item_id ? `stock:${row.stock_item_id}` : `name:${row.item_name.toLowerCase()}`;
+
+        if (!groups.has(key)) {
+          groups.set(key, {
+            stockItemId: row.stock_item_id,
+            itemName: row.item_name,
+            stock: row.stock == null ? null : Number(row.stock),
+            stockUnit: row.current_unit || row.stock_unit,
+            averageCost: Number(row.average_cost || 0),
+            stockValue: Number(row.stock_value || 0),
+            purchaseCount: 0,
+            histories: [],
+          });
+        }
+
+        const group = groups.get(key);
+        group.purchaseCount += 1;
+        group.histories.push({
+          id: row.id,
+          purchaseId: row.purchase_id,
+          purchaseDate: row.purchase_date,
+          supplierName: row.suplier_name,
+          paymentMethod: row.payment_method,
+          note: row.note || "",
+          quantity: Number(row.quantity),
+          unit: row.unit,
+          unitPrice: Number(row.unit_price),
+          total: Number(row.total),
+          stockQuantity: Number(row.stock_quantity),
+          stockUnit: row.stock_unit,
+          stockAverageCost: Number(row.stock_average_cost || 0),
+          stockValueAfter: Number(row.stock_value_after || 0),
+        });
+
+        return groups;
+      }, new Map()).values()
+    );
+    const groupTotal = groupedItems.length;
+    const itemGroups = groupedItems.slice((page - 1) * 10, page * 10);
+
+    return { purchases: rows, total: Number(count.total), itemGroups, groupTotal, page };
   };
   return { suppliers, saveSupplier, save, list };
 };

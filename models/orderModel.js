@@ -9,6 +9,36 @@ const parseNominal = (value) => {
 
   return Number(value) || 0;
 };
+const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
+const cleanUnit = (value) => String(value || "").trim().toLowerCase();
+const unitConversions = {
+  kg: ["mass", 1000],
+  gr: ["mass", 1],
+  g: ["mass", 1],
+  gram: ["mass", 1],
+  l: ["volume", 1000],
+  liter: ["volume", 1000],
+  litre: ["volume", 1000],
+  ml: ["volume", 1],
+  pcs: ["pieces", 1],
+  pc: ["pieces", 1],
+  buah: ["pieces", 1],
+};
+const convertQuantity = (qty, from, to) => {
+  const fromUnit = cleanUnit(from);
+  const toUnit = cleanUnit(to);
+
+  if (!fromUnit || !toUnit || fromUnit === toUnit) return Number(qty) || 0;
+  if (
+    !unitConversions[fromUnit] ||
+    !unitConversions[toUnit] ||
+    unitConversions[fromUnit][0] !== unitConversions[toUnit][0]
+  ) {
+    return Number(qty) || 0;
+  }
+
+  return ((Number(qty) || 0) * unitConversions[fromUnit][1]) / unitConversions[toUnit][1];
+};
 
 const mapOrder = (row, items = []) => {
   if (!row) return null;
@@ -119,6 +149,39 @@ const getSourceMenuItemId = (item) => {
 const findMenuItemSnapshot = async (connection, menuItemId, sizeName = "") => {
   if (!menuItemId) return { menuItemId: null, hppCost: 0 };
 
+  const [ingredientRows] = await connection.query(
+    `SELECT
+       mii.quantity,
+       mii.unit AS ingredient_unit,
+       mii.size_name,
+       si.unit AS stock_unit,
+       si.average_cost
+     FROM menu_item_ingredients mii
+     JOIN stock_items si ON si.id = mii.stock_item_id
+     WHERE mii.menu_item_id = ?
+       AND mii.stock_item_id IS NOT NULL`,
+    [menuItemId]
+  );
+  const normalizedSizeName = String(sizeName || "").trim().toLowerCase();
+  const dynamicHpp = ingredientRows.reduce((total, ingredient) => {
+    const ingredientSizeName = String(ingredient.size_name || "").trim().toLowerCase();
+
+    if (
+      ingredientSizeName &&
+      (!normalizedSizeName || ingredientSizeName !== normalizedSizeName)
+    ) {
+      return total;
+    }
+
+    const stockQuantity = convertQuantity(
+      Number(ingredient.quantity) || 0,
+      ingredient.ingredient_unit,
+      ingredient.stock_unit
+    );
+
+    return total + stockQuantity * Number(ingredient.average_cost || 0);
+  }, 0);
+
   const [rows] = await connection.query(
     `SELECT mi.id,
             COALESCE(
@@ -149,7 +212,7 @@ const findMenuItemSnapshot = async (connection, menuItemId, sizeName = "") => {
 
   return {
     menuItemId: rows[0].id,
-    hppCost: Number(rows[0].hpp_cost || 0),
+    hppCost: dynamicHpp > 0 ? roundCurrency(dynamicHpp) : Number(rows[0].hpp_cost || 0),
   };
 };
 
@@ -283,9 +346,11 @@ const buildStockDeductions = async (connection, items = []) => {
        mii.stock_item_id,
        mii.size_name,
        mii.quantity,
+       mii.unit AS ingredient_unit,
        si.name AS stock_name,
        si.stock,
-       si.unit,
+       si.unit AS stock_unit,
+       si.average_cost,
        si.is_unlimited
      FROM menu_item_ingredients mii
      JOIN stock_items si ON si.id = mii.stock_item_id
@@ -313,8 +378,11 @@ const buildStockDeductions = async (connection, items = []) => {
 
     for (const ingredient of matchingIngredients) {
       const stockItemId = Number(ingredient.stock_item_id);
-      const deduction =
-        (Number(ingredient.quantity) || 0) * orderItem.quantity;
+      const deduction = convertQuantity(
+        (Number(ingredient.quantity) || 0) * orderItem.quantity,
+        ingredient.ingredient_unit,
+        ingredient.stock_unit
+      );
 
       if (!stockItemId || deduction <= 0) continue;
 
@@ -322,12 +390,17 @@ const buildStockDeductions = async (connection, items = []) => {
         stockItemId,
         name: ingredient.stock_name,
         stock: Number(ingredient.stock || 0),
-        unit: ingredient.unit || "",
+        unit: ingredient.stock_unit || "",
+        averageCost: Number(ingredient.average_cost || 0),
         isUnlimited: Boolean(ingredient.is_unlimited),
         required: 0,
+        requiredValue: 0,
       };
 
       currentDeduction.required += deduction;
+      currentDeduction.requiredValue += roundCurrency(
+        deduction * currentDeduction.averageCost
+      );
       deductions.set(stockItemId, currentDeduction);
     }
   }
@@ -357,9 +430,13 @@ const applyStockDeductions = async (connection, deductions) => {
        SET stock = CASE
          WHEN is_unlimited = TRUE THEN stock
          ELSE stock - ?
+       END,
+       stock_value = CASE
+         WHEN is_unlimited = TRUE THEN stock_value
+         ELSE GREATEST(stock_value - ?, 0)
        END
        WHERE id = ?`,
-      [deduction.required, deduction.stockItemId]
+      [deduction.required, deduction.requiredValue, deduction.stockItemId]
     );
   }
 
@@ -392,9 +469,13 @@ const restoreIngredientStock = async (connection, items = []) => {
        SET stock = CASE
          WHEN is_unlimited = TRUE THEN stock
          ELSE stock + ?
+       END,
+       stock_value = CASE
+         WHEN is_unlimited = TRUE THEN stock_value
+         ELSE stock_value + ?
        END
        WHERE id = ?`,
-      [deduction.required, deduction.stockItemId]
+      [deduction.required, deduction.requiredValue, deduction.stockItemId]
     );
   }
 

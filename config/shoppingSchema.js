@@ -32,8 +32,32 @@ const ensureShoppingSchema = async (db) => {
     total DECIMAL(14,2) NOT NULL,
     stock_quantity DECIMAL(12,2) NOT NULL,
     stock_unit VARCHAR(30) NOT NULL,
+    stock_average_cost DECIMAL(14,4) NOT NULL DEFAULT 0,
+    stock_value_after DECIMAL(14,2) NOT NULL DEFAULT 0,
     FOREIGN KEY (purchase_id) REFERENCES stock_purchases(id) ON DELETE CASCADE,
     FOREIGN KEY (stock_item_id) REFERENCES stock_items(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
+  await db.query("ALTER TABLE stock_items ADD COLUMN average_cost DECIMAL(14,4) NOT NULL DEFAULT 0 AFTER minimum_stock").catch(() => {});
+  await db.query("ALTER TABLE stock_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER average_cost").catch(() => {});
+  await db.query("ALTER TABLE stock_purchase_items ADD COLUMN stock_average_cost DECIMAL(14,4) NOT NULL DEFAULT 0 AFTER stock_unit").catch(() => {});
+  await db.query("ALTER TABLE stock_purchase_items ADD COLUMN stock_value_after DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER stock_average_cost").catch(() => {});
+  await db.query(`
+    UPDATE stock_items si
+    JOIN (
+      SELECT stock_item_id, SUM(total) / NULLIF(SUM(stock_quantity), 0) AS average_cost
+      FROM stock_purchase_items
+      WHERE stock_item_id IS NOT NULL
+      GROUP BY stock_item_id
+    ) purchase_costs ON purchase_costs.stock_item_id = si.id
+    SET
+      si.average_cost = CASE
+        WHEN si.average_cost = 0 THEN ROUND(COALESCE(purchase_costs.average_cost, 0), 4)
+        ELSE si.average_cost
+      END,
+      si.stock_value = CASE
+        WHEN si.stock_value = 0 THEN ROUND(GREATEST(si.stock, 0) * COALESCE(NULLIF(si.average_cost, 0), purchase_costs.average_cost, 0), 2)
+        ELSE si.stock_value
+      END
+  `).catch(() => {});
 };
 module.exports = { ensureShoppingSchema };

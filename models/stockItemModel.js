@@ -23,6 +23,8 @@ const mapStockItem = (row) => {
     unit: row.unit,
     stock: Number(row.stock),
     minimumStock: Number(row.minimum_stock),
+    averageCost: Number(row.average_cost || 0),
+    stockValue: Number(row.stock_value || 0),
     supplier: row.supplier || "",
     isUnlimited: Boolean(row.is_unlimited),
     status: getStockStatus(row),
@@ -63,8 +65,8 @@ const create = async ({
 }) => {
   const [result] = await pool.query(
     `INSERT INTO stock_items
-      (name, category, unit, stock, minimum_stock, supplier, is_unlimited)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      (name, category, unit, stock, minimum_stock, average_cost, stock_value, supplier, is_unlimited)
+     VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)`,
     [name, category, unit, stock, minimumStock, supplier || null, isUnlimited ? 1 : 0]
   );
 
@@ -77,9 +79,16 @@ const update = async (
 ) => {
   const [result] = await pool.query(
     `UPDATE stock_items
-     SET name = ?, category = ?, unit = ?, stock = ?, minimum_stock = ?, supplier = ?, is_unlimited = ?
+     SET name = ?,
+         category = ?,
+         unit = ?,
+         stock = ?,
+         minimum_stock = ?,
+         stock_value = ROUND(? * average_cost, 2),
+         supplier = ?,
+         is_unlimited = ?
      WHERE id = ?`,
-    [name, category, unit, stock, minimumStock, supplier || null, isUnlimited ? 1 : 0, id]
+    [name, category, unit, stock, minimumStock, stock, supplier || null, isUnlimited ? 1 : 0, id]
   );
 
   if (!result.affectedRows) return null;
@@ -89,8 +98,8 @@ const update = async (
 
 const updateStock = async (id, stock) => {
   const [result] = await pool.query(
-    "UPDATE stock_items SET stock = ? WHERE id = ?",
-    [stock, id]
+    "UPDATE stock_items SET stock = ?, stock_value = ROUND(? * average_cost, 2) WHERE id = ?",
+    [stock, stock, id]
   );
 
   if (!result.affectedRows) return null;

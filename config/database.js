@@ -901,6 +901,8 @@ const connectDB = async () => {
       unit VARCHAR(30) NOT NULL,
       stock DECIMAL(12,2) NOT NULL DEFAULT 0,
       minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+      average_cost DECIMAL(14,4) NOT NULL DEFAULT 0,
+      stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
       supplier VARCHAR(150),
       is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -911,6 +913,8 @@ const connectDB = async () => {
     )
   `);
   await runSafeMigration("ALTER TABLE stock_items ADD COLUMN is_unlimited BOOLEAN NOT NULL DEFAULT FALSE AFTER supplier");
+  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN average_cost DECIMAL(14,4) NOT NULL DEFAULT 0 AFTER minimum_stock");
+  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER average_cost");
 
   await pool.query(
     `INSERT INTO stock_items
