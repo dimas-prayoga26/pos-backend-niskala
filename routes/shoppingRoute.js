@@ -20,11 +20,23 @@ router.put("/suppliers/:id", admin, handler(async (req,res) => {
 }));
 router.get("/purchases", handler(async (req,res) => res.json({success:true,data:await shopping.list(req.query)})));
 router.post("/purchases", admin, handler(async (req,res) => {
-  const data = await shopping.save(req.body, req.user.id || req.user._id);
+  const data = await shopping.save(req.body, req.user);
   if (!data.duplicate) {
     emitRealtimeEvent("stock:changed", {action:"purchase-received"});
     emitRealtimeEvent("shopping:changed", {action:"purchase-created"});
   }
   res.status(data.duplicate ? 200 : 201).json({success:true,data});
+}));
+router.put("/purchase-items/:id", admin, handler(async (req,res) => {
+  const data = await shopping.updateItem(req.params.id, req.body, req.user);
+  emitRealtimeEvent("stock:changed", {action:"purchase-item-updated"});
+  emitRealtimeEvent("shopping:changed", {action:"purchase-item-updated"});
+  res.json({success:true,data});
+}));
+router.delete("/purchase-items/:id", admin, handler(async (req,res) => {
+  const data = await shopping.deleteItem(req.params.id, req.user);
+  emitRealtimeEvent("stock:changed", {action:"purchase-item-deleted"});
+  emitRealtimeEvent("shopping:changed", {action:"purchase-item-deleted"});
+  res.json({success:true,data});
 }));
 module.exports = router;

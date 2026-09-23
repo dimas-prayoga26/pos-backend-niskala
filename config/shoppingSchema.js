@@ -37,6 +37,25 @@ const ensureShoppingSchema = async (db) => {
     FOREIGN KEY (purchase_id) REFERENCES stock_purchases(id) ON DELETE CASCADE,
     FOREIGN KEY (stock_item_id) REFERENCES stock_items(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
+  await db.query(`CREATE TABLE IF NOT EXISTS stock_purchase_item_logs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    purchase_item_id INT UNSIGNED NULL,
+    purchase_id INT UNSIGNED NULL,
+    stock_item_id INT UNSIGNED NULL,
+    item_name VARCHAR(150) NOT NULL,
+    action VARCHAR(20) NOT NULL,
+    old_data JSON NULL,
+    new_data JSON NULL,
+    user_id INT UNSIGNED NULL,
+    user_name VARCHAR(150) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_stock_purchase_item_logs_item (stock_item_id, created_at),
+    INDEX idx_stock_purchase_item_logs_purchase_item (purchase_item_id, created_at),
+    FOREIGN KEY (purchase_item_id) REFERENCES stock_purchase_items(id) ON DELETE SET NULL,
+    FOREIGN KEY (purchase_id) REFERENCES stock_purchases(id) ON DELETE SET NULL,
+    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  ) ENGINE=InnoDB`);
   await db.query("ALTER TABLE stock_items ADD COLUMN average_cost DECIMAL(14,4) NOT NULL DEFAULT 0 AFTER minimum_stock").catch(() => {});
   await db.query("ALTER TABLE stock_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER average_cost").catch(() => {});
   await db.query("ALTER TABLE stock_purchase_items ADD COLUMN stock_average_cost DECIMAL(14,4) NOT NULL DEFAULT 0 AFTER stock_unit").catch(() => {});

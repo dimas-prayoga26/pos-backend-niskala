@@ -61,6 +61,83 @@ const normalizePurchase = body => {
     })),
   };
 };
+const normalizeItemPatch = body => ({
+  quantity: number(body?.quantity, 0.001, 999999999, 3, "Qty"),
+  unit: unit(body?.unit),
+  unitPrice: number(body?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
+});
+const actor = user => {
+  if (typeof user === "number" || typeof user === "string") {
+    return { userId: user || null, userName: "Admin" };
+  }
+
+  return {
+    userId: user?.id || user?._id || null,
+    userName: [user?.name, user?.email].filter(Boolean).join(" - ").slice(0, 150) || "Admin",
+  };
+};
+const snapshotItem = row => ({
+  id: row.id,
+  purchaseId: row.purchase_id,
+  stockItemId: row.stock_item_id,
+  itemName: row.item_name,
+  quantity: Number(row.quantity),
+  unit: row.unit,
+  unitPrice: Number(row.unit_price),
+  total: Number(row.total),
+  stockQuantity: Number(row.stock_quantity),
+  stockUnit: row.stock_unit,
+  stockAverageCost: Number(row.stock_average_cost || 0),
+  stockValueAfter: Number(row.stock_value_after || 0),
+});
+const writeItemLog = async (connection, { item, action, oldData, newData, user }) => {
+  const by = actor(user);
+
+  await connection.query(
+    `INSERT INTO stock_purchase_item_logs
+      (purchase_item_id, purchase_id, stock_item_id, item_name, action, old_data, new_data, user_id, user_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      item.id,
+      item.purchase_id,
+      item.stock_item_id,
+      item.item_name,
+      action,
+      oldData == null ? null : JSON.stringify(oldData),
+      newData == null ? null : JSON.stringify(newData),
+      by.userId,
+      by.userName,
+    ]
+  );
+};
+const updatePurchaseTotal = async (connection, purchaseId) => {
+  const [[totalRow]] = await connection.query(
+    "SELECT COALESCE(SUM(total), 0) AS total FROM stock_purchase_items WHERE purchase_id = ?",
+    [purchaseId]
+  );
+  await connection.query("UPDATE stock_purchases SET total = ? WHERE id = ?", [
+    roundCurrency(totalRow.total),
+    purchaseId,
+  ]);
+};
+const applyStockDelta = async (connection, stockItemId, deltaQty, deltaValue) => {
+  const [[stock]] = await connection.query(
+    "SELECT * FROM stock_items WHERE id = ? FOR UPDATE",
+    [stockItemId]
+  );
+  if (!stock) throw createError(404, "Barang stok tidak ditemukan.");
+
+  const nextStock = Math.round((Number(stock.stock || 0) + deltaQty) * 100) / 100;
+  const nextValue = roundCurrency(Number(stock.stock_value || 0) + deltaValue);
+  const nextAverageCost = nextStock > 0 ? roundCost(nextValue / nextStock) : 0;
+
+  await connection.query(
+    "UPDATE stock_items SET stock = ?, stock_value = ?, average_cost = ? WHERE id = ?",
+    [nextStock, nextValue, nextAverageCost, stockItemId]
+  );
+
+  return { stock: nextStock, stockValue: nextValue, averageCost: nextAverageCost };
+};
 
 const createShoppingModel = db => {
   const suppliers = async () => (await db.query("SELECT id, name FROM suplier ORDER BY name"))[0];
@@ -95,7 +172,8 @@ const createShoppingModel = db => {
     if (!row.is_active) throw createError(409, "Barang sudah ada tetapi tidak aktif. Aktifkan melalui pengelolaan stok.");
     return { id: row.id, name: row.name, unit: row.unit, stock: Number(row.stock) };
   };
-  const save = async (body, userId) => {
+  const save = async (body, user) => {
+    const userId = typeof user === "object" && user ? user.id || user._id : user;
     const data = normalizePurchase(body);
     const hash = crypto.createHash("sha256").update(JSON.stringify({ ...data, userId })).digest("hex");
     const connection = await db.getConnection();
@@ -143,10 +221,21 @@ const createShoppingModel = db => {
           "UPDATE stock_items SET stock = ?, unit = ?, average_cost = ?, stock_value = ?, supplier = ? WHERE id = ?",
           [stock.stock, stock.unit, stock.average_cost, stock.stock_value, supplier.name, stock.id]
         );
-        await connection.query(`INSERT INTO stock_purchase_items
+        const [insertedItem] = await connection.query(`INSERT INTO stock_purchase_items
           (purchase_id, stock_item_id, item_name, quantity, unit, unit_price, total, stock_quantity, stock_unit, stock_average_cost, stock_value_after)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [header.insertId, stock.id, stock.name, item.quantity, item.unit, item.unitPrice, purchaseValue, stockQty, stock.unit, stock.average_cost, stock.stock_value]);
+        const [[createdItem]] = await connection.query(
+          "SELECT * FROM stock_purchase_items WHERE id = ?",
+          [insertedItem.insertId]
+        );
+        await writeItemLog(connection, {
+          item: createdItem,
+          action: "create",
+          oldData: null,
+          newData: snapshotItem(createdItem),
+          user,
+        });
       }
       await connection.commit();
       return { id: header.insertId, total, duplicate: false };
@@ -161,6 +250,104 @@ const createShoppingModel = db => {
       }
       throw error;
     } finally { connection.release(); }
+  };
+  const updateItem = async (id, body, user) => {
+    id = number(id, 1, 4294967295, 0, "ID item belanja");
+    const data = normalizeItemPatch(body);
+    const connection = await db.getConnection();
+
+    try {
+      await connection.beginTransaction();
+      const [[item]] = await connection.query(
+        "SELECT * FROM stock_purchase_items WHERE id = ? FOR UPDATE",
+        [id]
+      );
+      if (!item) throw createError(404, "Item belanja tidak ditemukan.");
+      if (!item.stock_item_id) throw createError(400, "Item belanja ini tidak terhubung ke stok.");
+
+      const [[stock]] = await connection.query(
+        "SELECT * FROM stock_items WHERE id = ? FOR UPDATE",
+        [item.stock_item_id]
+      );
+      if (!stock) throw createError(404, "Barang stok tidak ditemukan.");
+
+      const oldData = snapshotItem(item);
+      const stockQty = convertQuantity(data.quantity, data.unit, stock.unit || item.stock_unit);
+      const total = roundCurrency(data.quantity * data.unitPrice);
+      const stockState = await applyStockDelta(
+        connection,
+        item.stock_item_id,
+        stockQty - Number(item.stock_quantity || 0),
+        total - Number(item.total || 0)
+      );
+
+      await connection.query(
+        `UPDATE stock_purchase_items
+         SET quantity = ?, unit = ?, unit_price = ?, total = ?,
+             stock_quantity = ?, stock_unit = ?, stock_average_cost = ?, stock_value_after = ?
+         WHERE id = ?`,
+        [
+          data.quantity,
+          data.unit,
+          data.unitPrice,
+          total,
+          stockQty,
+          stock.unit || item.stock_unit,
+          stockState.averageCost,
+          stockState.stockValue,
+          id,
+        ]
+      );
+      await updatePurchaseTotal(connection, item.purchase_id);
+
+      const [[updated]] = await connection.query(
+        "SELECT * FROM stock_purchase_items WHERE id = ?",
+        [id]
+      );
+      const newData = snapshotItem(updated);
+      await writeItemLog(connection, { item, action: "edit", oldData, newData, user });
+
+      await connection.commit();
+      return newData;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  };
+  const deleteItem = async (id, user) => {
+    id = number(id, 1, 4294967295, 0, "ID item belanja");
+    const connection = await db.getConnection();
+
+    try {
+      await connection.beginTransaction();
+      const [[item]] = await connection.query(
+        "SELECT * FROM stock_purchase_items WHERE id = ? FOR UPDATE",
+        [id]
+      );
+      if (!item) throw createError(404, "Item belanja tidak ditemukan.");
+      if (!item.stock_item_id) throw createError(400, "Item belanja ini tidak terhubung ke stok.");
+
+      const oldData = snapshotItem(item);
+      await applyStockDelta(
+        connection,
+        item.stock_item_id,
+        -Number(item.stock_quantity || 0),
+        -Number(item.total || 0)
+      );
+      await writeItemLog(connection, { item, action: "delete", oldData, newData: null, user });
+      await connection.query("DELETE FROM stock_purchase_items WHERE id = ?", [id]);
+      await updatePurchaseTotal(connection, item.purchase_id);
+
+      await connection.commit();
+      return oldData;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   };
   const list = async ({ page = 1, search = "" } = {}) => {
     page = Math.max(1, Math.floor(Number(page) || 1));
@@ -213,6 +400,7 @@ const createShoppingModel = db => {
         group.histories.push({
           id: row.id,
           purchaseId: row.purchase_id,
+          itemName: row.item_name,
           purchaseDate: row.purchase_date,
           supplierName: row.suplier_name,
           paymentMethod: row.payment_method,
@@ -230,11 +418,54 @@ const createShoppingModel = db => {
         return groups;
       }, new Map()).values()
     );
+    const stockIds = groupedItems
+      .map(group => group.stockItemId)
+      .filter(Boolean);
+    const logsByStockId = new Map();
+
+    if (stockIds.length) {
+      const [logs] = await db.query(
+        `SELECT *
+         FROM stock_purchase_item_logs
+         WHERE stock_item_id IN (${stockIds.map(() => "?").join(",")})
+         ORDER BY created_at DESC, id DESC
+         LIMIT 200`,
+        stockIds
+      );
+
+      logs.forEach(log => {
+        const list = logsByStockId.get(log.stock_item_id) || [];
+        const parseJson = value => {
+          if (!value) return null;
+          if (typeof value === "object") return value;
+          try { return JSON.parse(value); } catch { return null; }
+        };
+
+        list.push({
+          id: log.id,
+          purchaseItemId: log.purchase_item_id,
+          purchaseId: log.purchase_id,
+          stockItemId: log.stock_item_id,
+          itemName: log.item_name,
+          action: log.action,
+          oldData: parseJson(log.old_data),
+          newData: parseJson(log.new_data),
+          userId: log.user_id,
+          userName: log.user_name || "Admin",
+          createdAt: log.created_at,
+        });
+        logsByStockId.set(log.stock_item_id, list);
+      });
+    }
+
+    groupedItems.forEach(group => {
+      group.logs = logsByStockId.get(group.stockItemId) || [];
+    });
     const groupTotal = groupedItems.length;
     const itemGroups = groupedItems.slice((page - 1) * 10, page * 10);
 
     return { purchases: rows, total: Number(count.total), itemGroups, groupTotal, page };
   };
-  return { suppliers, saveSupplier, save, list };
+  return { suppliers, saveSupplier, save, updateItem, deleteItem, list };
 };
 module.exports = { ...createShoppingModel(pool), createShoppingModel, convertQuantity, normalizePurchase };
