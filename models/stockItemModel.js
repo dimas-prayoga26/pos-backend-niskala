@@ -107,6 +107,21 @@ const updateStock = async (id, stock) => {
   return findById(id);
 };
 
+const updateCogs = async (id, { averageCost = 0, supplier }) => {
+  const [result] = await pool.query(
+    `UPDATE stock_items
+     SET average_cost = ?,
+         stock_value = ROUND(stock * ?, 2),
+         supplier = COALESCE(NULLIF(?, ''), supplier)
+     WHERE id = ?`,
+    [averageCost, averageCost, supplier || "", id]
+  );
+
+  if (!result.affectedRows) return null;
+
+  return findById(id);
+};
+
 const remove = async (id) => {
   const [result] = await pool.query("DELETE FROM stock_items WHERE id = ?", [
     id,
@@ -121,5 +136,6 @@ module.exports = {
   findById,
   remove,
   update,
+  updateCogs,
   updateStock,
 };

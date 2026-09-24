@@ -134,6 +134,39 @@ const updateStockQuantity = async (req, res, next) => {
   }
 };
 
+const updateStockCogs = async (req, res, next) => {
+  try {
+    const permissionError = requireAdmin(req, next);
+    if (permissionError) return next(permissionError);
+
+    const { id } = req.params;
+    const averageCost = Math.max(Number(req.body.averageCost) || 0, 0);
+    const supplier = String(req.body.supplier || "").trim();
+
+    if (!Number(id)) {
+      return next(createHttpError(404, "Invalid id!"));
+    }
+
+    const stockItem = await StockItem.updateCogs(id, { averageCost, supplier });
+
+    if (!stockItem) {
+      return next(createHttpError(404, "Stock item not found!"));
+    }
+
+    emitRealtimeEvent("stock:changed", {
+      action: "stock-cogs-updated",
+      stockItemId: stockItem.id || stockItem._id,
+    });
+    res.status(200).json({
+      success: true,
+      message: "COGS stok berhasil diubah.",
+      data: stockItem,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteStockItem = async (req, res, next) => {
   try {
     const permissionError = requireAdmin(req, next);
@@ -165,6 +198,7 @@ module.exports = {
   addStockItem,
   deleteStockItem,
   getStockItems,
+  updateStockCogs,
   updateStockItem,
   updateStockQuantity,
 };
