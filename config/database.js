@@ -40,10 +40,10 @@ const runSafeMigration = async (query) => {
   }
 };
 
-const monthlyOrderCodePattern = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$";
+const monthlyOrderCodePattern = "^[0-9]{4}-[0-9]{4}$";
 const padOrderCodePart = (value, length) => String(value).padStart(length, "0");
 const formatMonthlyOrderCode = ({ sequence, month, year }) =>
-  `${padOrderCodePart(sequence, 4)}-${padOrderCodePart(month, 2)}-${padOrderCodePart(year, 2)}`;
+  `${padOrderCodePart(year, 2)}${padOrderCodePart(month, 2)}-${padOrderCodePart(sequence, 4)}`;
 
 const backfillMonthlyOrderCodes = async () => {
   const [summaryRows] = await pool.query(`
@@ -102,11 +102,11 @@ const backfillMonthlyOrderCodes = async () => {
 
       const [sequenceRows] = await connection.query(`
         SELECT
-          SUBSTRING(order_code, 6) AS period_key,
-          MAX(CAST(SUBSTRING(order_code, 1, 4) AS UNSIGNED)) AS max_sequence
+          SUBSTRING(order_code, 1, 4) AS period_key,
+          MAX(CAST(SUBSTRING(order_code, 6, 4) AS UNSIGNED)) AS max_sequence
         FROM orders
         WHERE order_code REGEXP '${monthlyOrderCodePattern}'
-        GROUP BY SUBSTRING(order_code, 6)
+        GROUP BY SUBSTRING(order_code, 1, 4)
       `);
       const counters = new Map(
         sequenceRows.map((row) => [

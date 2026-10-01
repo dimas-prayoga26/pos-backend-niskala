@@ -12,7 +12,7 @@ const parseNominal = (value) => {
 const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
 const padOrderCodePart = (value, length) => String(value).padStart(length, "0");
 const formatMonthlyOrderCode = ({ sequence, month, year }) =>
-  `${padOrderCodePart(sequence, 4)}-${padOrderCodePart(month, 2)}-${padOrderCodePart(year, 2)}`;
+  `${padOrderCodePart(year, 2)}${padOrderCodePart(month, 2)}-${padOrderCodePart(sequence, 4)}`;
 const normalizeOrderDateInput = (value) => {
   const date = String(value || "").trim();
 
@@ -408,14 +408,14 @@ const createMonthlyOrderCode = async (connection, orderId) => {
     throw new Error("Order tidak ditemukan saat membuat nomor order.");
   }
 
-  const codeSuffix = `${period.order_month}-${period.order_year}`;
+  const codePrefix = `${period.order_year}${period.order_month}`;
   const [sequenceRows] = await connection.query(
-    `SELECT MAX(CAST(SUBSTRING(order_code, 1, 4) AS UNSIGNED)) AS max_sequence
+    `SELECT MAX(CAST(SUBSTRING(order_code, 6, 4) AS UNSIGNED)) AS max_sequence
      FROM orders
-     WHERE order_code REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
-       AND SUBSTRING(order_code, 6) = ?
+     WHERE order_code REGEXP '^[0-9]{4}-[0-9]{4}$'
+       AND SUBSTRING(order_code, 1, 4) = ?
        AND id <> ?`,
-    [codeSuffix, orderId]
+    [codePrefix, orderId]
   );
   const nextSequence = Number(sequenceRows[0]?.max_sequence || 0) + 1;
 
