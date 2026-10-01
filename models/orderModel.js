@@ -10,6 +10,40 @@ const parseNominal = (value) => {
   return Number(value) || 0;
 };
 const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
+const padOrderCodePart = (value, length) => String(value).padStart(length, "0");
+const formatMonthlyOrderCode = ({ sequence, month, year }) =>
+  `${padOrderCodePart(sequence, 4)}-${padOrderCodePart(month, 2)}-${padOrderCodePart(year, 2)}`;
+const normalizeOrderDateInput = (value) => {
+  const date = String(value || "").trim();
+
+  if (!date) return null;
+
+  const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!match) {
+    const error = new Error("Tanggal order tidak valid.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const [, year, month, day] = match;
+  const parsedDate = new Date(
+    Date.UTC(Number(year), Number(month) - 1, Number(day))
+  );
+  const isValidDate =
+    !Number.isNaN(parsedDate.getTime()) &&
+    parsedDate.getUTCFullYear() === Number(year) &&
+    parsedDate.getUTCMonth() + 1 === Number(month) &&
+    parsedDate.getUTCDate() === Number(day);
+
+  if (!isValidDate) {
+    const error = new Error("Tanggal order tidak valid.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return date;
+};
 const cleanUnit = (value) => String(value || "").trim().toLowerCase();
 const unitConversions = {
   kg: ["mass", 1000],
@@ -295,12 +329,18 @@ const createRecapLockedError = (
   return error;
 };
 
-const assertNoDailyRecapForDate = async (connection, dateExpression, message) => {
+const assertNoDailyRecapForDate = async (
+  connection,
+  dateExpression,
+  params = [],
+  message
+) => {
   const [rows] = await connection.query(
     `SELECT dr.id
      FROM daily_recaps dr
      WHERE dr.recap_date = DATE(${dateExpression})
-     LIMIT 1`
+     LIMIT 1`,
+    params
   );
 
   if (rows.length) {
@@ -321,6 +361,69 @@ const assertOrderIsNotRecapped = async (connection, orderId) => {
   if (rows.length) {
     throw createRecapLockedError();
   }
+};
+
+const acquireMonthlyOrderCodeLock = async (connection, orderDate = null) => {
+  const [periodRows] = await connection.query(
+    "SELECT DATE_FORMAT(COALESCE(?, CURRENT_TIMESTAMP), '%Y-%m') AS period_key",
+    [orderDate]
+  );
+  const lockName = `orders:monthly-code:${periodRows[0]?.period_key || "current"}`;
+  const [lockRows] = await connection.query("SELECT GET_LOCK(?, 10) AS locked", [
+    lockName,
+  ]);
+
+  if (Number(lockRows[0]?.locked) !== 1) {
+    const error = new Error("Gagal membuat nomor order. Silakan coba lagi.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  return lockName;
+};
+
+const releaseMonthlyOrderCodeLock = async (connection, lockName) => {
+  if (!lockName) return;
+
+  try {
+    await connection.query("SELECT RELEASE_LOCK(?)", [lockName]);
+  } catch (error) {
+    // The connection closing also releases MySQL named locks.
+  }
+};
+
+const createMonthlyOrderCode = async (connection, orderId) => {
+  const [periodRows] = await connection.query(
+    `SELECT
+       DATE_FORMAT(order_date, '%m') AS order_month,
+       DATE_FORMAT(order_date, '%y') AS order_year
+     FROM orders
+     WHERE id = ?
+     LIMIT 1`,
+    [orderId]
+  );
+  const period = periodRows[0];
+
+  if (!period) {
+    throw new Error("Order tidak ditemukan saat membuat nomor order.");
+  }
+
+  const codeSuffix = `${period.order_month}-${period.order_year}`;
+  const [sequenceRows] = await connection.query(
+    `SELECT MAX(CAST(SUBSTRING(order_code, 1, 4) AS UNSIGNED)) AS max_sequence
+     FROM orders
+     WHERE order_code REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+       AND SUBSTRING(order_code, 6) = ?
+       AND id <> ?`,
+    [codeSuffix, orderId]
+  );
+  const nextSequence = Number(sequenceRows[0]?.max_sequence || 0) + 1;
+
+  return formatMonthlyOrderCode({
+    sequence: nextSequence,
+    month: period.order_month,
+    year: period.order_year,
+  });
 };
 
 const normalizeOrderItemsForStock = (items = []) =>
@@ -549,6 +652,7 @@ const findById = async (id) => {
 
 const create = async (orderData) => {
   const connection = await pool.getConnection();
+  let orderCodeLockName = null;
 
   try {
     await connection.beginTransaction();
@@ -559,6 +663,7 @@ const create = async (orderData) => {
       orderPlatformId,
       orderPlatform,
       platformTax,
+      orderDate,
       orderStatus,
       bills,
       items = [],
@@ -568,11 +673,23 @@ const create = async (orderData) => {
       allowNegativeStock = false,
       note = "",
     } = orderData;
+    const effectiveOrderDate =
+      orderType === "Online" ? normalizeOrderDateInput(orderDate) : null;
+    const orderDateExpression = effectiveOrderDate
+      ? "TIMESTAMP(?, CURRENT_TIME())"
+      : "CURRENT_TIMESTAMP";
+    const orderDateParams = effectiveOrderDate ? [effectiveOrderDate] : [];
+
+    orderCodeLockName = await acquireMonthlyOrderCodeLock(
+      connection,
+      effectiveOrderDate
+    );
 
     await assertNoDailyRecapForDate(
       connection,
-      "CURRENT_DATE()",
-      "Rekap harian hari ini sudah dibuat. Pesanan baru tidak bisa ditambahkan ke tanggal yang sudah closing."
+      effectiveOrderDate ? "?" : "CURRENT_DATE()",
+      orderDateParams,
+      "Rekap harian tanggal ini sudah dibuat. Pesanan baru tidak bisa ditambahkan ke tanggal yang sudah closing."
     );
 
     await deductIngredientStock(connection, items, { allowNegativeStock });
@@ -583,8 +700,9 @@ const create = async (orderData) => {
       const [guestRows] = await connection.query(
         `SELECT COUNT(*) AS total
          FROM orders
-         WHERE DATE(order_date) = CURDATE()
-           AND (customer_name = 'Guest' OR customer_name REGEXP '^Guest-[0-9]+$')`
+         WHERE DATE(order_date) = DATE(${effectiveOrderDate ? "?" : "CURRENT_DATE()"})
+           AND (customer_name = 'Guest' OR customer_name REGEXP '^Guest-[0-9]+$')`,
+        orderDateParams
       );
 
       customerName = `Guest-${Number(guestRows[0]?.total || 0) + 1}`;
@@ -601,15 +719,16 @@ const create = async (orderData) => {
 
     const [result] = await connection.query(
       `INSERT INTO orders
-        (customer_name, guests, order_type, order_platform, order_status, total, online_order_charge, tax, total_with_tax,
+        (customer_name, guests, order_type, order_platform, order_status, order_date, total, online_order_charge, tax, total_with_tax,
          payment_method, note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ${orderDateExpression}, ?, ?, ?, ?, ?, ?)`,
       [
         customerName,
         customerDetails.guests || 1,
         orderType,
         platformSnapshot?.name || null,
         orderStatus,
+        ...orderDateParams,
         bills.total,
         bills.onlineOrderCharge || 0,
         bills.tax,
@@ -620,7 +739,7 @@ const create = async (orderData) => {
     );
 
     const orderId = result.insertId;
-    const orderCode = `ORD-${String(orderId).padStart(6, "0")}`;
+    const orderCode = await createMonthlyOrderCode(connection, orderId);
 
     await connection.query("UPDATE orders SET order_code = ? WHERE id = ?", [
       orderCode,
@@ -728,6 +847,7 @@ const create = async (orderData) => {
     await connection.rollback();
     throw error;
   } finally {
+    await releaseMonthlyOrderCodeLock(connection, orderCodeLockName);
     connection.release();
   }
 };
