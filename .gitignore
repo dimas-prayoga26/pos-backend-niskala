@@ -1,2 +1,4 @@
 node_modules
 .env
+# Characterization test output (baseline.json is committed)
+tests/characterization/__snapshots__/current.json

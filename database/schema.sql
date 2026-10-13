@@ -235,6 +235,7 @@ CREATE TABLE IF NOT EXISTS orders (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_code VARCHAR(40) UNIQUE,
   customer_name VARCHAR(100) NOT NULL,
+  customer_phone VARCHAR(50) NULL,
   guests INT NOT NULL,
   order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
   order_platform VARCHAR(100),
@@ -265,20 +266,6 @@ CREATE TABLE IF NOT EXISTS order_platforms (
   CONSTRAINT fk_order_platforms_meta_data_platform
     FOREIGN KEY (meta_data_platform_id) REFERENCES meta_data_platform(id)
     ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS order_online_transactions (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  order_id INT UNSIGNED NOT NULL UNIQUE,
-  midtrans_order_id VARCHAR(100),
-  midtrans_transaction_id VARCHAR(100),
-  midtrans_payment_type VARCHAR(100),
-  midtrans_transaction_status VARCHAR(100),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_order_online_transactions_order
-    FOREIGN KEY (order_id) REFERENCES orders(id)
-    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS order_catering_details (
@@ -321,19 +308,6 @@ CREATE TABLE IF NOT EXISTS order_items (
   CONSTRAINT fk_order_items_menu_item
     FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
     ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS payments (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  payment_id VARCHAR(150),
-  order_id VARCHAR(150),
-  amount DECIMAL(12,2),
-  currency VARCHAR(20),
-  status VARCHAR(50),
-  method VARCHAR(100),
-  email VARCHAR(150),
-  contact VARCHAR(50),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS meta_data_format_recap (

@@ -1,11 +1,17 @@
 {
   "name": "pos-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
-    "network": "node -e \"require('./utils/networkAddresses').printLocalAccessUrls()\""
+    "network": "node -e \"require('./src/shared/utils/networkAddresses').printLocalAccessUrls()\"",
+    "lint": "eslint .",
+    "test:unit": "node --test tests/unit/",
+    "test:integration": "node tests/integration/shopping.test.js && node --test tests/integration/regressions.test.js",
+    "test:characterization": "node tests/characterization/run.js",
+    "test:characterization:update": "node tests/characterization/run.js --update",
+    "test": "npm run test:unit && npm run test:integration && npm run test:characterization"
   },
   "keywords": [],
   "author": "",
@@ -15,17 +21,19 @@
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "crypto": "^1.0.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "http-errors": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
-    "midtrans-client": "^1.4.3",
     "multer": "^2.2.0",
     "mysql2": "^3.23.0",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "@eslint/js": "^8.57.0",
+    "eslint": "^8.57.0",
+    "globals": "^14.0.0",
+    "nodemon": "^3.1.9",
+    "socket.io-client": "^4.8.3"
   }
 }

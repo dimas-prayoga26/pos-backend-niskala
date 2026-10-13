@@ -23,4 +23,4 @@ Jalankan backend seperti biasa: `ensureShoppingSchema` membuat ketiga tabel d id
 
 ## Pengujian
 
-`node scripts/test-shopping.js` membuat database sementara bernama `pos_shopping_test_<acak>`, menjalankan pengujian transaksi dan konkurensi, kemudian menghapus database pengujian itu. Pengguna DB pengujian membutuhkan CREATE/DROP DATABASE. Data stok POS tidak dipakai sebagai data uji.
+`node tests/integration/shopping.test.js` membuat database sementara bernama `pos_shopping_test_<acak>`, menjalankan pengujian transaksi dan konkurensi, kemudian menghapus database pengujian itu. Pengguna DB pengujian membutuhkan CREATE/DROP DATABASE. Data stok POS tidak dipakai sebagai data uji.
