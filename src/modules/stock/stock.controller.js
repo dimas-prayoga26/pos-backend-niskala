@@ -86,6 +86,7 @@ const updateStockQuantity = asyncHandler(async (req, res, next) => {
 });
 
 const updateStockCogs = asyncHandler(async (req, res, next) => {
+  // Exact cost: stock_value uses it, unit_cost is stored as whole rupiah.
   const averageCost = toNonNegativeNumber(req.body.averageCost);
   const supplier = String(req.body.supplier || "").trim();
   const stockItem = await StockItem.updateCogs(req.params.id, { averageCost, supplier });
@@ -104,6 +105,17 @@ const updateStockCogs = asyncHandler(async (req, res, next) => {
 
 const deleteStockItem = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
+  const recipeMenuNames = await StockItem.findRecipeMenuNames(id);
+
+  if (recipeMenuNames.length) {
+    return next(
+      createHttpError(
+        409,
+        `Bahan masih dipakai di resep menu: ${recipeMenuNames.join(", ")}. Hapus dari resep terlebih dahulu.`
+      )
+    );
+  }
+
   const deleted = await StockItem.remove(id);
 
   if (!deleted) {

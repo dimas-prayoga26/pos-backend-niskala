@@ -1,5 +1,5 @@
-// Default catalog seeded on every boot (see bootstrap/index.js).
-const { roundCurrency } = require("../../../shared/utils/money");
+// Default catalog (see bootstrap/index.js). Categories, stock, platforms and recap
+// formats are seeded on every boot; menus only into a brand-new database.
 
 const menuImage = (fileName) => `/uploads/menu/${fileName}`;
 
@@ -13,28 +13,28 @@ const seedCategories = [
 ];
 
 const seedMenuItems = [
-  ["Coffee", "Cappuccino", 18000, 21000, menuImage("cappuccino-d2eb185afd.jpg")],
-  ["Coffee", "Cafe Latte", 18000, 21000, menuImage("cafe-latte-1acbe6600b.jpg")],
-  ["Coffee", "Butterscotch Latte", 20000, 23000, menuImage("butterscotch-latte-3e444ae99e.jpg")],
-  ["Coffee", "Caramel Latte", 20000, 23000, menuImage("caramel-latte-e6dd7de691.jpg")],
-  ["Coffee", "Vanilla Latte", 20000, 23000, menuImage("vanilla-latte-8231e75eae.jpg")],
-  ["Coffee", "Hazelnut Latte", 20000, 23000, menuImage("hazelnut-latte-6f30e26336.jpg")],
-  ["Coffee", "Aren Latte", 20000, 23000, menuImage("aren-latte-9daa0860f4.jpg")],
-  ["Coffee", "Moccacino", 22000, 25000, menuImage("moccacino-16b683cb90.jpg")],
-  ["Coffee", "Berry Coffee Milk", 22000, 25000, menuImage("berry-coffee-milk-d7f69b0093.jpg")],
-  ["Coffee", "Americano", 15000, 18000, menuImage("americano-a7098299e6.jpg")],
-  ["Coffee", "Longblack", 15000, 18000, menuImage("longblack-c9fca6adf7.jpg")],
-  ["Coffee", "On The Rock Espresso", 15000, 18000, menuImage("on-the-rock-espresso-1159307ad6.jpg")],
-  ["Coffee", "Tropical Americano", 23000, 26000, menuImage("tropical-americano-911a87baf1.jpg")],
-  ["Coffee", "Elberry Americano", 23000, 26000, menuImage("elberry-americano-c30281ce32.jpg")],
-  ["Coffee", "Berry Summer", 23000, 26000, menuImage("berry-summer-27a7222ae3.jpg")],
-  ["Non-Coffee", "Chocolate", 18000, 21000, menuImage("chocolate-317bab573b.jpg")],
-  ["Non-Coffee", "Matcha", 18000, 21000, menuImage("matcha-05d3506b73.jpg")],
-  ["Non-Coffee", "Cookies and Cream", 18000, 21000, menuImage("cookies-and-cream-4ba3428963.jpg")],
-  ["Non-Coffee", "Lychee Tea", 13000, 16000, menuImage("lychee-tea-b961e917f7.jpg")],
-  ["Non-Coffee", "Lemon Tea", 13000, 16000, menuImage("lemon-tea-6a2e7161fe.jpg")],
-  ["Non-Coffee", "Jeruk Nipis Songkit", 13000, 16000, menuImage("jeruk-nipis-songkit-dd4a1bded6.jpg")],
-  ["Non-Coffee", "Thai Tea", 15000, 18000, menuImage("thai-tea-6793cc6d8d.jpg")],
+  ["Coffee", "Cappuccino", 18000, menuImage("cappuccino-d2eb185afd.jpg")],
+  ["Coffee", "Cafe Latte", 18000, menuImage("cafe-latte-1acbe6600b.jpg")],
+  ["Coffee", "Butterscotch Latte", 20000, menuImage("butterscotch-latte-3e444ae99e.jpg")],
+  ["Coffee", "Caramel Latte", 20000, menuImage("caramel-latte-e6dd7de691.jpg")],
+  ["Coffee", "Vanilla Latte", 20000, menuImage("vanilla-latte-8231e75eae.jpg")],
+  ["Coffee", "Hazelnut Latte", 20000, menuImage("hazelnut-latte-6f30e26336.jpg")],
+  ["Coffee", "Aren Latte", 20000, menuImage("aren-latte-9daa0860f4.jpg")],
+  ["Coffee", "Moccacino", 22000, menuImage("moccacino-16b683cb90.jpg")],
+  ["Coffee", "Berry Coffee Milk", 22000, menuImage("berry-coffee-milk-d7f69b0093.jpg")],
+  ["Coffee", "Americano", 15000, menuImage("americano-a7098299e6.jpg")],
+  ["Coffee", "Longblack", 15000, menuImage("longblack-c9fca6adf7.jpg")],
+  ["Coffee", "On The Rock Espresso", 15000, menuImage("on-the-rock-espresso-1159307ad6.jpg")],
+  ["Coffee", "Tropical Americano", 23000, menuImage("tropical-americano-911a87baf1.jpg")],
+  ["Coffee", "Elberry Americano", 23000, menuImage("elberry-americano-c30281ce32.jpg")],
+  ["Coffee", "Berry Summer", 23000, menuImage("berry-summer-27a7222ae3.jpg")],
+  ["Non-Coffee", "Chocolate", 18000, menuImage("chocolate-317bab573b.jpg")],
+  ["Non-Coffee", "Matcha", 18000, menuImage("matcha-05d3506b73.jpg")],
+  ["Non-Coffee", "Cookies and Cream", 18000, menuImage("cookies-and-cream-4ba3428963.jpg")],
+  ["Non-Coffee", "Lychee Tea", 13000, menuImage("lychee-tea-b961e917f7.jpg")],
+  ["Non-Coffee", "Lemon Tea", 13000, menuImage("lemon-tea-6a2e7161fe.jpg")],
+  ["Non-Coffee", "Jeruk Nipis Songkit", 13000, menuImage("jeruk-nipis-songkit-dd4a1bded6.jpg")],
+  ["Non-Coffee", "Thai Tea", 15000, menuImage("thai-tea-6793cc6d8d.jpg")],
   ["Main Course", "Fried Egg Rice Bowl", 15000, menuImage("fried-egg-rice-bowl-71e4a6b35b.jpg")],
   ["Main Course", "Chicken Katsu Rice Bowl", 25000, menuImage("chicken-katsu-rice-bowl-9f77c07d83.jpg")],
   ["Main Course", "Chicken Teriyaki Rice Bowl", 23000, menuImage("chicken-teriyaki-rice-bowl-de9b95075d.jpg")],
@@ -73,24 +73,6 @@ const seedMenuCatalog = [
   ]),
 ];
 
-const singlePriceCategories = new Set(["Coffee", "Non-Coffee"]);
-const noTemperatureVariantMenuItems = new Set([
-  "On The Rock Espresso",
-  "Tropical Americano",
-  "Elberry Americano",
-  "Berry Summer",
-  "Cookies and Cream",
-]);
-
-const shouldUseSinglePrice = (categoryName) =>
-  singlePriceCategories.has(categoryName);
-
-const getSeedTemperatureVariants = (categoryName, menuName) =>
-  singlePriceCategories.has(categoryName) &&
-  !noTemperatureVariantMenuItems.has(menuName)
-    ? ["Cold", "Hot"]
-    : [];
-
 const seedStockItems = [
   ["ESPRESSO", "Coffee", "gr", 999, 0, "", false],
   ["WATER", "Beverage", "ml", 999, 0, "", true],
@@ -117,152 +99,140 @@ const seedStockItems = [
   ["SKM", "Dairy", "ml", 999, 0, "", false],
 ];
 
+// Recipe quantities are in the stock item's unit (see seedStockItems).
 const seedMenuIngredients = {
   Americano: [
-    ["ESPRESSO", "", 8, "gr"],
-    ["WATER", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
+    ["ESPRESSO", 8],
+    ["WATER", 100],
+    ["CUP", 1],
   ],
   "Aren Latte": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP AREN", "", 15, "ml"],
-    ["CREAMER", "", 15, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["SYRUP AREN", 15],
+    ["CREAMER", 15],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   "Berry Coffee Milk": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP STRAWBERRY", "", 10, "ml"],
-    ["SYRUP LYCHEE", "", 5, "ml"],
-    ["SYRUP BUTTERSCOTH", "", 5, "ml"],
-    ["FRESHMILK", "", 80, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["SYRUP STRAWBERRY", 10],
+    ["SYRUP LYCHEE", 5],
+    ["SYRUP BUTTERSCOTH", 5],
+    ["FRESHMILK", 80],
+    ["CUP", 1],
   ],
   "Berry Summer": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP STRAWBERRY", "", 10, "ml"],
-    ["SYRUP VANILLA", "", 5, "ml"],
-    ["SYRUP PINEAPPLE", "", 5, "ml"],
-    ["WATER", "", 80, "ml"],
-    ["CUP", "", 1, "pcs"],
+    ["ESPRESSO", 8],
+    ["SYRUP STRAWBERRY", 10],
+    ["SYRUP VANILLA", 5],
+    ["SYRUP PINEAPPLE", 5],
+    ["WATER", 80],
+    ["CUP", 1],
   ],
   "Butterscotch Latte": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP BUTTERSCOTH", "", 15, "ml"],
-    ["CREAMER", "", 15, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["SYRUP BUTTERSCOTH", 15],
+    ["CREAMER", 15],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   "Cafe Latte": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   Cappuccino: [
-    ["ESPRESSO", "", 8, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   "Caramel Latte": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP CLASSC CARAMEL", "", 15, "ml"],
-    ["CREAMER", "", 15, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["SYRUP CLASSC CARAMEL", 15],
+    ["CREAMER", 15],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   Chocolate: [
-    ["POWDER CHOCOLATE", "", 15, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["POWDER CHOCOLATE", 15],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   "Cookies and Cream": [
-    ["POWDER COOKIES AND CREAM", "", 15, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["POWDER COOKIES AND CREAM", 15],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   "Elberry Americano": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP STRAWBERRY", "", 10, "ml"],
-    ["SYRUP LYCHEE", "", 5, "ml"],
-    ["SYRUP LEMON", "", 5, "ml"],
-    ["WATER", "", 80, "ml"],
-    ["CUP", "", 1, "pcs"],
+    ["ESPRESSO", 8],
+    ["SYRUP STRAWBERRY", 10],
+    ["SYRUP LYCHEE", 5],
+    ["SYRUP LEMON", 5],
+    ["WATER", 80],
+    ["CUP", 1],
   ],
   "Hazelnut Latte": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP HAZELNUT", "", 15, "ml"],
-    ["CREAMER", "", 15, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["SYRUP HAZELNUT", 15],
+    ["CREAMER", 15],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   "Jeruk Nipis Songkit": [
-    ["POWDER SONGKIT", "", 15, "gr"],
-    ["WATER", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
+    ["POWDER SONGKIT", 15],
+    ["WATER", 100],
+    ["CUP", 1],
   ],
   "Lemon Tea": [
-    ["POWDER LEMON TEA", "", 15, "gr"],
-    ["WATER", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
+    ["POWDER LEMON TEA", 15],
+    ["WATER", 100],
+    ["CUP", 1],
   ],
   Longblack: [
-    ["ESPRESSO", "", 15, "gr"],
-    ["WATER", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
+    ["ESPRESSO", 15],
+    ["WATER", 100],
+    ["CUP", 1],
   ],
   "Lychee Tea": [
-    ["POWDER LYCHEE TEA", "", 15, "gr"],
-    ["WATER", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
+    ["POWDER LYCHEE TEA", 15],
+    ["WATER", 100],
+    ["CUP", 1],
   ],
   Matcha: [
-    ["POWDER MATCHA", "", 15, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["POWDER MATCHA", 15],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   Moccacino: [
-    ["ESPRESSO", "", 8, "gr"],
-    ["POWDER CHOCOLATE", "", 10, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["POWDER CHOCOLATE", 10],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   "On The Rock Espresso": [
-    ["ESPRESSO", "", 15, "gr"],
-    ["CUP", "", 1, "pcs"],
+    ["ESPRESSO", 15],
+    ["CUP", 1],
   ],
   "Thai Tea": [
-    ["POWDER THAI TEA", "", 15, "gr"],
-    ["SKM", "", 5, "ml"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["POWDER THAI TEA", 15],
+    ["SKM", 5],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
   "Tropical Americano": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP PINEAPPLE", "", 10, "ml"],
-    ["SYRUP LYCHEE", "", 5, "ml"],
-    ["SYRUP LEMON", "", 5, "ml"],
-    ["WATER", "", 80, "ml"],
-    ["CUP", "", 1, "pcs"],
+    ["ESPRESSO", 8],
+    ["SYRUP PINEAPPLE", 10],
+    ["SYRUP LYCHEE", 5],
+    ["SYRUP LEMON", 5],
+    ["WATER", 80],
+    ["CUP", 1],
   ],
   "Vanilla Latte": [
-    ["ESPRESSO", "", 8, "gr"],
-    ["SYRUP VANILLA TRADITIO", "", 15, "ml"],
-    ["CREAMER", "", 15, "gr"],
-    ["FRESHMILK", "", 100, "ml"],
-    ["CUP", "", 1, "pcs"],
-    ["FRESHMILK", "Large", 20, "ml", "Tambahan ukuran Large"],
+    ["ESPRESSO", 8],
+    ["SYRUP VANILLA TRADITIO", 15],
+    ["CREAMER", 15],
+    ["FRESHMILK", 100],
+    ["CUP", 1],
   ],
 };
 
@@ -318,41 +288,6 @@ const seedMenuFinancials = {
   },
 };
 
-const seedIngredientHppUnitCosts = {
-  FRESHMILK: 25.61,
-};
-
-const getLargeHppAdjustment = (menuName) =>
-  (seedMenuIngredients[menuName] || [])
-    .filter(([, sizeName]) => String(sizeName || "").toLowerCase() === "large")
-    .reduce((total, [stockName, , quantity]) => {
-      const unitCost = seedIngredientHppUnitCosts[stockName] || 0;
-      return total + Number(quantity || 0) * unitCost;
-    }, 0);
-
-const getSeedSizeFinancials = (menuName, sizeName, price) => {
-  const financials = seedMenuFinancials[menuName];
-  if (!financials) {
-    return { hppCost: 0, grossProfit: 0 };
-  }
-
-  if (String(sizeName).toLowerCase() !== "large") {
-    return {
-      hppCost: roundCurrency(financials.hppCost),
-      grossProfit: roundCurrency(financials.grossProfit),
-    };
-  }
-
-  const hppCost = roundCurrency(
-    financials.hppCost + getLargeHppAdjustment(menuName)
-  );
-
-  return {
-    hppCost,
-    grossProfit: roundCurrency(Number(price || 0) - hppCost),
-  };
-};
-
 const seedOrderPlatforms = [
   ["GoFood", "/platforms/gofood.png", 0],
   ["GrabFood", "/platforms/grabfood.png", 0],
@@ -367,8 +302,6 @@ const seedRecapFormats = [
 
 
 module.exports = {
-  getSeedSizeFinancials,
-  getSeedTemperatureVariants,
   seedCategories,
   seedMenuCatalog,
   seedMenuFinancials,
@@ -376,5 +309,4 @@ module.exports = {
   seedOrderPlatforms,
   seedRecapFormats,
   seedStockItems,
-  shouldUseSinglePrice,
 };

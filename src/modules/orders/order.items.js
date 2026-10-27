@@ -29,7 +29,6 @@ const normalizeOrderItemsForStock = (items = []) =>
   items
     .map((item) => ({
       menuItemId: getSourceMenuItemId(item),
-      sizeName: String(item.sizeVariant || item.sizeName || "").trim(),
       quantity: Math.max(Number(item.quantity) || 0, 0),
     }))
     .filter((item) => item.menuItemId && item.quantity > 0);

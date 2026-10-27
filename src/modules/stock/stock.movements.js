@@ -1,10 +1,9 @@
 // Recipe-driven stock movements. Orders pass recipe lines
-// ({ menuItemId, sizeName, quantity }); each menu item's ingredients
-// (menu_item_ingredients) are converted to the stock unit and applied to
-// stock_items inside the caller's transaction connection.
+// ({ menuItemId, quantity }); each menu item's recipe rows (recipes, quantities
+// in the stock item's unit) are applied to stock_items inside the caller's
+// transaction connection.
 const createHttpError = require("http-errors");
 const { roundCurrency } = require("../../shared/utils/money");
-const { convertRecipeQuantity } = require("../../shared/utils/units");
 
 const createStockValidationError = (insufficientStock) =>
   createHttpError(409, "Stok bahan tidak mencukupi.", {
@@ -17,20 +16,18 @@ const buildStockDeductions = async (connection, orderItems = []) => {
   const menuItemIds = [...new Set(orderItems.map((item) => item.menuItemId))];
   const [ingredientRows] = await connection.query(
     `SELECT
-       mii.menu_item_id,
-       mii.stock_item_id,
-       mii.size_name,
-       mii.quantity,
-       mii.unit AS ingredient_unit,
+       r.menu_item_id,
+       r.stock_item_id,
+       r.quantity,
        si.name AS stock_name,
        si.stock,
        si.unit AS stock_unit,
-       si.average_cost,
+       si.unit_cost,
        si.is_unlimited
-     FROM menu_item_ingredients mii
-     JOIN stock_items si ON si.id = mii.stock_item_id
-     WHERE mii.menu_item_id IN (?)
-       AND mii.stock_item_id IS NOT NULL`,
+     FROM recipes r
+     JOIN stock_items si ON si.id = r.stock_item_id
+     WHERE r.menu_item_id IN (?)
+     ORDER BY r.sort_order ASC, r.id ASC`,
     [menuItemIds]
   );
 
@@ -39,25 +36,13 @@ const buildStockDeductions = async (connection, orderItems = []) => {
   const deductions = new Map();
 
   for (const orderItem of orderItems) {
-    const matchingIngredients = ingredientRows.filter((ingredient) => {
-      if (Number(ingredient.menu_item_id) !== orderItem.menuItemId) return false;
-
-      const ingredientSizeName = String(ingredient.size_name || "").trim();
-
-      return (
-        !ingredientSizeName ||
-        (orderItem.sizeName &&
-          ingredientSizeName.toLowerCase() === orderItem.sizeName.toLowerCase())
-      );
-    });
+    const matchingIngredients = ingredientRows.filter(
+      (ingredient) => Number(ingredient.menu_item_id) === orderItem.menuItemId
+    );
 
     for (const ingredient of matchingIngredients) {
       const stockItemId = Number(ingredient.stock_item_id);
-      const deduction = convertRecipeQuantity(
-        (Number(ingredient.quantity) || 0) * orderItem.quantity,
-        ingredient.ingredient_unit,
-        ingredient.stock_unit
-      );
+      const deduction = (Number(ingredient.quantity) || 0) * orderItem.quantity;
 
       if (!stockItemId || deduction <= 0) continue;
 
@@ -66,7 +51,7 @@ const buildStockDeductions = async (connection, orderItems = []) => {
         name: ingredient.stock_name,
         stock: Number(ingredient.stock || 0),
         unit: ingredient.stock_unit || "",
-        averageCost: Number(ingredient.average_cost || 0),
+        averageCost: Number(ingredient.unit_cost || 0),
         isUnlimited: Boolean(ingredient.is_unlimited),
         required: 0,
         requiredValue: 0,

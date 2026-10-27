@@ -25,18 +25,23 @@ describe("menu pricing", () => {
     });
   });
 
-  it("nulls base price, HPP and online price for sized items", () => {
+  it("keeps one recipe row per stock item, summing repeats", () => {
     const record = buildMenuItemRecord({
       price: 1,
-      includeOnlinePlatform: true,
-      onlinePrice: 5,
-      sizes: [{ name: "Regular", price: 20000 }],
+      ingredients: [
+        { stockItemId: 4, quantity: 10 },
+        { stock_item_id: "4", quantity: 5, note: "ekstra" },
+        { ingredientName: "no stock", quantity: 1 },
+        { stockItemId: 7, quantity: 0.1 },
+        { stockItemId: 7, quantity: "0.2" },
+        { stockItemId: 8, quantity: 0.123456 },
+      ],
     });
-    assert.equal(record.basePrice, null);
-    assert.equal(record.baseOnlinePrice, null);
-    assert.equal(record.shouldIncludeOnlinePlatform, false);
-    assert.deepEqual(record.profitFields, { hppCost: null, grossProfit: null });
-    assert.equal(record.normalizedSizes.length, 1);
+    assert.deepEqual(record.normalizedIngredients, [
+      { stockItemId: 4, quantity: 15, note: "" },
+      { stockItemId: 7, quantity: 0.3, note: "" },
+      { stockItemId: 8, quantity: 0.1235, note: "" },
+    ]);
   });
 
   it("keeps the online price only when the item is on online platforms", () => {
@@ -59,11 +64,11 @@ describe("order items", () => {
   it("builds recipe lines, dropping zero quantities and unknown items", () => {
     assert.deepEqual(
       toRecipeLines([
-        { sourceMenuItemId: 2, sizeVariant: " Large ", quantity: "2" },
+        { sourceMenuItemId: 2, quantity: "2" },
         { sourceMenuItemId: 3, quantity: 0 },
         { name: "no id", quantity: 1 },
       ]),
-      [{ menuItemId: 2, sizeName: "Large", quantity: 2 }]
+      [{ menuItemId: 2, quantity: 2 }]
     );
     assert.deepEqual(toRecipeLines(null), []);
   });

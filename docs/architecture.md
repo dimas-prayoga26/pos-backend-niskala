@@ -73,7 +73,7 @@ Urutan guard sengaja dibuat berbeda per endpoint. Urutan ini meniru kode lama su
 
 1. membuat database dan tabel bila belum ada;
 2. menjalankan ALTER/DROP/UPDATE lewat `runSafeMigration()`, yang menelan semua error agar idempoten;
-3. menjalankan seed katalog default (`bootstrap/seedData.js`): kategori, menu, stok, resep, platform, dan format rekap;
+3. menjalankan seed katalog default (`bootstrap/seedData.js`): kategori, stok, platform, dan format rekap. Menu default (harga dan resep) hanya di-seed saat tabel `menu_items` baru dibuat, jadi menu yang diedit atau dihapus admin tidak pernah ditimpa;
 4. menjalankan backfill (kode order bulanan, relasi platform, HPP item order).
 
 Isi `config/database.js` lama sudah dipecah tanpa mengubah urutan statement:
@@ -82,7 +82,7 @@ Isi `config/database.js` lama sudah dipecah tanpa mengubah urutan statement:
 |---|---|
 | `bootstrap/index.js` | Urutan migrasi `connectDB()` |
 | `bootstrap/seedData.js` | Data katalog default |
-| `bootstrap/menuCatalog.js` | Migrasi opsi menu lama, seed resep |
+| `bootstrap/menuCatalog.js` | Migrasi data menu lama (opsi, harga, resep), seed menu default untuk database baru |
 | `bootstrap/platforms.js` | Tabel platform dan relasi order–platform |
 | `bootstrap/orderCodes.js` | Backfill kode `YYMM-NNNN` |
 | `bootstrap/shoppingSchema.js` | Tabel belanja dan supplier |
@@ -133,4 +133,4 @@ Semua tes memakai database bernama `pos_*test*`. Helper menolak nama lain, jadi 
 | Service hanya di modul berlogika | Menghindari lapisan kosong yang hanya meneruskan panggilan |
 | Mutasi stok dari order ada di modul stock | Hanya modul stock yang mengubah `stock_items` dari resep; orders memanggil API-nya |
 | Kontrak response tidak diubah (termasuk alias `_id`/`id` dan envelope yang tidak seragam) | Frontend dan aplikasi RawBT bergantung padanya |
-| Konversi satuan dibuat dua varian (`convertRecipeQuantity` lenient, `convertQuantity` strict di shopping) | Semantik keduanya memang berbeda di kode lama; menyatukannya akan mengubah perhitungan stok |
+| Konversi satuan dibuat dua varian (`convertRecipeQuantity` lenient, `convertQuantity` strict di shopping) | Semantik keduanya memang berbeda di kode lama. Resep kini tidak punya satuan sendiri; `convertRecipeQuantity` hanya dipakai migrasi boot untuk memindahkan takaran lama ke satuan stok |

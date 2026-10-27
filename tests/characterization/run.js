@@ -145,7 +145,7 @@ const dumpDatabase = async () => {
       const [[createRow]] = await db.query(`SHOW CREATE TABLE \`${name}\``);
       const [rows] = await db.query(`SELECT * FROM \`${name}\` ORDER BY 1`);
       dump[name] = {
-        ddl: createRow["Create Table"].replace(/ AUTO_INCREMENT=\d+/, ""),
+        ddl: (createRow["Create Table"] ?? createRow["Create View"]).replace(/ AUTO_INCREMENT=\d+/, ""),
         rows: normalize(rows),
       };
     }

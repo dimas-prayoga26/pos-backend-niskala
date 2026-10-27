@@ -106,9 +106,7 @@ const create = async (orderData) => {
         orderType === "Offline"
           ? String(customerDetails.phone || "").trim()
           : "",
-      guests: customerDetails.guests || 1,
       orderType,
-      platformName: platformSnapshot?.name || null,
       orderStatus,
       orderDate: effectiveOrderDate,
       bills,
@@ -132,14 +130,16 @@ const create = async (orderData) => {
     }
 
     for (const item of items) {
-      const sizeName = String(item.sizeVariant || item.sizeName || "").trim();
       const menuItemSnapshot = await findMenuItemSnapshot(
         connection,
-        getSourceMenuItemId(item),
-        sizeName
+        getSourceMenuItemId(item)
       );
 
-      await Order.insertOrderItem(connection, orderId, { item, sizeName, menuItemSnapshot });
+      const orderItemId = await Order.insertOrderItem(connection, orderId, {
+        item,
+        menuItemSnapshot,
+      });
+      await Order.insertOrderItemCosts(connection, orderItemId, menuItemSnapshot.costs);
     }
 
     await connection.commit();

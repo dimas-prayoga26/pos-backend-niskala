@@ -1,44 +1,52 @@
-// Request/seed normalizers for menu sizes, temperature variants and recipes.
-const normalizeSize = (size) => ({
-  name: String(size?.name || "").trim(),
-  price: Number(size?.price) || 0,
-  hppCost: Number(size?.hppCost ?? size?.hpp_cost) || 0,
-  grossProfit: Number(size?.grossProfit ?? size?.gross_profit) || 0,
-});
+// Request/seed normalizers for a menu item's recipe and price row.
 
-const normalizeSizes = (sizes) =>
-  (Array.isArray(sizes) ? sizes : [])
-    .map(normalizeSize)
-    .filter((size) => size.name && size.price >= 0);
-
-const normalizeVariants = (variants) =>
-  (Array.isArray(variants) ? variants : [])
-    .map((variant) => String(variant || "").trim())
-    .filter(Boolean);
+// Recipe quantities are stored as plain numbers (shown as 8, 0.015); rounding
+// to 4 decimals keeps float noise like 0.30000000000000004 out of the table.
+const roundRecipeQuantity = (value) =>
+  Math.round((Number(value) || 0) * 10000) / 10000;
 
 const normalizeIngredient = (ingredient) => ({
-  stockItemId: ingredient?.stockItemId || ingredient?.stock_item_id || null,
-  sizeName: String(ingredient?.sizeName || ingredient?.size_name || "").trim(),
-  ingredientName: String(
-    ingredient?.ingredientName || ingredient?.ingredient_name || ingredient?.name || ""
-  ).trim(),
-  quantity: Number(ingredient?.quantity) || 0,
-  unit: String(ingredient?.unit || "").trim(),
+  stockItemId: Number(ingredient?.stockItemId || ingredient?.stock_item_id) || null,
+  quantity: roundRecipeQuantity(ingredient?.quantity),
   note: String(ingredient?.note || "").trim(),
 });
 
-const normalizeIngredients = (ingredients) =>
+// Recipe rows must point at a stock item; quantities are in the stock item's
+// unit. The recipes table allows one row per stock item, so repeats are summed.
+const normalizeIngredients = (ingredients) => {
+  const ingredientsByStockItemId = new Map();
+
   (Array.isArray(ingredients) ? ingredients : [])
     .map(normalizeIngredient)
-    .filter(
-      (ingredient) =>
-        ingredient.ingredientName &&
-        ingredient.quantity >= 0 &&
-        ingredient.unit
-    );
+    .filter((ingredient) => ingredient.stockItemId > 0 && ingredient.quantity >= 0)
+    .forEach((ingredient) => {
+      const existing = ingredientsByStockItemId.get(ingredient.stockItemId);
+
+      if (existing) {
+        existing.quantity = roundRecipeQuantity(existing.quantity + ingredient.quantity);
+      } else {
+        ingredientsByStockItemId.set(ingredient.stockItemId, ingredient);
+      }
+    });
+
+  return [...ingredientsByStockItemId.values()];
+};
+
+const PRICE_ROW_COLUMNS =
+  "(menu_item_id, regular_price, online_price, hpp_cost, gross_profit)";
+
+// The menu_item_prices row of a menu item, or null when it has no price.
+const toPriceRow = (
+  menuItemId,
+  { regularPrice, onlinePrice, hppCost, grossProfit }
+) =>
+  regularPrice === null || regularPrice === undefined
+    ? null
+    : [menuItemId, regularPrice, onlinePrice ?? null, hppCost ?? 0, grossProfit ?? 0];
 
 module.exports = {
+  PRICE_ROW_COLUMNS,
   normalizeIngredients,
-  normalizeSizes,
-  normalizeVariants,
+  roundRecipeQuantity,
+  toPriceRow,
 };

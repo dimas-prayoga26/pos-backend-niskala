@@ -2,14 +2,13 @@
 // Every statement must stay idempotent; see docs/architecture.md.
 const config = require("../../../config/env");
 const logger = require("../../../shared/logger");
-const { roundCurrency } = require("../../../shared/utils/money");
 const { pool, serverPool } = require("../pool");
-const { runSafeMigration } = require("./helpers");
+const { getColumnNames, runSafeMigration, tableExists } = require("./helpers");
 const {
-  migrateLegacyMenuOptions,
-  removeSinglePriceSizeSpecificIngredients,
-  replaceMenuItemOptions,
-  seedDefaultMenuIngredients,
+  removeMenuSizes,
+  removeRecipeUnits,
+  seedDefaultMenuCatalog,
+  useDoubleRecipeQuantities,
 } = require("./menuCatalog");
 const { backfillMonthlyOrderCodes } = require("./orderCodes");
 const {
@@ -20,15 +19,11 @@ const {
   seedMetaDataPlatforms,
 } = require("./platforms");
 const {
-  getSeedSizeFinancials,
-  getSeedTemperatureVariants,
   seedCategories,
-  seedMenuCatalog,
-  seedMenuFinancials,
   seedRecapFormats,
   seedStockItems,
-  shouldUseSinglePrice,
 } = require("./seedData");
+const { refreshMenuCosts } = require("../../../modules/menu/menu.costs");
 const { ensureShoppingSchema } = require("./shoppingSchema");
 
 const connectDB = async () => {
@@ -82,16 +77,14 @@ const connectDB = async () => {
     WHERE sort_order = 0
   `);
 
+  // The default menu catalog is seeded only into a brand-new menu_items table.
+  const isNewMenuCatalog = !(await tableExists("menu_items"));
   await pool.query(`
     CREATE TABLE IF NOT EXISTS menu_items (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       category_id INT UNSIGNED NOT NULL,
       name VARCHAR(150) NOT NULL,
-      regular_price DECIMAL(12,2) NULL,
-      online_price DECIMAL(12,2) NULL,
       include_online_platform BOOLEAN NOT NULL DEFAULT FALSE,
-      hpp_cost DECIMAL(12,2) NULL,
-      gross_profit DECIMAL(12,2) NULL,
       image_path VARCHAR(255),
       is_available BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -105,75 +98,43 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN description");
   await runSafeMigration("ALTER TABLE menu_items CHANGE COLUMN image_url image_path VARCHAR(255) NULL");
   await runSafeMigration("UPDATE menu_items SET image_path = NULL WHERE image_path IS NOT NULL AND image_path NOT LIKE '/uploads/%'");
-  await runSafeMigration("ALTER TABLE menu_items CHANGE COLUMN price regular_price DECIMAL(12,2) NULL");
-  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN online_price DECIMAL(12,2) NULL AFTER regular_price");
-  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN include_online_platform BOOLEAN NOT NULL DEFAULT FALSE AFTER online_price");
-  await runSafeMigration("UPDATE menu_items SET include_online_platform = TRUE WHERE online_price IS NOT NULL");
-  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN hpp_cost DECIMAL(12,2) NULL AFTER include_online_platform");
-  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN gross_profit DECIMAL(12,2) NULL AFTER hpp_cost");
-  await runSafeMigration("ALTER TABLE menu_items DROP COLUMN gross_profit_margin");
-  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN regular_price DECIMAL(12,2) NULL");
-  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN online_price DECIMAL(12,2) NULL");
-  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN hpp_cost DECIMAL(12,2) NULL");
-  await runSafeMigration("ALTER TABLE menu_items MODIFY COLUMN gross_profit DECIMAL(12,2) NULL");
+  // Databases from before menu_item_prices still carry price columns on
+  // menu_items; bring them to their last shape so removeMenuSizes can move them.
+  const menuItemColumns = await getColumnNames("menu_items");
+  if (menuItemColumns.has("price") || menuItemColumns.has("regular_price")) {
+    await runSafeMigration("ALTER TABLE menu_items CHANGE COLUMN price regular_price DECIMAL(12,2) NULL");
+    await runSafeMigration("ALTER TABLE menu_items ADD COLUMN online_price DECIMAL(12,2) NULL AFTER regular_price");
+    await runSafeMigration("ALTER TABLE menu_items ADD COLUMN include_online_platform BOOLEAN NOT NULL DEFAULT FALSE AFTER online_price");
+    await runSafeMigration("UPDATE menu_items SET include_online_platform = TRUE WHERE online_price IS NOT NULL");
+    await runSafeMigration("ALTER TABLE menu_items ADD COLUMN hpp_cost DECIMAL(12,2) NULL AFTER include_online_platform");
+    await runSafeMigration("ALTER TABLE menu_items ADD COLUMN gross_profit DECIMAL(12,2) NULL AFTER hpp_cost");
+    await runSafeMigration("ALTER TABLE menu_items DROP COLUMN gross_profit_margin");
+  }
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS menu_seed_exclusions (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(150) NOT NULL UNIQUE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  // Only the every-boot seed needed this list of edited/deleted seed menus.
+  await runSafeMigration("DROP TABLE IF EXISTS menu_seed_exclusions");
 
+  // Price, online price, HPP and gross profit of a menu item (one row per menu).
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS menu_item_sizes (
+    CREATE TABLE IF NOT EXISTS menu_item_prices (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       menu_item_id INT UNSIGNED NOT NULL,
-      name VARCHAR(80) NOT NULL,
-      price DECIMAL(12,2) NOT NULL,
+      regular_price DECIMAL(12,2) NOT NULL,
+      online_price DECIMAL(12,2) NULL,
       hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
       gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0,
-      sort_order INT NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      INDEX idx_menu_item_sizes_menu_item_id (menu_item_id),
-      UNIQUE KEY uniq_menu_item_sizes_name (menu_item_id, name),
-      CONSTRAINT fk_menu_item_sizes_menu_item
-        FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
-        ON DELETE CASCADE
-    )
-  `);
-  await runSafeMigration("ALTER TABLE menu_item_sizes ADD COLUMN hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER price");
-  await runSafeMigration("ALTER TABLE menu_item_sizes ADD COLUMN gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER hpp_cost");
-  await runSafeMigration(`
-    UPDATE menu_items mi
-    SET mi.regular_price = NULL,
-        mi.hpp_cost = NULL,
-        mi.gross_profit = NULL
-    WHERE EXISTS (
-      SELECT 1
-      FROM menu_item_sizes mis
-      WHERE mis.menu_item_id = mi.id
-    )
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS menu_item_variants (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      menu_item_id INT UNSIGNED NOT NULL,
-      name VARCHAR(80) NOT NULL,
-      sort_order INT NOT NULL DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      INDEX idx_menu_item_variants_menu_item_id (menu_item_id),
-      UNIQUE KEY uniq_menu_item_variants_name (menu_item_id, name),
-      CONSTRAINT fk_menu_item_variants_menu_item
+      UNIQUE KEY uniq_menu_item_prices_menu_item (menu_item_id),
+      CONSTRAINT fk_menu_item_prices_menu_item
         FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
         ON DELETE CASCADE
     )
   `);
 
-  await migrateLegacyMenuOptions();
+  // Menus no longer have temperature variants or sizes (sizes are folded away
+  // by removeMenuSizes once recipes exist).
+  await runSafeMigration("DROP TABLE IF EXISTS menu_item_variants");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN large_price");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN variants_json");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN sizes_json");
@@ -190,7 +151,7 @@ const connectDB = async () => {
       unit VARCHAR(30) NOT NULL,
       stock DECIMAL(12,2) NOT NULL DEFAULT 0,
       minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
-      average_cost DECIMAL(14,4) NOT NULL DEFAULT 0,
+      unit_cost INT NOT NULL DEFAULT 0,
       stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
       supplier VARCHAR(150),
       is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
@@ -202,8 +163,11 @@ const connectDB = async () => {
     )
   `);
   await runSafeMigration("ALTER TABLE stock_items ADD COLUMN is_unlimited BOOLEAN NOT NULL DEFAULT FALSE AFTER supplier");
-  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN average_cost DECIMAL(14,4) NOT NULL DEFAULT 0 AFTER minimum_stock");
-  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER average_cost");
+  // unit_cost was called average_cost; renaming before the ADD COLUMN below
+  // keeps that from creating an empty second column.
+  await runSafeMigration("ALTER TABLE stock_items RENAME COLUMN average_cost TO unit_cost");
+  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN unit_cost INT NOT NULL DEFAULT 0 AFTER minimum_stock");
+  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER unit_cost");
 
   await pool.query(
     `INSERT INTO stock_items
@@ -220,31 +184,58 @@ const connectDB = async () => {
     [seedStockItems]
   );
 
+  // Recipes: pivot menu_items <-> stock_items, one row per ingredient. Quantities
+  // are in the stock item's unit.
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS menu_item_ingredients (
+    CREATE TABLE IF NOT EXISTS recipes (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       menu_item_id INT UNSIGNED NOT NULL,
-      stock_item_id INT UNSIGNED NULL,
-      size_name VARCHAR(80) NULL,
-      ingredient_name VARCHAR(150) NOT NULL,
-      quantity DECIMAL(12,3) NOT NULL DEFAULT 0,
-      unit VARCHAR(30) NOT NULL,
+      stock_item_id INT UNSIGNED NOT NULL,
+      quantity DOUBLE NOT NULL DEFAULT 0,
+      cost INT NOT NULL DEFAULT 0,
       sort_order INT NOT NULL DEFAULT 0,
       note VARCHAR(255) NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      INDEX idx_menu_item_ingredients_menu_item_id (menu_item_id),
-      INDEX idx_menu_item_ingredients_stock_item_id (stock_item_id),
-      CONSTRAINT fk_menu_item_ingredients_menu_item
+      UNIQUE KEY uniq_recipes_menu_stock (menu_item_id, stock_item_id),
+      INDEX idx_recipes_stock_item_id (stock_item_id),
+      CONSTRAINT fk_recipes_menu_item
         FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
         ON DELETE CASCADE,
-      CONSTRAINT fk_menu_item_ingredients_stock_item
+      CONSTRAINT fk_recipes_stock_item
         FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
-        ON DELETE SET NULL
+        ON DELETE RESTRICT
     )
   `);
-  await runSafeMigration("ALTER TABLE menu_item_ingredients ADD COLUMN size_name VARCHAR(80) NULL AFTER stock_item_id");
-  await runSafeMigration("ALTER TABLE menu_item_ingredients DROP COLUMN unit_cost");
+  await removeMenuSizes();
+  await removeRecipeUnits();
+  await useDoubleRecipeQuantities();
+  // Cost of each recipe line in whole rupiah (quantity x average cost), kept up
+  // to date by refreshMenuCosts.
+  await runSafeMigration("ALTER TABLE recipes ADD COLUMN cost INT NOT NULL DEFAULT 0 AFTER quantity");
+  // Recipes with menu and stock names for reading in phpMyAdmin; the app reads
+  // the tables. Optional, so a host without the CREATE VIEW privilege still boots.
+  await runSafeMigration(`
+    CREATE OR REPLACE SQL SECURITY INVOKER VIEW recipe_details AS
+    SELECT
+      r.id,
+      mi.name AS menu_name,
+      si.name AS stock_item_name,
+      r.quantity,
+      si.unit,
+      si.unit_cost,
+      r.cost,
+      r.note,
+      r.menu_item_id,
+      r.stock_item_id,
+      r.sort_order
+    FROM recipes r
+    JOIN menu_items mi ON mi.id = r.menu_item_id
+    JOIN stock_items si ON si.id = r.stock_item_id
+    ORDER BY mi.name, r.sort_order, r.id
+  `);
+  // Menu costing is stored in menu_item_prices now; the 30% overhead view is gone.
+  await runSafeMigration("DROP VIEW IF EXISTS menu_costs");
 
   await pool.query(
     `INSERT INTO categories (name, icon)
@@ -267,122 +258,9 @@ const connectDB = async () => {
     WHERE sort_order = 0
   `);
 
-  const [categoryRows] = await pool.query(
-    `SELECT id, name FROM categories
-     WHERE name IN (${seedCategories.map(() => "?").join(", ")})`,
-    seedCategories.map(([name]) => name)
-  );
-  const categoryIdByName = new Map(
-    categoryRows.map((category) => [category.name, category.id])
-  );
-  const [seedExclusionRows] = await pool.query(
-    "SELECT name FROM menu_seed_exclusions"
-  );
-  const seedExcludedMenuNames = new Set(
-    seedExclusionRows.map((row) => String(row.name || "").trim()).filter(Boolean)
-  );
-
-  for (const seedMenuItem of seedMenuCatalog) {
-    const [categoryName, name, regularPrice, largePriceOrImageUrl, maybeImageUrl] =
-      seedMenuItem;
-    if (seedExcludedMenuNames.has(name)) continue;
-
-    const seedHasLargePrice = typeof largePriceOrImageUrl === "number";
-    const usesSinglePrice = shouldUseSinglePrice(categoryName);
-    const hasLargePrice = seedHasLargePrice && !usesSinglePrice;
-    const largePrice = hasLargePrice ? largePriceOrImageUrl : null;
-    const imagePathCandidate = seedHasLargePrice
-      ? maybeImageUrl
-      : largePriceOrImageUrl;
-    const seedImagePath =
-      typeof imagePathCandidate === "string" &&
-      imagePathCandidate.startsWith("/uploads/")
-        ? imagePathCandidate
-        : null;
-    const variants = getSeedTemperatureVariants(categoryName, name);
-    const sizes = hasLargePrice
-      ? [
-          {
-            name: "Reguler",
-            price: regularPrice,
-            ...getSeedSizeFinancials(name, "Reguler", regularPrice),
-          },
-          {
-            name: "Large",
-            price: largePrice,
-            ...getSeedSizeFinancials(name, "Large", largePrice),
-          },
-        ]
-      : [];
-    const categoryId = categoryIdByName.get(categoryName);
-    const baseFinancials = seedMenuFinancials[name] || {
-      hppCost: 0,
-      grossProfit: 0,
-    };
-    if (!categoryId) continue;
-
-    const [existingRows] = await pool.query(
-      "SELECT id FROM menu_items WHERE name = ? LIMIT 1",
-      [name]
-    );
-
-    let menuItemId;
-
-    if (existingRows.length) {
-      menuItemId = existingRows[0].id;
-      await pool.query(
-        `UPDATE menu_items
-         SET category_id = ?,
-             regular_price = COALESCE(regular_price, ?),
-             hpp_cost = COALESCE(hpp_cost, ?),
-             gross_profit = COALESCE(gross_profit, ?),
-             image_path = COALESCE(NULLIF(image_path, ''), ?)
-          WHERE id = ?`,
-        [
-          categoryId,
-          sizes.length ? null : regularPrice,
-          sizes.length ? null : roundCurrency(baseFinancials.hppCost),
-          sizes.length ? null : roundCurrency(baseFinancials.grossProfit),
-          seedImagePath,
-          menuItemId,
-        ]
-      );
-    } else {
-      const [result] = await pool.query(
-      `INSERT INTO menu_items
-          (category_id, name, regular_price, online_price, include_online_platform, hpp_cost, gross_profit, image_path, is_available)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
-        [
-          categoryId,
-          name,
-          sizes.length ? null : regularPrice,
-          null,
-          false,
-          sizes.length ? null : roundCurrency(baseFinancials.hppCost),
-          sizes.length ? null : roundCurrency(baseFinancials.grossProfit),
-          seedImagePath,
-        ]
-      );
-      menuItemId = result.insertId;
-    }
-
-    await replaceMenuItemOptions(menuItemId, { sizes, variants });
+  if (isNewMenuCatalog) {
+    await seedDefaultMenuCatalog();
   }
-  await runSafeMigration(`
-    DELETE mis
-    FROM menu_item_sizes mis
-    JOIN menu_items mi ON mi.id = mis.menu_item_id
-    JOIN (
-      SELECT menu_item_id, COUNT(*) AS total
-      FROM menu_item_sizes
-      GROUP BY menu_item_id
-    ) size_counts ON size_counts.menu_item_id = mis.menu_item_id
-    WHERE size_counts.total = 1
-      AND mis.name = 'Harga'
-      AND mis.price = mi.regular_price
-  `);
-  await seedDefaultMenuIngredients();
-  await removeSinglePriceSizeSpecificIngredients();
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
@@ -390,9 +268,7 @@ const connectDB = async () => {
       order_code VARCHAR(40) UNIQUE,
       customer_name VARCHAR(100) NOT NULL,
       customer_phone VARCHAR(50) NULL,
-      guests INT NOT NULL,
       order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
-      order_platform VARCHAR(100),
       order_status VARCHAR(50) NOT NULL,
       order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       total DECIMAL(12,2) NOT NULL,
@@ -409,9 +285,10 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE orders ADD COLUMN note TEXT NULL AFTER payment_method");
   await runSafeMigration("ALTER TABLE orders ADD COLUMN order_code VARCHAR(40) UNIQUE AFTER id");
   await runSafeMigration("ALTER TABLE orders ADD COLUMN customer_phone VARCHAR(50) NULL AFTER customer_name");
-  await runSafeMigration("ALTER TABLE orders ADD COLUMN order_type VARCHAR(50) NOT NULL DEFAULT 'Offline' AFTER guests");
-  await runSafeMigration("ALTER TABLE orders ADD COLUMN order_platform VARCHAR(100) NULL AFTER order_type");
+  await runSafeMigration("ALTER TABLE orders ADD COLUMN order_type VARCHAR(50) NOT NULL DEFAULT 'Offline' AFTER customer_phone");
   await runSafeMigration("ALTER TABLE orders ADD COLUMN online_order_charge DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER total");
+  // guests was never entered in the UI (always 1).
+  await runSafeMigration("ALTER TABLE orders DROP COLUMN guests");
   await runSafeMigration("UPDATE orders SET order_type = 'Offline' WHERE order_type = 'Dine In'");
   await runSafeMigration("UPDATE orders SET order_type = 'Online' WHERE order_type = 'Online Order'");
   await backfillMonthlyOrderCodes();
@@ -422,6 +299,8 @@ const connectDB = async () => {
 
   await createOrderPlatformRelationTable();
   await backfillOrderPlatformRelations();
+  // The platform name now lives only in order_platforms (filled by the backfill above).
+  await runSafeMigration("ALTER TABLE orders DROP COLUMN order_platform");
 
   await runSafeMigration("DROP TABLE IF EXISTS order_online_transactions");
   await runSafeMigration("ALTER TABLE orders DROP COLUMN midtrans_order_id");
@@ -459,7 +338,6 @@ const connectDB = async () => {
       order_id INT UNSIGNED NOT NULL,
       item_key VARCHAR(100),
       menu_item_id INT UNSIGNED NULL,
-      size_name VARCHAR(80) NULL,
       name VARCHAR(150) NOT NULL,
       variant VARCHAR(50) NULL,
       quantity INT NOT NULL,
@@ -478,7 +356,6 @@ const connectDB = async () => {
     )
   `);
   await runSafeMigration("ALTER TABLE order_items ADD COLUMN menu_item_id INT UNSIGNED NULL AFTER item_key");
-  await runSafeMigration("ALTER TABLE order_items ADD COLUMN size_name VARCHAR(80) NULL AFTER menu_item_id");
   await runSafeMigration("ALTER TABLE order_items ADD COLUMN variant VARCHAR(50) NULL AFTER name");
   await runSafeMigration("ALTER TABLE order_items ADD COLUMN hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER price_per_quantity");
   await runSafeMigration("CREATE INDEX idx_order_items_menu_item_id ON order_items (menu_item_id)");
@@ -492,32 +369,12 @@ const connectDB = async () => {
   `);
   await runSafeMigration(`
     UPDATE order_items oi
-    SET oi.size_name = NULLIF(
-      TRIM(SUBSTRING(oi.item_key, LENGTH(SUBSTRING_INDEX(oi.item_key, '-', 2)) + 2)),
-      ''
-    )
-    WHERE oi.size_name IS NULL
-      AND oi.item_key REGEXP '^[0-9]+-[0-9]+-.+'
-  `);
-  await runSafeMigration(`
-    UPDATE order_items oi
-    LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
     SET oi.hpp_cost = COALESCE(
       (
-        SELECT mis.hpp_cost
-        FROM menu_item_sizes mis
-        WHERE mis.menu_item_id = oi.menu_item_id
-          AND LOWER(mis.name) = LOWER(oi.size_name)
-        LIMIT 1
+        SELECT mip.hpp_cost
+        FROM menu_item_prices mip
+        WHERE mip.menu_item_id = oi.menu_item_id
       ),
-      (
-        SELECT mis.hpp_cost
-        FROM menu_item_sizes mis
-        WHERE mis.menu_item_id = oi.menu_item_id
-        ORDER BY mis.sort_order ASC, mis.id ASC
-        LIMIT 1
-      ),
-      mi.hpp_cost,
       0
     )
     WHERE oi.hpp_cost = 0
@@ -528,6 +385,35 @@ const connectDB = async () => {
       FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
       ON DELETE SET NULL
   `);
+  await runSafeMigration("DROP TABLE IF EXISTS order_item_stock_usages");
+  // Menu sizes are gone; the variant label still describes historical items.
+  await runSafeMigration("ALTER TABLE order_items DROP COLUMN size_name");
+  // Per-ingredient HPP of each order item, frozen at sale time: cost =
+  // quantity x unit_cost per portion, and the costs sum to order_items.hpp_cost. Later recipe or price changes
+  // never touch it; names and units are copied so history stays readable.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_item_costs (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      order_item_id INT UNSIGNED NOT NULL,
+      stock_item_id INT UNSIGNED NULL,
+      stock_item_name VARCHAR(150) NOT NULL,
+      quantity DOUBLE NOT NULL DEFAULT 0,
+      unit VARCHAR(30) NOT NULL DEFAULT '',
+      unit_cost INT NOT NULL DEFAULT 0,
+      cost INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_order_item_costs_order_item_id (order_item_id),
+      INDEX idx_order_item_costs_stock_item_id (stock_item_id),
+      CONSTRAINT fk_order_item_costs_order_item
+        FOREIGN KEY (order_item_id) REFERENCES order_items(id)
+        ON DELETE CASCADE,
+      CONSTRAINT fk_order_item_costs_stock_item
+        FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+        ON DELETE SET NULL
+    )
+  `);
+  // unit_cost was first called unit_cost.
+  await runSafeMigration("ALTER TABLE order_item_costs RENAME COLUMN average_cost TO unit_cost");
 
   await runSafeMigration("DROP TABLE IF EXISTS order_item_addons");
   await runSafeMigration("DROP TABLE IF EXISTS add_ons");
@@ -712,6 +598,8 @@ const connectDB = async () => {
 const bootstrapDatabase = async () => {
   await connectDB();
   await ensureShoppingSchema(pool);
+  // Catches average costs changed outside the app (e.g. in phpMyAdmin).
+  await refreshMenuCosts(pool);
 };
 
 module.exports = { bootstrapDatabase, connectDB };

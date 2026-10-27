@@ -7,7 +7,7 @@
     "start": "node app.js",
     "network": "node -e \"require('./src/shared/utils/networkAddresses').printLocalAccessUrls()\"",
     "lint": "eslint .",
-    "test:unit": "node --test tests/unit/",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
     "test:integration": "node tests/integration/shopping.test.js && node --test tests/integration/regressions.test.js",
     "test:characterization": "node tests/characterization/run.js",
     "test:characterization:update": "node tests/characterization/run.js --update",

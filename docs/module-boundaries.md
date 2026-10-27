@@ -6,8 +6,9 @@ Setiap modul di `src/modules/<nama>/` memiliki tabelnya sendiri. Modul lain bole
 
 ```text
 orders ──► stock (stock.movements: potong / kembalikan stok dari resep)
+stock, shopping ──► menu (menu.costs: hitung ulang recipes.cost dan HPP menu saat unit_cost berubah)
 shared/middleware/authenticate ──► users (user.service: verifikasi token, ambil user)
-infrastructure/bootstrap ──► menu (menu.options: normalisasi size/varian untuk seed)
+infrastructure/bootstrap ──► menu (menu.options: baris harga untuk seed)
 ```
 
 Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `infrastructure/`.
@@ -18,11 +19,11 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 |---|---|---|---|---|
 | users | `/api/user` | `users` | – | – |
 | categories | `/api/category` | `categories` | – | `menu:changed` |
-| menu | `/api/menu-item` | `menu_items`, `menu_item_sizes`, `menu_item_variants`, `menu_item_ingredients`, `menu_seed_exclusions` | `categories`, `stock_items` (nama bahan) | `menu:changed` |
-| stock | `/api/stock-item` | `stock_items` | `menu_item_ingredients` (resep, di `stock.movements`) | `stock:changed` |
-| shopping | `/api/shopping` | `suplier`, `stock_purchases`, `stock_purchase_items`, `stock_purchase_item_logs` | – | `shopping:changed`, `stock:changed` |
+| menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `recipes` (pivot menu ↔ bahan stok), VIEW `recipe_details` (resep + nama menu/bahan + average cost + cost, baca-saja) | `categories`, `stock_items` (nama bahan) | `menu:changed` |
+| stock | `/api/stock-item` | `stock_items` | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
+| shopping | `/api/shopping` | `suplier`, `history_stock_purchases`, `history_stock_purchase_items`, `history_stock_purchase_item_logs` | – | `shopping:changed`, `stock:changed` |
 | platforms | `/api/order-platform` | `meta_data_platform` | – | `platforms:changed` |
-| orders | `/api/order` | `orders`, `order_items`, `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_sizes`, `menu_item_ingredients`, `stock_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
+| orders | `/api/order` | `orders`, `order_items`, `order_item_costs` (rincian HPP per bahan, dibekukan saat terjual), `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_prices`, `recipes`, `stock_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
 | recaps | `/api/recap` | `meta_data_format_recap`, `daily_recaps`, `weekly_recaps`, `monthly_recaps` | `users`, `menu_items` (lookup nama) | `recaps:changed` |
 
 ## Detail per modul
@@ -36,19 +37,21 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 
 ### menu
 - **Isi:**
-  - `menu.options`: normalisasi size, varian, dan resep (dipakai juga oleh seed);
+  - `menu.options`: normalisasi resep dan baris harga (dipakai juga oleh seed);
   - `menu.pricing`: aturan harga, HPP, dan profit;
   - `menu.images`: hapus file gambar yang tidak dipakai lagi;
   - `menu.upload`: multer, jpg/png maksimal 3 MB;
   - `menu.service`: orkestrasi;
   - `menu.repository`: SQL.
 - **Aturan:**
-  - Menu ber-size menyimpan harga dan HPP per size, sehingga harga dasar dan HPP-nya null.
-  - Mengedit atau menghapus menu hasil seed menambahkannya ke `menu_seed_exclusions` agar seed saat boot tidak menimpanya.
+  - `recipes.cost` = quantity × `stock_items.unit_cost` (harga per satuan, rata-rata dari belanja; rupiah bulat); `menu_item_prices.hpp_cost` = jumlah cost resep dan `gross_profit` = harga − HPP. Dihitung ulang oleh `menu.costs` saat resep disimpan, saat belanja/COGS mengubah unit_cost, dan setiap boot. Menu yang resepnya belum punya harga beli memakai HPP manual.
+  - Setiap menu punya satu harga (tanpa ukuran dan tanpa varian Hot/Cold). Harga, harga online, HPP, dan gross profit ada di `menu_item_prices`, satu baris per menu.
+  - `order_items.variant` hanya berisi label lama (mis. "Reguler / Cold") untuk order sebelum ukuran/varian dihapus.
+  - Menu default hanya di-seed sekali saat database baru, sehingga edit dan hapus menu tidak pernah ditimpa saat boot.
 
 ### stock
 - **Isi:** CRUD `stock_items` (`stock.repository`, `stock.controller`) dan `stock.movements`.
-- **`stock.movements`:** satu-satunya kode yang memotong atau mengembalikan stok berdasarkan resep. Ia menerima *recipe lines* `{ menuItemId, sizeName, quantity }` dan berjalan di koneksi transaksi pemanggil. Konversi satuannya lenient (`convertRecipeQuantity`).
+- **`stock.movements`:** satu-satunya kode yang memotong atau mengembalikan stok berdasarkan resep. Ia menerima *recipe lines* `{ menuItemId, quantity }` dan berjalan di koneksi transaksi pemanggil. Takaran resep selalu dalam satuan bahan di `stock_items`, jadi tidak ada konversi satuan; mengganti satuan stok antar satuan yang bisa dikonversi (mis. gr → kg) ikut menyesuaikan takaran resep.
 - **Status stok:** `HARUS ORDER` (stok ≤ minimum), `HAMPIR HABIS` (stok ≤ minimum + maks(1, 20%)), `AMAN`, atau `BEBAS STOK` untuk item unlimited.
 
 ### shopping

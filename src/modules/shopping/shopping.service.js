@@ -5,6 +5,7 @@ const createError = require("http-errors");
 const crypto = require("node:crypto");
 const { pool } = require("../../infrastructure/database/pool");
 const { roundCost, roundCurrency } = require("../../shared/utils/money");
+const { refreshMenuCosts } = require("../menu/menu.costs");
 const {
   clean,
   convertQuantity,
@@ -39,14 +40,14 @@ const snapshotItem = row => ({
   total: Number(row.total),
   stockQuantity: Number(row.stock_quantity),
   stockUnit: row.stock_unit,
-  stockAverageCost: Number(row.stock_average_cost || 0),
+  stockAverageCost: Number(row.stock_unit_cost || 0),
   stockValueAfter: Number(row.stock_value_after || 0),
 });
 const writeItemLog = async (connection, { item, action, oldData, newData, user }) => {
   const by = actor(user);
 
   await connection.query(
-    `INSERT INTO stock_purchase_item_logs
+    `INSERT INTO history_stock_purchase_item_logs
       (purchase_item_id, purchase_id, stock_item_id, item_name, action, old_data, new_data, user_id, user_name)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -64,10 +65,10 @@ const writeItemLog = async (connection, { item, action, oldData, newData, user }
 };
 const updatePurchaseTotal = async (connection, purchaseId) => {
   const [[totalRow]] = await connection.query(
-    "SELECT COALESCE(SUM(total), 0) AS total FROM stock_purchase_items WHERE purchase_id = ?",
+    "SELECT COALESCE(SUM(total), 0) AS total FROM history_stock_purchase_items WHERE purchase_id = ?",
     [purchaseId]
   );
-  await connection.query("UPDATE stock_purchases SET total = ? WHERE id = ?", [
+  await connection.query("UPDATE history_stock_purchases SET total = ? WHERE id = ?", [
     roundCurrency(totalRow.total),
     purchaseId,
   ]);
@@ -84,7 +85,7 @@ const applyStockDelta = async (connection, stockItemId, deltaQty, deltaValue) =>
   const nextAverageCost = nextStock > 0 ? roundCost(nextValue / nextStock) : 0;
 
   await connection.query(
-    "UPDATE stock_items SET stock = ?, stock_value = ?, average_cost = ? WHERE id = ?",
+    "UPDATE stock_items SET stock = ?, stock_value = ?, unit_cost = ? WHERE id = ?",
     [nextStock, nextValue, nextAverageCost, stockItemId]
   );
 
@@ -137,7 +138,7 @@ const createShoppingService = db => {
       if (!supplier) throw createError(400, "Toko/sumber tidak ditemukan.");
       const total = data.items.reduce((sum, item) => sum + Math.round(item.quantity * item.unitPrice * 100), 0) / 100;
       number(total, 0, 999999999999.99, 2, "Total belanja");
-      const [header] = await connection.query(`INSERT INTO stock_purchases
+      const [header] = await connection.query(`INSERT INTO history_stock_purchases
         (request_id, payload_hash, purchase_date, suplier_id, suplier_name, payment_method, note, total, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.requestId, hash, data.date, supplier.id, supplier.name, data.paymentMethod, data.note, total, userId]);
@@ -159,7 +160,7 @@ const createShoppingService = db => {
         }
         const stockQty = convertQuantity(item.quantity, item.unit, stock.unit);
         const previousStock = Math.max(Number(stock.stock || 0), 0);
-        const previousAverageCost = Number(stock.average_cost || 0);
+        const previousAverageCost = Number(stock.unit_cost || 0);
         const previousValue = Math.max(
           Number(stock.stock_value || 0),
           roundCurrency(previousStock * previousAverageCost)
@@ -168,17 +169,17 @@ const createShoppingService = db => {
         stock.stock = Math.round((Number(stock.stock) + stockQty) * 100) / 100;
         number(stock.stock, -9999999999.99, 9999999999.99, 2, "Jumlah stok akhir");
         stock.stock_value = roundCurrency(previousValue + purchaseValue);
-        stock.average_cost = stock.stock > 0 ? roundCost(stock.stock_value / stock.stock) : 0;
+        stock.unit_cost = stock.stock > 0 ? roundCost(stock.stock_value / stock.stock) : 0;
         await connection.query(
-          "UPDATE stock_items SET stock = ?, unit = ?, average_cost = ?, stock_value = ?, supplier = ? WHERE id = ?",
-          [stock.stock, stock.unit, stock.average_cost, stock.stock_value, supplier.name, stock.id]
+          "UPDATE stock_items SET stock = ?, unit = ?, unit_cost = ?, stock_value = ?, supplier = ? WHERE id = ?",
+          [stock.stock, stock.unit, stock.unit_cost, stock.stock_value, supplier.name, stock.id]
         );
-        const [insertedItem] = await connection.query(`INSERT INTO stock_purchase_items
-          (purchase_id, stock_item_id, item_name, quantity, unit, unit_price, total, stock_quantity, stock_unit, stock_average_cost, stock_value_after)
+        const [insertedItem] = await connection.query(`INSERT INTO history_stock_purchase_items
+          (purchase_id, stock_item_id, item_name, quantity, unit, unit_price, total, stock_quantity, stock_unit, stock_unit_cost, stock_value_after)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [header.insertId, stock.id, stock.name, item.quantity, item.unit, item.unitPrice, purchaseValue, stockQty, stock.unit, stock.average_cost, stock.stock_value]);
+        [header.insertId, stock.id, stock.name, item.quantity, item.unit, item.unitPrice, purchaseValue, stockQty, stock.unit, stock.unit_cost, stock.stock_value]);
         const [[createdItem]] = await connection.query(
-          "SELECT * FROM stock_purchase_items WHERE id = ?",
+          "SELECT * FROM history_stock_purchase_items WHERE id = ?",
           [insertedItem.insertId]
         );
         await writeItemLog(connection, {
@@ -189,12 +190,13 @@ const createShoppingService = db => {
           user,
         });
       }
+      await refreshMenuCosts(connection, { stockItemIds: ids });
       await connection.commit();
       return { id: header.insertId, total, duplicate: false };
     } catch (error) {
       await connection.rollback();
       if (error.code === "ER_DUP_ENTRY") {
-        const [[existing]] = await connection.query("SELECT id, total, payload_hash FROM stock_purchases WHERE request_id = ?", [data.requestId]);
+        const [[existing]] = await connection.query("SELECT id, total, payload_hash FROM history_stock_purchases WHERE request_id = ?", [data.requestId]);
         if (existing) {
           if (existing.payload_hash !== hash) throw createError(409, "Permintaan ini sudah disimpan dengan isi berbeda. Muat ulang form untuk belanja baru.");
           return { id: existing.id, total: Number(existing.total), duplicate: true };
@@ -211,7 +213,7 @@ const createShoppingService = db => {
     try {
       await connection.beginTransaction();
       const [[item]] = await connection.query(
-        "SELECT * FROM stock_purchase_items WHERE id = ? FOR UPDATE",
+        "SELECT * FROM history_stock_purchase_items WHERE id = ? FOR UPDATE",
         [id]
       );
       if (!item) throw createError(404, "Item belanja tidak ditemukan.");
@@ -234,9 +236,9 @@ const createShoppingService = db => {
       );
 
       await connection.query(
-        `UPDATE stock_purchase_items
+        `UPDATE history_stock_purchase_items
          SET quantity = ?, unit = ?, unit_price = ?, total = ?,
-             stock_quantity = ?, stock_unit = ?, stock_average_cost = ?, stock_value_after = ?
+             stock_quantity = ?, stock_unit = ?, stock_unit_cost = ?, stock_value_after = ?
          WHERE id = ?`,
         [
           data.quantity,
@@ -251,9 +253,10 @@ const createShoppingService = db => {
         ]
       );
       await updatePurchaseTotal(connection, item.purchase_id);
+      await refreshMenuCosts(connection, { stockItemIds: [item.stock_item_id] });
 
       const [[updated]] = await connection.query(
-        "SELECT * FROM stock_purchase_items WHERE id = ?",
+        "SELECT * FROM history_stock_purchase_items WHERE id = ?",
         [id]
       );
       const newData = snapshotItem(updated);
@@ -275,7 +278,7 @@ const createShoppingService = db => {
     try {
       await connection.beginTransaction();
       const [[item]] = await connection.query(
-        "SELECT * FROM stock_purchase_items WHERE id = ? FOR UPDATE",
+        "SELECT * FROM history_stock_purchase_items WHERE id = ? FOR UPDATE",
         [id]
       );
       if (!item) throw createError(404, "Item belanja tidak ditemukan.");
@@ -289,8 +292,9 @@ const createShoppingService = db => {
         -Number(item.total || 0)
       );
       await writeItemLog(connection, { item, action: "delete", oldData, newData: null, user });
-      await connection.query("DELETE FROM stock_purchase_items WHERE id = ?", [id]);
+      await connection.query("DELETE FROM history_stock_purchase_items WHERE id = ?", [id]);
       await updatePurchaseTotal(connection, item.purchase_id);
+      await refreshMenuCosts(connection, { stockItemIds: [item.stock_item_id] });
 
       await connection.commit();
       return oldData;
@@ -304,12 +308,12 @@ const createShoppingService = db => {
   const list = async ({ page = 1, search = "" } = {}) => {
     page = Math.max(1, Math.floor(Number(page) || 1));
     const keyword = `%${String(search).slice(0,150)}%`;
-    const where = `WHERE p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM stock_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?)`;
+    const where = `WHERE p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM history_stock_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?)`;
     const itemWhere = `WHERE p.suplier_name LIKE ? OR i.item_name LIKE ?`;
-    const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM stock_purchases p ${where}`, [keyword, keyword]);
-    const [rows] = await db.query(`SELECT p.* FROM stock_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [keyword, keyword, (page-1)*10]);
+    const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM history_stock_purchases p ${where}`, [keyword, keyword]);
+    const [rows] = await db.query(`SELECT p.* FROM history_stock_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [keyword, keyword, (page-1)*10]);
     if (rows.length) {
-      const [items] = await db.query(`SELECT * FROM stock_purchase_items WHERE purchase_id IN (${rows.map(()=>"?").join(",")}) ORDER BY id`, rows.map(row=>row.id));
+      const [items] = await db.query(`SELECT * FROM history_stock_purchase_items WHERE purchase_id IN (${rows.map(()=>"?").join(",")}) ORDER BY id`, rows.map(row=>row.id));
       rows.forEach(row => { delete row.payload_hash; delete row.request_id; row.items = items.filter(item=>item.purchase_id===row.id); });
     }
     const [itemRows] = await db.query(
@@ -321,10 +325,10 @@ const createShoppingService = db => {
          p.note,
          si.stock,
          si.unit AS current_unit,
-         si.average_cost,
+         si.unit_cost,
          si.stock_value
-       FROM stock_purchase_items i
-       JOIN stock_purchases p ON p.id = i.purchase_id
+       FROM history_stock_purchase_items i
+       JOIN history_stock_purchases p ON p.id = i.purchase_id
        LEFT JOIN stock_items si ON si.id = i.stock_item_id
        ${itemWhere}
        ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
@@ -340,7 +344,7 @@ const createShoppingService = db => {
             itemName: row.item_name,
             stock: row.stock == null ? null : Number(row.stock),
             stockUnit: row.current_unit || row.stock_unit,
-            averageCost: Number(row.average_cost || 0),
+            averageCost: Number(row.unit_cost || 0),
             stockValue: Number(row.stock_value || 0),
             purchaseCount: 0,
             histories: [],
@@ -363,7 +367,7 @@ const createShoppingService = db => {
           total: Number(row.total),
           stockQuantity: Number(row.stock_quantity),
           stockUnit: row.stock_unit,
-          stockAverageCost: Number(row.stock_average_cost || 0),
+          stockAverageCost: Number(row.stock_unit_cost || 0),
           stockValueAfter: Number(row.stock_value_after || 0),
         });
 
@@ -378,7 +382,7 @@ const createShoppingService = db => {
     if (stockIds.length) {
       const [logs] = await db.query(
         `SELECT *
-         FROM stock_purchase_item_logs
+         FROM history_stock_purchase_item_logs
          WHERE stock_item_id IN (${stockIds.map(() => "?").join(",")})
          ORDER BY created_at DESC, id DESC
          LIMIT 200`,

@@ -1,75 +1,50 @@
-// Values frozen onto an order at sale time: the item's HPP (from the current
-// recipe/average cost, else the stored size/menu HPP) and the platform fee.
-const { parseNominal, roundCurrency } = require("../../shared/utils/money");
-const { convertRecipeQuantity } = require("../../shared/utils/units");
+// Values frozen onto an order at sale time: the item's HPP with its
+// per-ingredient breakdown (current recipe x average cost, else the HPP stored
+// in menu_item_prices) and the platform fee.
+const { parseNominal } = require("../../shared/utils/money");
 
-const findMenuItemSnapshot = async (connection, menuItemId, sizeName = "") => {
-  if (!menuItemId) return { menuItemId: null, hppCost: 0 };
+const findMenuItemSnapshot = async (connection, menuItemId) => {
+  if (!menuItemId) return { menuItemId: null, hppCost: 0, costs: [] };
 
-  const [ingredientRows] = await connection.query(
+  const [recipeRows] = await connection.query(
     `SELECT
-       mii.quantity,
-       mii.unit AS ingredient_unit,
-       mii.size_name,
-       si.unit AS stock_unit,
-       si.average_cost
-     FROM menu_item_ingredients mii
-     JOIN stock_items si ON si.id = mii.stock_item_id
-     WHERE mii.menu_item_id = ?
-       AND mii.stock_item_id IS NOT NULL`,
+       r.stock_item_id,
+       si.name AS stock_item_name,
+       r.quantity,
+       si.unit,
+       si.unit_cost,
+       ROUND(r.quantity * si.unit_cost) AS cost
+     FROM recipes r
+     JOIN stock_items si ON si.id = r.stock_item_id
+     WHERE r.menu_item_id = ?
+     ORDER BY r.sort_order ASC, r.id ASC`,
     [menuItemId]
   );
-  const normalizedSizeName = String(sizeName || "").trim().toLowerCase();
-  const dynamicHpp = ingredientRows.reduce((total, ingredient) => {
-    const ingredientSizeName = String(ingredient.size_name || "").trim().toLowerCase();
-
-    if (
-      ingredientSizeName &&
-      (!normalizedSizeName || ingredientSizeName !== normalizedSizeName)
-    ) {
-      return total;
-    }
-
-    const stockQuantity = convertRecipeQuantity(
-      Number(ingredient.quantity) || 0,
-      ingredient.ingredient_unit,
-      ingredient.stock_unit
-    );
-
-    return total + stockQuantity * Number(ingredient.average_cost || 0);
-  }, 0);
+  const costs = recipeRows.map((row) => ({
+    stockItemId: row.stock_item_id,
+    stockItemName: row.stock_item_name,
+    quantity: Number(row.quantity) || 0,
+    unit: row.unit || "",
+    unitCost: Number(row.unit_cost) || 0,
+    cost: Number(row.cost) || 0,
+  }));
+  const recipeHpp = costs.reduce((total, line) => total + line.cost, 0);
 
   const [rows] = await connection.query(
-    `SELECT mi.id,
-            COALESCE(
-       (
-         SELECT mis.hpp_cost
-         FROM menu_item_sizes mis
-         WHERE mis.menu_item_id = mi.id
-           AND LOWER(mis.name) = LOWER(?)
-         LIMIT 1
-       ),
-       (
-         SELECT mis.hpp_cost
-         FROM menu_item_sizes mis
-         WHERE mis.menu_item_id = mi.id
-         ORDER BY mis.sort_order ASC, mis.id ASC
-         LIMIT 1
-       ),
-       mi.hpp_cost,
-       0
-     ) AS hpp_cost
+    `SELECT mi.id, COALESCE(mip.hpp_cost, 0) AS hpp_cost
      FROM menu_items mi
+     LEFT JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
      WHERE mi.id = ?
      LIMIT 1`,
-    [sizeName, menuItemId]
+    [menuItemId]
   );
 
-  if (!rows.length) return { menuItemId: null, hppCost: 0 };
+  if (!rows.length) return { menuItemId: null, hppCost: 0, costs: [] };
 
   return {
     menuItemId: rows[0].id,
-    hppCost: dynamicHpp > 0 ? roundCurrency(dynamicHpp) : Number(rows[0].hpp_cost || 0),
+    hppCost: recipeHpp > 0 ? recipeHpp : Number(rows[0].hpp_cost || 0),
+    costs,
   };
 };
 

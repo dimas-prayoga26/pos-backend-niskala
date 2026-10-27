@@ -129,8 +129,8 @@ describe("regressions", () => {
     // One order already has a monthly code, a later one in the same month has none.
     const insertOrder = (code, date) =>
       db.query(
-        `INSERT INTO orders (order_code, customer_name, guests, order_status, order_date, total, tax, total_with_tax)
-         VALUES (?, 'Lama', 1, 'Completed', ?, 1000, 0, 1000)`,
+        `INSERT INTO orders (order_code, customer_name, order_status, order_date, total, tax, total_with_tax)
+         VALUES (?, 'Lama', 'Completed', ?, 1000, 0, 1000)`,
         [code, date]
       );
     await insertOrder("2601-0001", "2026-01-05 10:00:00");
@@ -148,5 +148,181 @@ describe("regressions", () => {
       "SELECT order_code FROM orders WHERE customer_name = 'Lama' ORDER BY order_date"
     );
     assert.deepEqual(codes.map((row) => row.order_code), ["2601-0001", "2601-0002"]);
+  });
+
+  it("rescales recipe quantities when a stock item switches to a convertible unit", async () => {
+    const stock = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Gula Resep", category: "Bahan", unit: "gr", stock: 1000 },
+    });
+    const stockItemId = stock.body.data.id;
+    const [[category]] = await db.query("SELECT id FROM categories ORDER BY id LIMIT 1");
+    const menu = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: {
+        categoryId: category.id,
+        name: "Teh Manis Resep",
+        price: 5000,
+        ingredients: [{ stockItemId, quantity: 15 }],
+      },
+    });
+    assert.equal(menu.status, 201);
+
+    const updateUnit = (unit) =>
+      request("PUT", `/api/stock-item/${stockItemId}`, {
+        as: "admin",
+        body: { name: "Gula Resep", category: "Bahan", unit, stock: 1 },
+      });
+    const recipeQuantity = async () => {
+      const [[row]] = await db.query(
+        "SELECT quantity FROM recipes WHERE stock_item_id = ?",
+        [stockItemId]
+      );
+      return Number(row.quantity);
+    };
+
+    await updateUnit("kg");
+    assert.equal(await recipeQuantity(), 0.015);
+    await updateUnit("pcs");
+    assert.equal(await recipeQuantity(), 0.015, "incompatible units leave the recipe as is");
+  });
+
+  it("keeps recipe cost and menu HPP in step with the stock average cost", async () => {
+    const stock = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Kopi Biaya", category: "Bahan", unit: "gr", stock: 1000 },
+    });
+    const stockItemId = stock.body.data.id;
+    const [[category]] = await db.query("SELECT id FROM categories ORDER BY id LIMIT 1");
+    const menu = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: {
+        categoryId: category.id,
+        name: "Kopi Biaya",
+        price: 20000,
+        hppCost: 5000,
+        ingredients: [{ stockItemId, quantity: 8 }],
+      },
+    });
+    assert.equal(menu.body.data.hppCost, 5000, "without purchase prices the manual HPP stays");
+
+    await request("PATCH", `/api/stock-item/${stockItemId}/cogs`, {
+      as: "admin",
+      body: { averageCost: 205 },
+    });
+
+    const [[recipe]] = await db.query("SELECT cost FROM recipes WHERE stock_item_id = ?", [stockItemId]);
+    assert.equal(recipe.cost, 1640);
+    const [[price]] = await db.query(
+      "SELECT hpp_cost, gross_profit FROM menu_item_prices WHERE menu_item_id = ?",
+      [menu.body.data.id]
+    );
+    assert.deepEqual([Number(price.hpp_cost), Number(price.gross_profit)], [1640, 18360]);
+  });
+
+  it("freezes the per-ingredient HPP of sold items when costs change later", async () => {
+    const stock = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Susu Snapshot", category: "Bahan", unit: "ml", stock: 10000 },
+    });
+    const stockItemId = stock.body.data.id;
+    await request("PATCH", `/api/stock-item/${stockItemId}/cogs`, {
+      as: "admin",
+      body: { averageCost: 20 },
+    });
+    const [[category]] = await db.query("SELECT id FROM categories ORDER BY id LIMIT 1");
+    const menu = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: {
+        categoryId: category.id,
+        name: "Latte Snapshot",
+        price: 18000,
+        ingredients: [{ stockItemId, quantity: 100 }],
+      },
+    });
+    const menuItemId = menu.body.data.id;
+
+    const order = await request("POST", "/api/order", {
+      as: "cashier",
+      body: {
+        customerDetails: { name: "Snapshot" },
+        orderType: "Offline",
+        orderStatus: "In Progress",
+        bills: { total: 36000, tax: 0, totalWithTax: 36000 },
+        items: [{
+          id: `${category.id}-${menuItemId}`,
+          sourceMenuItemId: menuItemId,
+          name: "Latte Snapshot",
+          quantity: 2,
+          pricePerQuantity: 18000,
+          price: 36000,
+        }],
+        paymentMethod: "Cash",
+      },
+    });
+    assert.equal(order.status, 201);
+
+    const soldCosts = async () => {
+      const [rows] = await db.query(
+        `SELECT oi.hpp_cost, c.stock_item_name, c.quantity, c.unit, c.unit_cost, c.cost
+         FROM order_item_costs c
+         JOIN order_items oi ON oi.id = c.order_item_id
+         WHERE oi.order_id = ?`,
+        [order.body.data.id]
+      );
+      return rows.map((row) => ({ ...row, hpp_cost: Number(row.hpp_cost) }));
+    };
+    const atSale = [{
+      hpp_cost: 2000, stock_item_name: "Susu Snapshot", quantity: 100, unit: "ml", unit_cost: 20, cost: 2000,
+    }];
+    assert.deepEqual(await soldCosts(), atSale);
+
+    // The milk price rises: the recipe follows, the sold item does not.
+    await request("PATCH", `/api/stock-item/${stockItemId}/cogs`, {
+      as: "admin",
+      body: { averageCost: 25 },
+    });
+    const [[recipe]] = await db.query("SELECT cost FROM recipes WHERE menu_item_id = ?", [menuItemId]);
+    assert.equal(recipe.cost, 2500);
+    assert.deepEqual(await soldCosts(), atSale);
+  });
+
+  it("stores whole-rupiah average costs but keeps the exact stock value", async () => {
+    const stock = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Matcha Nilai", category: "Bahan", unit: "gr", stock: 1600 },
+    });
+    const id = stock.body.data.id;
+
+    // 800 gr package for Rp169.000 -> Rp211,25 per gr.
+    const cogs = await request("PATCH", `/api/stock-item/${id}/cogs`, {
+      as: "admin",
+      body: { averageCost: 211.25 },
+    });
+    assert.equal(cogs.body.data.averageCost, 211);
+    assert.equal(cogs.body.data.stockValue, 338000);
+
+    const halved = await request("PATCH", `/api/stock-item/${id}/stock`, {
+      as: "admin",
+      body: { stock: 800 },
+    });
+    assert.equal(halved.body.data.stockValue, 169000, "not 800 x 211 = 168.800");
+  });
+
+  it("never stores a negative stock value when COGS is set on negative stock", async () => {
+    const stock = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Susu Minus", category: "Bahan", unit: "ml", stock: 0 },
+    });
+    const id = stock.body.data.id;
+    // Orders with allowNegativeStock can push stock below zero.
+    await db.query("UPDATE stock_items SET stock = -1500 WHERE id = ?", [id]);
+
+    const cogs = await request("PATCH", `/api/stock-item/${id}/cogs`, {
+      as: "admin",
+      body: { averageCost: 20 },
+    });
+    assert.equal(cogs.body.data.averageCost, 20);
+    assert.equal(cogs.body.data.stockValue, 0, "the dialog preview shows Rp 0 as well");
   });
 });

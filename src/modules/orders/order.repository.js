@@ -20,10 +20,9 @@ const mapOrder = (row, items = []) => {
     customerDetails: {
       name: row.customer_name,
       phone: row.customer_phone || "",
-      guests: row.guests,
     },
     orderType: row.order_type || "Offline",
-    orderPlatform: row.order_platform_name || row.order_platform || "",
+    orderPlatform: row.order_platform_name || "",
     orderPlatformId: row.order_platform_meta_id || null,
     platformTax: Number(row.order_platform_tax || 0),
     orderStatus: row.order_status,
@@ -65,8 +64,6 @@ const mapItem = (row) => ({
   _id: row.id,
   menuItemId: row.menu_item_id,
   sourceMenuItemId: row.menu_item_id,
-  sizeName: row.size_name || "",
-  sizeVariant: row.size_name || "",
   name: row.name,
   variant: row.variant,
   quantity: row.quantity,
@@ -157,9 +154,7 @@ const insertOrder = async (
   {
     customerName,
     customerPhone,
-    guests,
     orderType,
-    platformName,
     orderStatus,
     orderDate,
     bills,
@@ -173,15 +168,13 @@ const insertOrder = async (
   const orderDateParams = orderDate ? [orderDate] : [];
   const [result] = await connection.query(
     `INSERT INTO orders
-      (customer_name, customer_phone, guests, order_type, order_platform, order_status, order_date, total, online_order_charge, tax, total_with_tax,
+      (customer_name, customer_phone, order_type, order_status, order_date, total, online_order_charge, tax, total_with_tax,
        payment_method, note)
-     VALUES (?, ?, ?, ?, ?, ?, ${orderDateExpression}, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ${orderDateExpression}, ?, ?, ?, ?, ?, ?)`,
     [
       customerName,
       customerPhone || null,
-      guests,
       orderType,
-      platformName,
       orderStatus,
       ...orderDateParams,
       bills.total,
@@ -239,17 +232,16 @@ const insertCateringDetails = (
     ]
   );
 
-const insertOrderItem = (connection, orderId, { item, sizeName, menuItemSnapshot }) =>
-  connection.query(
+const insertOrderItem = async (connection, orderId, { item, menuItemSnapshot }) => {
+  const [result] = await connection.query(
     `INSERT INTO order_items
-      (order_id, item_key, menu_item_id, size_name, name, variant, quantity,
+      (order_id, item_key, menu_item_id, name, variant, quantity,
        price_per_quantity, hpp_cost, price)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       orderId,
       item.id || null,
       menuItemSnapshot.menuItemId,
-      sizeName || null,
       item.name,
       item.variant || null,
       item.quantity,
@@ -258,6 +250,31 @@ const insertOrderItem = (connection, orderId, { item, sizeName, menuItemSnapshot
       item.price,
     ]
   );
+
+  return result.insertId;
+};
+
+// Per-ingredient HPP frozen at sale time (see order_item_costs).
+const insertOrderItemCosts = async (connection, orderItemId, costs = []) => {
+  if (!costs.length) return;
+
+  await connection.query(
+    `INSERT INTO order_item_costs
+      (order_item_id, stock_item_id, stock_item_name, quantity, unit, unit_cost, cost)
+     VALUES ?`,
+    [
+      costs.map((line) => [
+        orderItemId,
+        line.stockItemId,
+        line.stockItemName,
+        line.quantity,
+        line.unit,
+        line.unitCost,
+        line.cost,
+      ]),
+    ]
+  );
+};
 
 const updateStatus = (connection, id, orderStatus) =>
   connection.query("UPDATE orders SET order_status = ? WHERE id = ?", [
@@ -316,7 +333,6 @@ const findItemsForStockRestore = async (connection, id) => {
     `SELECT
        item_key AS id,
        menu_item_id AS menuItemId,
-       size_name AS sizeName,
        quantity
      FROM order_items
      WHERE order_id = ?`,
@@ -344,6 +360,7 @@ module.exports = {
   insertCateringDetails,
   insertOrder,
   insertOrderItem,
+  insertOrderItemCosts,
   insertOrderPlatform,
   orderExists,
   setCateringPaidStatus,

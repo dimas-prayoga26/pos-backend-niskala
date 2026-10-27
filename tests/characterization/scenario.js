@@ -171,32 +171,29 @@ module.exports = async function scenario(api) {
     as: "admin",
     body: { categoryId, name: "Tanpa Harga" },
   });
-  const sized = await call("menu add with sizes", "POST", "/api/menu-item", {
+  const coffee = await call("menu add with recipe", "POST", "/api/menu-item", {
     as: "admin",
     body: {
       categoryId,
       name: "Kopi Uji",
+      price: 20000,
+      hppCost: 6000,
       includeOnlinePlatform: true,
       onlinePrice: 30000,
-      sizes: [
-        { name: "Regular", price: 20000, hppCost: 6000 },
-        { name: "Large", price: 26000, hpp_cost: 8000, gross_profit: 17000 },
-        { name: "", price: 1 },
-      ],
-      variants: ["Hot", " Ice ", ""],
       ingredients: [
-        { stockItemId: beansId, sizeName: "Regular", ingredientName: "Biji Uji", quantity: 18, unit: "gr" },
-        { stock_item_id: beansId, size_name: "Large", name: "Biji Uji", quantity: 25, unit: "g" },
-        { stockItemId: cupsId, ingredientName: "Cup Uji", quantity: 1, unit: "pcs", note: "semua ukuran" },
-        { ingredientName: "Tanpa Stok", quantity: 1, unit: "pcs" },
+        { stockItemId: beansId, ingredientName: "Biji Uji", quantity: 0.018 },
+        { stock_item_id: beansId, name: "Biji Uji", quantity: 0.002 },
+        { stockItemId: cupsId, ingredientName: "Cup Uji", quantity: 1, note: "1 per gelas" },
+        { ingredientName: "Tanpa Stok", quantity: 1 },
       ],
       isAvailable: true,
     },
   });
-  const sizedId = sized.body.data.id;
+  const coffeeId = coffee.body.data.id;
+  await call("stock delete used in recipe", "DELETE", `/api/stock-item/${cupsId}`, { as: "admin" });
   const single = await call("menu add single price", "POST", "/api/menu-item", {
     as: "admin",
-    body: { categoryId, name: "Roti Uji", price: "15000", hpp: 5000, profit: 10000, largePrice: 99 },
+    body: { categoryId, name: "Roti Uji", price: "15000", hpp: 5000, profit: 10000 },
   });
   const singleId = single.body.data.id;
   await call("menu add regularPrice with hppCost only", "POST", "/api/menu-item", {
@@ -230,7 +227,6 @@ module.exports = async function scenario(api) {
       regularPrice: 17000,
       hppCost: 6000,
       imagePath: uploaded.body?.data?.imagePath,
-      variants: ["Coklat"],
     },
   });
   await call("menu update not found", "PUT", "/api/menu-item/999999", {
@@ -327,12 +323,10 @@ module.exports = async function scenario(api) {
 
   // --- orders -------------------------------------------------------------
   const baseItem = (overrides) => ({
-    id: `${categoryId}-${sizedId}-Regular`,
-    menuItemId: `${categoryId}-${sizedId}-Regular`,
-    sourceMenuItemId: sizedId,
+    id: `${categoryId}-${coffeeId}`,
+    menuItemId: `${categoryId}-${coffeeId}`,
+    sourceMenuItemId: coffeeId,
     name: "Kopi Uji",
-    sizeVariant: "Regular",
-    variant: "Hot",
     quantity: 2,
     pricePerQuantity: 20000,
     price: 40000,
@@ -366,8 +360,8 @@ module.exports = async function scenario(api) {
     body: {
       customerDetails: { name: "guest" },
       orderStatus: "In Progress",
-      bills: { total: 26000, tax: 0, totalWithTax: 26000 },
-      items: [baseItem({ sizeVariant: "Large", quantity: 1, pricePerQuantity: 26000, price: 26000 })],
+      bills: { total: 20000, tax: 0, totalWithTax: 20000 },
+      items: [baseItem({ quantity: 1, price: 20000 })],
       paymentMethod: "QRIS",
     },
   });
@@ -556,7 +550,7 @@ module.exports = async function scenario(api) {
       customerDetails: { name: "Minus" },
       orderStatus: "In Progress",
       bills: { total: 1, tax: 0, totalWithTax: 1 },
-      items: [{ id: `${categoryId}-${sizedId}`, menuItemId: sizedId, name: "Kopi Uji", sizeName: "Large", quantity: 200, pricePerQuantity: 1, price: 1 }],
+      items: [{ id: `${categoryId}-${coffeeId}`, menuItemId: coffeeId, name: "Kopi Uji", quantity: 200, pricePerQuantity: 1, price: 1 }],
       allowNegativeStock: true,
       paymentMethod: "Cash",
     },

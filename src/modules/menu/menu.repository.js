@@ -1,25 +1,20 @@
 const { pool } = require("../../infrastructure/database/pool");
 const {
+  PRICE_ROW_COLUMNS,
   normalizeIngredients,
-  normalizeSizes,
-  normalizeVariants,
+  toPriceRow,
 } = require("./menu.options");
 
+const toNullableNumber = (value) =>
+  value === null || value === undefined ? null : Number(value);
+
+// Price fields come from menu_item_prices; all are null without a price row.
 const mapMenuItem = (row) => {
   if (!row) return null;
 
-  const regularPriceValue = row.regular_price ?? row.price;
-  const regularPrice =
-    regularPriceValue === null || regularPriceValue === undefined
-      ? null
-      : Number(regularPriceValue);
-  const onlinePrice =
-    row.online_price === null || row.online_price === undefined
-      ? null
-      : Number(row.online_price);
-  const hppCost = row.hpp_cost === null ? null : Number(row.hpp_cost || 0);
-  const grossProfit =
-    row.gross_profit === null ? null : Number(row.gross_profit || 0);
+  const regularPrice = toNullableNumber(row.regular_price);
+  const hppCost = toNullableNumber(row.hpp_cost);
+  const grossProfit = toNullableNumber(row.gross_profit);
 
   return {
     _id: row.id,
@@ -28,16 +23,13 @@ const mapMenuItem = (row) => {
     name: row.name,
     price: regularPrice,
     regularPrice,
-    onlinePrice,
+    onlinePrice: toNullableNumber(row.online_price),
     includeOnlinePlatform: Boolean(row.include_online_platform),
-    largePrice: null,
     hppCost,
     hpp: hppCost,
     grossProfit,
     profit: grossProfit,
     ingredients: [],
-    variants: [],
-    sizes: [],
     imagePath: row.image_path,
     isAvailable: Boolean(row.is_available),
     category: row.category_name
@@ -60,12 +52,17 @@ const mapMenuItem = (row) => {
 const baseQuery = `
   SELECT
     mi.*,
+    mip.regular_price,
+    mip.online_price,
+    mip.hpp_cost,
+    mip.gross_profit,
     c.name AS category_name,
     c.icon AS category_icon,
     c.tax AS category_tax,
     c.sort_order AS category_sort_order
   FROM menu_items mi
   JOIN categories c ON c.id = mi.category_id
+  LEFT JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
 `;
 
 const categoryOrder = `
@@ -112,62 +109,23 @@ const menuItemOrder = `
   END
 `;
 
-const attachOptions = async (menuItems) => {
+const attachRecipes = async (menuItems) => {
   if (!menuItems.length) return menuItems;
 
   const ids = menuItems.map((item) => item.id);
-  const placeholders = ids.map(() => "?").join(", ");
-  const [sizeRows] = await pool.query(
-    `SELECT menu_item_id, name, price, hpp_cost, gross_profit
-     FROM menu_item_sizes
-     WHERE menu_item_id IN (${placeholders})
-     ORDER BY sort_order ASC, id ASC`,
-    ids
-  );
-  const [variantRows] = await pool.query(
-    `SELECT menu_item_id, name
-     FROM menu_item_variants
-     WHERE menu_item_id IN (${placeholders})
-     ORDER BY sort_order ASC, id ASC`,
-    ids
-  );
   const [ingredientRows] = await pool.query(
     `SELECT
-       mii.*,
-       si.name AS stock_item_name
-     FROM menu_item_ingredients mii
-     LEFT JOIN stock_items si ON si.id = mii.stock_item_id
-     WHERE mii.menu_item_id IN (${placeholders})
-     ORDER BY mii.sort_order ASC, mii.id ASC`,
-    ids
+       r.*,
+       si.name AS stock_item_name,
+       si.unit AS stock_unit
+     FROM recipes r
+     JOIN stock_items si ON si.id = r.stock_item_id
+     WHERE r.menu_item_id IN (?)
+     ORDER BY r.sort_order ASC, r.id ASC`,
+    [ids]
   );
 
-  const sizesByMenuItemId = new Map();
-  const variantsByMenuItemId = new Map();
   const ingredientsByMenuItemId = new Map();
-
-  for (const row of sizeRows) {
-    if (!sizesByMenuItemId.has(row.menu_item_id)) {
-      sizesByMenuItemId.set(row.menu_item_id, []);
-    }
-
-    sizesByMenuItemId.get(row.menu_item_id).push({
-      name: row.name,
-      price: Number(row.price),
-      hppCost: Number(row.hpp_cost || 0),
-      hpp: Number(row.hpp_cost || 0),
-      grossProfit: Number(row.gross_profit || 0),
-      profit: Number(row.gross_profit || 0),
-    });
-  }
-
-  for (const row of variantRows) {
-    if (!variantsByMenuItemId.has(row.menu_item_id)) {
-      variantsByMenuItemId.set(row.menu_item_id, []);
-    }
-
-    variantsByMenuItemId.get(row.menu_item_id).push(row.name);
-  }
 
   for (const row of ingredientRows) {
     if (!ingredientsByMenuItemId.has(row.menu_item_id)) {
@@ -179,113 +137,55 @@ const attachOptions = async (menuItems) => {
       id: row.id,
       stockItemId: row.stock_item_id,
       stockItemName: row.stock_item_name,
-      sizeName: row.size_name || "",
-      ingredientName: row.ingredient_name,
-      name: row.ingredient_name,
+      ingredientName: row.stock_item_name,
+      name: row.stock_item_name,
       quantity: Number(row.quantity),
-      unit: row.unit,
+      unit: row.stock_unit,
       note: row.note || "",
     });
   }
 
-  return menuItems.map((item) => {
-    const sizes = sizesByMenuItemId.get(item.id) || [];
-    const variants = variantsByMenuItemId.get(item.id) || [];
-    const ingredients = ingredientsByMenuItemId.get(item.id) || [];
-    const primarySize = sizes[0];
-
-    return {
-      ...item,
-      price: primarySize?.price ?? item.price,
-      regularPrice: primarySize?.price ?? item.regularPrice,
-      largePrice:
-        sizes.find((size) => size.name.toLowerCase() === "large")?.price ??
-        sizes[1]?.price ??
-        null,
-      hppCost: primarySize?.hppCost ?? item.hppCost,
-      hpp: primarySize?.hpp ?? item.hpp,
-      grossProfit: primarySize?.grossProfit ?? item.grossProfit,
-      profit: primarySize?.profit ?? item.profit,
-      sizes,
-      variants,
-      ingredients,
-    };
-  });
+  return menuItems.map((item) => ({
+    ...item,
+    ingredients: ingredientsByMenuItemId.get(item.id) || [],
+  }));
 };
 
-// Replaces sizes and variants; ingredients only when an array is supplied.
-const replaceOptions = async (
+// Replaces the price row; recipe rows only when an ingredients array is supplied.
+const replacePriceAndRecipe = async (
   connection,
   menuItemId,
-  { sizes, variants, ingredients }
+  { price, ingredients }
 ) => {
-  const normalizedSizes = normalizeSizes(sizes);
-  const normalizedVariants = normalizeVariants(variants);
-  const shouldReplaceIngredients = Array.isArray(ingredients);
-  const normalizedIngredients = shouldReplaceIngredients
-    ? normalizeIngredients(ingredients)
-    : [];
-
-  await connection.query("DELETE FROM menu_item_sizes WHERE menu_item_id = ?", [
+  await connection.query("DELETE FROM menu_item_prices WHERE menu_item_id = ?", [
     menuItemId,
   ]);
-  await connection.query(
-    "DELETE FROM menu_item_variants WHERE menu_item_id = ?",
-    [menuItemId]
-  );
-  if (shouldReplaceIngredients) {
+
+  const priceRow = toPriceRow(menuItemId, price);
+  if (priceRow) {
     await connection.query(
-      "DELETE FROM menu_item_ingredients WHERE menu_item_id = ?",
-      [menuItemId]
+      `INSERT INTO menu_item_prices ${PRICE_ROW_COLUMNS} VALUES (?)`,
+      [priceRow]
     );
   }
 
-  if (normalizedSizes.length) {
-    await connection.query(
-      `INSERT INTO menu_item_sizes
-        (menu_item_id, name, price, hpp_cost, gross_profit, sort_order)
-       VALUES ?`,
-      [
-        normalizedSizes.map((size, index) => [
-          menuItemId,
-          size.name,
-          size.price,
-          size.hppCost,
-          size.grossProfit,
-          index + 1,
-        ]),
-      ]
-    );
-  }
+  if (!Array.isArray(ingredients)) return;
 
-  if (normalizedVariants.length) {
-    await connection.query(
-      `INSERT INTO menu_item_variants (menu_item_id, name, sort_order)
-       VALUES ?`,
-      [
-        normalizedVariants.map((variant, index) => [
-          menuItemId,
-          variant,
-          index + 1,
-        ]),
-      ]
-    );
-  }
+  const normalizedIngredients = normalizeIngredients(ingredients);
+  await connection.query("DELETE FROM recipes WHERE menu_item_id = ?", [
+    menuItemId,
+  ]);
 
-  if (shouldReplaceIngredients && normalizedIngredients.length) {
+  if (normalizedIngredients.length) {
     await connection.query(
-      `INSERT INTO menu_item_ingredients
-        (menu_item_id, stock_item_id, size_name, ingredient_name, quantity, unit,
-         sort_order, note)
+      `INSERT INTO recipes
+        (menu_item_id, stock_item_id, quantity, sort_order, note)
        VALUES ?`,
       [
         normalizedIngredients.map((ingredient, index) => [
           menuItemId,
-          ingredient.stockItemId || null,
-          ingredient.sizeName || null,
-          ingredient.ingredientName,
+          ingredient.stockItemId,
           ingredient.quantity,
-          ingredient.unit,
           index + 1,
           ingredient.note || null,
         ]),
@@ -300,7 +200,7 @@ const findAll = async ({ includeUnavailable = false } = {}) => {
      ${includeUnavailable ? "" : "WHERE mi.is_available = TRUE AND c.is_active = TRUE"}
      ORDER BY ${categoryOrder}, ${menuItemOrder}, mi.name ASC`
   );
-  return attachOptions(rows.map(mapMenuItem));
+  return attachRecipes(rows.map(mapMenuItem));
 };
 
 const findByCategoryId = async (
@@ -314,12 +214,12 @@ const findByCategoryId = async (
      ORDER BY ${menuItemOrder}, mi.name ASC`,
     [categoryId]
   );
-  return attachOptions(rows.map(mapMenuItem));
+  return attachRecipes(rows.map(mapMenuItem));
 };
 
 const findById = async (id) => {
   const [rows] = await pool.query(`${baseQuery} WHERE mi.id = ? LIMIT 1`, [id]);
-  const [menuItem] = await attachOptions(rows.map(mapMenuItem).filter(Boolean));
+  const [menuItem] = await attachRecipes(rows.map(mapMenuItem).filter(Boolean));
   return menuItem || null;
 };
 
@@ -335,48 +235,18 @@ const countImagePathReferences = async (imagePath) => {
   return Number(rows[0]?.total) || 0;
 };
 
-const excludeFromDefaultSeed = async (names) => {
-  const normalizedNames = [...new Set(
-    (Array.isArray(names) ? names : [names])
-      .map((name) => String(name || "").trim())
-      .filter(Boolean)
-  )];
-
-  if (!normalizedNames.length) return;
-
-  await pool.query(
-    "INSERT IGNORE INTO menu_seed_exclusions (name) VALUES ?",
-    [normalizedNames.map((name) => [name])]
-  );
-};
-
 const insertMenuItem = async (
   connection,
-  {
-    categoryId,
-    name,
-    basePrice,
-    baseOnlinePrice,
-    shouldIncludeOnlinePlatform,
-    profitFields,
-    imagePath,
-    isAvailable,
-  }
+  { categoryId, name, shouldIncludeOnlinePlatform, imagePath, isAvailable }
 ) => {
   const [result] = await connection.query(
     `INSERT INTO menu_items
-      (category_id, name, regular_price, online_price, include_online_platform,
-       hpp_cost, gross_profit, image_path,
-       is_available)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (category_id, name, include_online_platform, image_path, is_available)
+     VALUES (?, ?, ?, ?, ?)`,
     [
       categoryId,
       name,
-      basePrice,
-      baseOnlinePrice,
       shouldIncludeOnlinePlatform ? 1 : 0,
-      profitFields.hppCost,
-      profitFields.grossProfit,
       imagePath || null,
       isAvailable ? 1 : 0,
     ]
@@ -388,37 +258,20 @@ const insertMenuItem = async (
 const updateMenuItem = async (
   connection,
   id,
-  {
-    categoryId,
-    name,
-    basePrice,
-    baseOnlinePrice,
-    shouldIncludeOnlinePlatform,
-    profitFields,
-    imagePath,
-    isAvailable,
-  }
+  { categoryId, name, shouldIncludeOnlinePlatform, imagePath, isAvailable }
 ) => {
   await connection.query(
     `UPDATE menu_items
      SET category_id = ?,
          name = ?,
-         regular_price = ?,
-         online_price = ?,
          include_online_platform = ?,
-         hpp_cost = ?,
-         gross_profit = ?,
          image_path = ?,
          is_available = ?
      WHERE id = ?`,
     [
       categoryId,
       name,
-      basePrice,
-      baseOnlinePrice,
       shouldIncludeOnlinePlatform ? 1 : 0,
-      profitFields.hppCost,
-      profitFields.grossProfit,
       imagePath || null,
       isAvailable ? 1 : 0,
       id,
@@ -435,12 +288,11 @@ const remove = async (id) => {
 
 module.exports = {
   countImagePathReferences,
-  excludeFromDefaultSeed,
   findAll,
   findByCategoryId,
   findById,
   insertMenuItem,
   remove,
-  replaceOptions,
+  replacePriceAndRecipe,
   updateMenuItem,
 };

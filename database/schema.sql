@@ -28,11 +28,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   category_id INT UNSIGNED NOT NULL,
   name VARCHAR(150) NOT NULL,
-  regular_price DECIMAL(12,2) NULL,
-  online_price DECIMAL(12,2) NULL,
   include_online_platform BOOLEAN NOT NULL DEFAULT FALSE,
-  hpp_cost DECIMAL(12,2) NULL,
-  gross_profit DECIMAL(12,2) NULL,
   image_path VARCHAR(255),
   is_available BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -43,33 +39,18 @@ CREATE TABLE IF NOT EXISTS menu_items (
     ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS menu_item_sizes (
+-- Price, online price, HPP and gross profit of a menu item (one row per menu).
+CREATE TABLE IF NOT EXISTS menu_item_prices (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   menu_item_id INT UNSIGNED NOT NULL,
-  name VARCHAR(80) NOT NULL,
-  price DECIMAL(12,2) NOT NULL,
+  regular_price DECIMAL(12,2) NOT NULL,
+  online_price DECIMAL(12,2) NULL,
   hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
   gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0,
-  sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_menu_item_sizes_menu_item_id (menu_item_id),
-  UNIQUE KEY uniq_menu_item_sizes_name (menu_item_id, name),
-  CONSTRAINT fk_menu_item_sizes_menu_item
-    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
-    ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS menu_item_variants (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  menu_item_id INT UNSIGNED NOT NULL,
-  name VARCHAR(80) NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_menu_item_variants_menu_item_id (menu_item_id),
-  UNIQUE KEY uniq_menu_item_variants_name (menu_item_id, name),
-  CONSTRAINT fk_menu_item_variants_menu_item
+  UNIQUE KEY uniq_menu_item_prices_menu_item (menu_item_id),
+  CONSTRAINT fk_menu_item_prices_menu_item
     FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
     ON DELETE CASCADE
 );
@@ -81,7 +62,7 @@ CREATE TABLE IF NOT EXISTS stock_items (
   unit VARCHAR(30) NOT NULL,
   stock DECIMAL(12,2) NOT NULL DEFAULT 0,
   minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
-  average_cost DECIMAL(14,4) NOT NULL DEFAULT 0,
+  unit_cost INT NOT NULL DEFAULT 0,
   stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
   supplier VARCHAR(150),
   is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
@@ -99,7 +80,7 @@ CREATE TABLE IF NOT EXISTS suplier (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS stock_purchases (
+CREATE TABLE IF NOT EXISTS history_stock_purchases (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   request_id VARCHAR(64) NOT NULL UNIQUE,
   payload_hash CHAR(64) NOT NULL,
@@ -120,7 +101,7 @@ CREATE TABLE IF NOT EXISTS stock_purchases (
     ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS stock_purchase_items (
+CREATE TABLE IF NOT EXISTS history_stock_purchase_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   purchase_id INT UNSIGNED NOT NULL,
   stock_item_id INT UNSIGNED NULL,
@@ -131,17 +112,17 @@ CREATE TABLE IF NOT EXISTS stock_purchase_items (
   total DECIMAL(14,2) NOT NULL,
   stock_quantity DECIMAL(12,2) NOT NULL,
   stock_unit VARCHAR(30) NOT NULL,
-  stock_average_cost DECIMAL(14,4) NOT NULL DEFAULT 0,
+  stock_unit_cost INT NOT NULL DEFAULT 0,
   stock_value_after DECIMAL(14,2) NOT NULL DEFAULT 0,
   CONSTRAINT fk_stock_purchase_items_purchase
-    FOREIGN KEY (purchase_id) REFERENCES stock_purchases(id)
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_purchases(id)
     ON DELETE CASCADE,
   CONSTRAINT fk_stock_purchase_items_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
     ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS stock_purchase_item_logs (
+CREATE TABLE IF NOT EXISTS history_stock_purchase_item_logs (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   purchase_item_id INT UNSIGNED NULL,
   purchase_id INT UNSIGNED NULL,
@@ -156,10 +137,10 @@ CREATE TABLE IF NOT EXISTS stock_purchase_item_logs (
   INDEX idx_stock_purchase_item_logs_item (stock_item_id, created_at),
   INDEX idx_stock_purchase_item_logs_purchase_item (purchase_item_id, created_at),
   CONSTRAINT fk_stock_purchase_item_logs_purchase_item
-    FOREIGN KEY (purchase_item_id) REFERENCES stock_purchase_items(id)
+    FOREIGN KEY (purchase_item_id) REFERENCES history_stock_purchase_items(id)
     ON DELETE SET NULL,
   CONSTRAINT fk_stock_purchase_item_logs_purchase
-    FOREIGN KEY (purchase_id) REFERENCES stock_purchases(id)
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_purchases(id)
     ON DELETE SET NULL,
   CONSTRAINT fk_stock_purchase_item_logs_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
@@ -169,27 +150,47 @@ CREATE TABLE IF NOT EXISTS stock_purchase_item_logs (
     ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS menu_item_ingredients (
+-- Recipes: pivot menu_items <-> stock_items, one row per ingredient. Quantities
+-- are in the stock item's unit.
+CREATE TABLE IF NOT EXISTS recipes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   menu_item_id INT UNSIGNED NOT NULL,
-  stock_item_id INT UNSIGNED NULL,
-  size_name VARCHAR(80) NULL,
-  ingredient_name VARCHAR(150) NOT NULL,
-  quantity DECIMAL(12,3) NOT NULL DEFAULT 0,
-  unit VARCHAR(30) NOT NULL,
+  stock_item_id INT UNSIGNED NOT NULL,
+  quantity DOUBLE NOT NULL DEFAULT 0,
+  -- quantity x stock unit_cost in whole rupiah, kept up to date by the app.
+  cost INT NOT NULL DEFAULT 0,
   sort_order INT NOT NULL DEFAULT 0,
   note VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_menu_item_ingredients_menu_item_id (menu_item_id),
-  INDEX idx_menu_item_ingredients_stock_item_id (stock_item_id),
-  CONSTRAINT fk_menu_item_ingredients_menu_item
+  UNIQUE KEY uniq_recipes_menu_stock (menu_item_id, stock_item_id),
+  INDEX idx_recipes_stock_item_id (stock_item_id),
+  CONSTRAINT fk_recipes_menu_item
     FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
     ON DELETE CASCADE,
-  CONSTRAINT fk_menu_item_ingredients_stock_item
+  CONSTRAINT fk_recipes_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
-    ON DELETE SET NULL
+    ON DELETE RESTRICT
 );
+
+-- Recipes with menu and stock names, for reading (e.g. in phpMyAdmin).
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW recipe_details AS
+SELECT
+  r.id,
+  mi.name AS menu_name,
+  si.name AS stock_item_name,
+  r.quantity,
+  si.unit,
+  si.unit_cost,
+  r.cost,
+  r.note,
+  r.menu_item_id,
+  r.stock_item_id,
+  r.sort_order
+FROM recipes r
+JOIN menu_items mi ON mi.id = r.menu_item_id
+JOIN stock_items si ON si.id = r.stock_item_id
+ORDER BY mi.name, r.sort_order, r.id;
 
 CREATE TABLE IF NOT EXISTS meta_data_platform (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -236,9 +237,7 @@ CREATE TABLE IF NOT EXISTS orders (
   order_code VARCHAR(40) UNIQUE,
   customer_name VARCHAR(100) NOT NULL,
   customer_phone VARCHAR(50) NULL,
-  guests INT NOT NULL,
   order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
-  order_platform VARCHAR(100),
   order_status VARCHAR(50) NOT NULL,
   order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   total DECIMAL(12,2) NOT NULL,
@@ -292,7 +291,6 @@ CREATE TABLE IF NOT EXISTS order_items (
   order_id INT UNSIGNED NOT NULL,
   item_key VARCHAR(100),
   menu_item_id INT UNSIGNED NULL,
-  size_name VARCHAR(80) NULL,
   name VARCHAR(150) NOT NULL,
   variant VARCHAR(50) NULL,
   quantity INT NOT NULL,
@@ -307,6 +305,29 @@ CREATE TABLE IF NOT EXISTS order_items (
     ON DELETE CASCADE,
   CONSTRAINT fk_order_items_menu_item
     FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+    ON DELETE SET NULL
+);
+
+-- Per-ingredient HPP of each order item, frozen at sale time: cost =
+-- quantity x unit_cost per portion, and the costs sum to order_items.hpp_cost. Later recipe or price changes
+-- never touch it; names and units are copied so history stays readable.
+CREATE TABLE IF NOT EXISTS order_item_costs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_item_id INT UNSIGNED NOT NULL,
+  stock_item_id INT UNSIGNED NULL,
+  stock_item_name VARCHAR(150) NOT NULL,
+  quantity DOUBLE NOT NULL DEFAULT 0,
+  unit VARCHAR(30) NOT NULL DEFAULT '',
+  unit_cost INT NOT NULL DEFAULT 0,
+  cost INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_order_item_costs_order_item_id (order_item_id),
+  INDEX idx_order_item_costs_stock_item_id (stock_item_id),
+  CONSTRAINT fk_order_item_costs_order_item
+    FOREIGN KEY (order_item_id) REFERENCES order_items(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_order_item_costs_stock_item
+    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
     ON DELETE SET NULL
 );
 

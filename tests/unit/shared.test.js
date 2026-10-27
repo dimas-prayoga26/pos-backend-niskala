@@ -18,7 +18,8 @@ describe("money", () => {
   it("rounds currency to 2 decimals and cost to 4", () => {
     assert.equal(roundCurrency(10.005), 10.01);
     assert.equal(roundCurrency("abc"), 0);
-    assert.equal(roundCost(103.448275), 103.4483);
+    assert.equal(roundCost(103.448275), 103);
+    assert.equal(roundCost(72.75), 73);
   });
 
   it("parses formatted nominal strings by keeping digits only", () => {
