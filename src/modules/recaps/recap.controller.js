@@ -78,6 +78,9 @@ const addRecap = asyncHandler(async (req, res, next) => {
     periodType,
     recapId: recap.id,
   });
+  if (recap.writtenOff?.length) {
+    emitRealtimeEvent("stock:changed", { action: "semi-items-day-closed" });
+  }
 
   res.status(201).json({
     success: true,

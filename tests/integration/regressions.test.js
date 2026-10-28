@@ -598,5 +598,94 @@ describe("regressions", () => {
     });
     assert.equal(adjusted.status, 200);
     assert.equal(adjusted.body.data.stockValue, 61250);
+
+    // ...and the 8 missing portions are kept as kerugian.
+    const wasteRows = async () =>
+      (await request("GET", `/api/stock-item/semi/wastes?semiItemId=${nasi.id}`, { as: "cashier" }))
+        .body.data.wastes.map((w) => [w.quantity, w.cost, w.reason]);
+    assert.deepEqual(await wasteRows(), [[8, 7000, "Penyesuaian"]]);
+
+    // Thrown away during the day: 5 spoiled portions at Rp 875.
+    const spoiled = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
+      as: "cashier",
+      body: { quantity: 5, reason: "Basi", note: "kena hujan" },
+    });
+    assert.equal(spoiled.status, 201);
+    assert.deepEqual([spoiled.body.data.stock, spoiled.body.data.stockValue], [65, 56875]);
+    assert.deepEqual(await wasteRows(), [[5, 4375, "Basi"], [8, 7000, "Penyesuaian"]]);
+    const tooMany = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
+      as: "cashier",
+      body: { quantity: 66, reason: "Tumpah" },
+    });
+    assert.equal(tooMany.status, 409);
+    const badReason = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
+      as: "cashier",
+      body: { quantity: 1, reason: "Sisa akhir hari" },
+    });
+    assert.equal(badReason.status, 400, "the system writes off leftovers itself");
+
+    // Undo: admins, latest write-off only.
+    const [latestWaste, olderWaste] = (
+      await request("GET", `/api/stock-item/semi/wastes?semiItemId=${nasi.id}`, { as: "admin" })
+    ).body.data.wastes;
+    assert.equal(
+      (await request("DELETE", `/api/stock-item/semi/wastes/${olderWaste.id}`, { as: "admin" })).status,
+      409
+    );
+    assert.equal(
+      (await request("DELETE", `/api/stock-item/semi/wastes/${latestWaste.id}`, { as: "cashier" })).status,
+      403
+    );
+    assert.equal(
+      (await request("DELETE", `/api/stock-item/semi/wastes/${latestWaste.id}`, { as: "admin" })).status,
+      200
+    );
+    assert.deepEqual(await semiRow(nasi.id), {
+      stock: 70, stockValue: 61250, unitCost: 875, yieldQuantity: 16,
+    });
+
+    // Closing a past day keeps portions cooked after it (all 70 were cooked
+    // today); closing today writes the leftover off and Nasi starts from 0.
+    const todayDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    const yesterday = new Date(`${todayDate}T00:00:00Z`);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const pastRecap = await request("POST", "/api/recap/daily", {
+      as: "admin",
+      body: { recapDate: yesterday.toISOString().slice(0, 10) },
+    });
+    assert.equal(pastRecap.status, 201);
+    assert.deepEqual(pastRecap.body.data.writtenOff, []);
+    assert.equal((await semiRow(nasi.id)).stock, 70);
+
+    const todayRecap = await request("POST", "/api/recap/daily", {
+      as: "admin",
+      body: { recapDate: todayDate },
+    });
+    assert.equal(todayRecap.status, 201);
+    assert.deepEqual(todayRecap.body.data.writtenOff, [
+      { semiItemId: nasi.id, name: "Nasi Olahan", quantity: 70, cost: 61250 },
+    ]);
+    assert.deepEqual(await semiRow(nasi.id), {
+      stock: 0, stockValue: 0, unitCost: 875, yieldQuantity: 16,
+    });
+    const todayWastes = await request("GET", `/api/stock-item/semi/wastes?from=${todayDate}&to=${todayDate}`, {
+      as: "admin",
+    });
+    assert.deepEqual(todayWastes.body.data.wastes[0], {
+      ...todayWastes.body.data.wastes[0],
+      wasteDate: todayDate,
+      quantity: 70,
+      cost: 61250,
+      reason: "Sisa akhir hari",
+    });
+    assert.deepEqual(todayWastes.body.data.dailyTotals, [{ date: todayDate, cost: 68250, entries: 2 }]);
+
+    // Items that keep (Sambal) can opt out of the daily reset.
+    const kept = await request("POST", "/api/stock-item/semi", {
+      as: "admin",
+      body: { name: "Sambal Olahan", resetDaily: false, components: [{ stockItemId: garamId, quantity: 10 }] },
+    });
+    assert.equal(kept.body.data.resetDaily, false);
+    assert.equal(nasi.resetDaily, true);
   });
 });

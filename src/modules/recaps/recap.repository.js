@@ -202,8 +202,8 @@ const dailyRecapExistsForDate = async (recapDate) => {
   return existingRows.length > 0;
 };
 
-const insertDaily = async (format, payload, { user, bestMenu, leastMenu }) => {
-  const [result] = await pool.query(
+const insertDaily = async (format, payload, { user, bestMenu, leastMenu }, connection = pool) => {
+  const [result] = await connection.query(
     `INSERT INTO daily_recaps
       (format_recap_id, recap_date, user_id, shift_officer, transaction_total,
        offline_revenue, online_revenue, catering_revenue, total_revenue,

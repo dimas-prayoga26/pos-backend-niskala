@@ -90,6 +90,9 @@ CREATE TABLE IF NOT EXISTS stock_semi_items (
   portion_size DOUBLE NOT NULL DEFAULT 0,
   -- Portions per recipe found by the latest cooking (0 = never cooked).
   yield_quantity DOUBLE NOT NULL DEFAULT 0,
+  -- Starts each day from zero: the leftover is written off (kerugian) when
+  -- the daily recap is saved. Off for items that keep (e.g. Sambal).
+  reset_daily BOOLEAN NOT NULL DEFAULT TRUE,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -283,6 +286,33 @@ CREATE TABLE IF NOT EXISTS stock_semi_item_productions (
     FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
     ON DELETE SET NULL,
   CONSTRAINT fk_stock_semi_item_productions_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
+-- Portions of a bahan setengah jadi thrown away, with their value at that
+-- time (kerugian). reason: Sisa akhir hari (written off by the daily recap),
+-- Penyesuaian (lower stock count), Basi, Tumpah or Lainnya. waste_date is the
+-- business day the loss belongs to.
+CREATE TABLE IF NOT EXISTS history_stock_semi_wastes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  semi_item_id INT UNSIGNED NULL,
+  item_name VARCHAR(150) NOT NULL,
+  waste_date DATE NOT NULL,
+  quantity DECIMAL(12,2) NOT NULL,
+  unit VARCHAR(30) NOT NULL,
+  unit_cost INT NOT NULL DEFAULT 0,
+  cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+  reason VARCHAR(30) NOT NULL,
+  note VARCHAR(255) NULL,
+  user_id INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_history_stock_semi_wastes_date (waste_date),
+  INDEX idx_history_stock_semi_wastes_item (semi_item_id, waste_date),
+  CONSTRAINT fk_history_stock_semi_wastes_semi_item
+    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_history_stock_semi_wastes_user
     FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE SET NULL
 );

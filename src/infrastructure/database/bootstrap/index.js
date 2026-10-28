@@ -206,6 +206,7 @@ const connectDB = async () => {
       stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
       portion_size DOUBLE NOT NULL DEFAULT 0,
       yield_quantity DOUBLE NOT NULL DEFAULT 0,
+      reset_daily BOOLEAN NOT NULL DEFAULT TRUE,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
