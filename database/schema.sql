@@ -66,6 +66,12 @@ CREATE TABLE IF NOT EXISTS stock_items (
   stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
   supplier VARCHAR(150),
   is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Prepared item (bahan olahan, e.g. Nasi): stocked in portions from cooking.
+  is_prepared BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Weight (gr) of one portion of the cooked result.
+  portion_size DOUBLE NOT NULL DEFAULT 0,
+  -- Portions per recipe found by the latest cooking (0 = never cooked).
+  yield_quantity DOUBLE NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -191,6 +197,73 @@ FROM recipes r
 JOIN menu_items mi ON mi.id = r.menu_item_id
 JOIN stock_items si ON si.id = r.stock_item_id
 ORDER BY mi.name, r.sort_order, r.id;
+
+-- Composition of one recipe (batch) of a prepared item, in each raw item's
+-- unit. Components are raw items only.
+CREATE TABLE IF NOT EXISTS prepared_item_recipes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  prepared_item_id INT UNSIGNED NOT NULL,
+  stock_item_id INT UNSIGNED NOT NULL,
+  quantity DOUBLE NOT NULL DEFAULT 0,
+  -- quantity x stock unit_cost in whole rupiah, kept up to date by the app.
+  cost INT NOT NULL DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
+  note VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_prepared_item_recipes_item_stock (prepared_item_id, stock_item_id),
+  INDEX idx_prepared_item_recipes_stock_item_id (stock_item_id),
+  CONSTRAINT fk_prepared_item_recipes_prepared_item
+    FOREIGN KEY (prepared_item_id) REFERENCES stock_items(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_prepared_item_recipes_stock_item
+    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+    ON DELETE RESTRICT
+);
+
+-- One row per cooking ("Catat Masak"): batch_quantity recipes gave
+-- portion_quantity portions (output_weight / portion_size when weighed).
+CREATE TABLE IF NOT EXISTS prepared_item_productions (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  prepared_item_id INT UNSIGNED NULL,
+  item_name VARCHAR(150) NOT NULL,
+  batch_quantity DOUBLE NOT NULL,
+  output_weight DOUBLE NULL,
+  portion_quantity DECIMAL(12,2) NOT NULL,
+  cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+  -- cost / portion_quantity of this cooking, whole rupiah.
+  unit_cost INT NOT NULL DEFAULT 0,
+  note VARCHAR(255) NULL,
+  produced_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  user_id INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_prepared_item_productions_item (prepared_item_id, produced_at),
+  CONSTRAINT fk_prepared_item_productions_prepared_item
+    FOREIGN KEY (prepared_item_id) REFERENCES stock_items(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_prepared_item_productions_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
+-- Raw items a cooking used, frozen at that time's unit cost.
+CREATE TABLE IF NOT EXISTS prepared_item_production_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  production_id INT UNSIGNED NOT NULL,
+  stock_item_id INT UNSIGNED NULL,
+  item_name VARCHAR(150) NOT NULL,
+  quantity DOUBLE NOT NULL,
+  unit VARCHAR(30) NOT NULL,
+  unit_cost INT NOT NULL DEFAULT 0,
+  cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+  INDEX idx_prepared_item_production_items_stock_item (stock_item_id),
+  CONSTRAINT fk_prepared_item_production_items_production
+    FOREIGN KEY (production_id) REFERENCES prepared_item_productions(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_prepared_item_production_items_stock_item
+    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+    ON DELETE SET NULL
+);
 
 CREATE TABLE IF NOT EXISTS meta_data_platform (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

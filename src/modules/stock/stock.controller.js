@@ -26,6 +26,13 @@ const validateStockPayload = ({ name, category, unit }) => {
 const emitStockChanged = (action, stockItemId) =>
   emitRealtimeEvent("stock:changed", { action, stockItemId });
 
+// Prepared items (bahan olahan) are edited through their own form, and their
+// cost comes from cooking (prepared.controller).
+const rejectPrepared = async (id, message) => {
+  const stockItem = await StockItem.findById(id);
+  return stockItem?.isPrepared ? createHttpError(400, message) : null;
+};
+
 const getStockItems = asyncHandler(async (_req, res) => {
   const stockItems = await StockItem.findAll();
 
@@ -50,7 +57,9 @@ const addStockItem = asyncHandler(async (req, res, next) => {
 
 const updateStockItem = asyncHandler(async (req, res, next) => {
   const payload = normalizeStockPayload(req.body);
-  const validationError = validateStockPayload(payload);
+  const validationError =
+    validateStockPayload(payload) ||
+    (await rejectPrepared(req.params.id, "Ubah bahan olahan lewat tab Bahan Olahan."));
 
   if (validationError) return next(validationError);
 
@@ -86,6 +95,12 @@ const updateStockQuantity = asyncHandler(async (req, res, next) => {
 });
 
 const updateStockCogs = asyncHandler(async (req, res, next) => {
+  const preparedError = await rejectPrepared(
+    req.params.id,
+    "COGS bahan olahan dihitung dari Catat Masak."
+  );
+  if (preparedError) return next(preparedError);
+
   // Exact cost: stock_value uses it, unit_cost is stored as whole rupiah.
   const averageCost = toNonNegativeNumber(req.body.averageCost);
   const supplier = String(req.body.supplier || "").trim();
@@ -112,6 +127,16 @@ const deleteStockItem = asyncHandler(async (req, res, next) => {
       createHttpError(
         409,
         `Bahan masih dipakai di resep menu: ${recipeMenuNames.join(", ")}. Hapus dari resep terlebih dahulu.`
+      )
+    );
+  }
+
+  const preparedItemNames = await StockItem.findPreparedItemNames(id);
+  if (preparedItemNames.length) {
+    return next(
+      createHttpError(
+        409,
+        `Bahan masih dipakai di bahan olahan: ${preparedItemNames.join(", ")}. Hapus dari komposisinya terlebih dahulu.`
       )
     );
   }
