@@ -492,7 +492,7 @@ describe("regressions", () => {
       body: { averageCost: 16000 },
     });
     const [[component]] = await db.query(
-      "SELECT cost FROM prepared_item_recipes WHERE prepared_item_id = ?",
+      "SELECT cost FROM stock_item_recipes WHERE prepared_item_id = ?",
       [nasi.id]
     );
     assert.equal(component.cost, 16000);

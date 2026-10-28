@@ -20,7 +20,7 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 | users | `/api/user` | `users` | – | – |
 | categories | `/api/category` | `categories` | – | `menu:changed` |
 | menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `recipes` (pivot menu ↔ bahan stok), VIEW `recipe_details` (resep + nama menu/bahan + average cost + cost, baca-saja) | `categories`, `stock_items` (nama bahan) | `menu:changed` |
-| stock | `/api/stock-item` | `stock_items`, `prepared_item_recipes`, `prepared_item_productions`, `prepared_item_production_items` (bahan olahan) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
+| stock | `/api/stock-item` | `stock_items`, `stock_item_recipes`, `stock_item_productions`, `stock_item_production_items` (bahan olahan) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
 | shopping | `/api/shopping` | `suplier`, `history_stock_purchases`, `history_stock_purchase_items`, `history_stock_purchase_item_logs` | – | `shopping:changed`, `stock:changed` |
 | platforms | `/api/order-platform` | `meta_data_platform` | – | `platforms:changed` |
 | orders | `/api/order` | `orders`, `order_items`, `order_item_costs` (rincian HPP per bahan, dibekukan saat terjual), `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_prices`, `recipes`, `stock_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
@@ -54,8 +54,8 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 - **`stock.movements`:** satu-satunya kode yang memotong atau mengembalikan stok berdasarkan resep. Ia menerima *recipe lines* `{ menuItemId, quantity }` dan berjalan di koneksi transaksi pemanggil. Takaran resep selalu dalam satuan bahan di `stock_items`, jadi tidak ada konversi satuan; mengganti satuan stok antar satuan yang bisa dikonversi (mis. gr → kg) ikut menyesuaikan takaran resep.
 - **Status stok:** `HARUS ORDER` (stok ≤ minimum; `HARUS MASAK` untuk bahan olahan), `HAMPIR HABIS` (stok ≤ minimum + maks(1, 20%)), `AMAN`, atau `BEBAS STOK` untuk item unlimited.
 - **Bahan olahan** (`prepared.repository`, `prepared.controller`): `stock_items` dengan `is_prepared` (mis. Nasi dari Beras).
-  - Komposisinya untuk 1 resep ada di `prepared_item_recipes` dan hanya boleh berisi bahan mentah.
-  - "Catat Masak" (`POST /:id/productions`) menyimpan satu baris `prepared_item_productions` dan bahan terpakainya di `prepared_item_production_items`.
+  - Komposisinya untuk 1 resep ada di `stock_item_recipes` dan hanya boleh berisi bahan mentah.
+  - "Catat Masak" (`POST /:id/productions`) menyimpan satu baris `stock_item_productions` dan bahan terpakainya di `stock_item_production_items`.
   - Saat Catat Masak, stok bahan mentah dipotong sebanyak resep × komposisi. Bahan olahan bertambah sejumlah porsi: berat hasil ÷ `portion_size`, atau dihitung langsung.
   - `unit_cost` bahan olahan menjadi rata-rata bergerak seperti belanja, dan `yield_quantity` diisi porsi per resep dari masak terakhir.
   - Menu yang memakai bahan olahan memotong porsinya lewat `stock.movements` seperti bahan biasa.

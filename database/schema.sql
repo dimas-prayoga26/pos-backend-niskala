@@ -200,7 +200,7 @@ ORDER BY mi.name, r.sort_order, r.id;
 
 -- Composition of one recipe (batch) of a prepared item, in each raw item's
 -- unit. Components are raw items only.
-CREATE TABLE IF NOT EXISTS prepared_item_recipes (
+CREATE TABLE IF NOT EXISTS stock_item_recipes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   prepared_item_id INT UNSIGNED NOT NULL,
   stock_item_id INT UNSIGNED NOT NULL,
@@ -211,19 +211,19 @@ CREATE TABLE IF NOT EXISTS prepared_item_recipes (
   note VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_prepared_item_recipes_item_stock (prepared_item_id, stock_item_id),
-  INDEX idx_prepared_item_recipes_stock_item_id (stock_item_id),
-  CONSTRAINT fk_prepared_item_recipes_prepared_item
+  UNIQUE KEY uniq_stock_item_recipes_item_stock (prepared_item_id, stock_item_id),
+  INDEX idx_stock_item_recipes_stock_item_id (stock_item_id),
+  CONSTRAINT fk_stock_item_recipes_prepared_item
     FOREIGN KEY (prepared_item_id) REFERENCES stock_items(id)
     ON DELETE CASCADE,
-  CONSTRAINT fk_prepared_item_recipes_stock_item
+  CONSTRAINT fk_stock_item_recipes_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
     ON DELETE RESTRICT
 );
 
 -- One row per cooking ("Catat Masak"): batch_quantity recipes gave
 -- portion_quantity portions (output_weight / portion_size when weighed).
-CREATE TABLE IF NOT EXISTS prepared_item_productions (
+CREATE TABLE IF NOT EXISTS stock_item_productions (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   prepared_item_id INT UNSIGNED NULL,
   item_name VARCHAR(150) NOT NULL,
@@ -237,17 +237,17 @@ CREATE TABLE IF NOT EXISTS prepared_item_productions (
   produced_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   user_id INT UNSIGNED NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_prepared_item_productions_item (prepared_item_id, produced_at),
-  CONSTRAINT fk_prepared_item_productions_prepared_item
+  INDEX idx_stock_item_productions_item (prepared_item_id, produced_at),
+  CONSTRAINT fk_stock_item_productions_prepared_item
     FOREIGN KEY (prepared_item_id) REFERENCES stock_items(id)
     ON DELETE SET NULL,
-  CONSTRAINT fk_prepared_item_productions_user
+  CONSTRAINT fk_stock_item_productions_user
     FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE SET NULL
 );
 
 -- Raw items a cooking used, frozen at that time's unit cost.
-CREATE TABLE IF NOT EXISTS prepared_item_production_items (
+CREATE TABLE IF NOT EXISTS stock_item_production_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   production_id INT UNSIGNED NOT NULL,
   stock_item_id INT UNSIGNED NULL,
@@ -256,11 +256,11 @@ CREATE TABLE IF NOT EXISTS prepared_item_production_items (
   unit VARCHAR(30) NOT NULL,
   unit_cost INT NOT NULL DEFAULT 0,
   cost DECIMAL(14,2) NOT NULL DEFAULT 0,
-  INDEX idx_prepared_item_production_items_stock_item (stock_item_id),
-  CONSTRAINT fk_prepared_item_production_items_production
-    FOREIGN KEY (production_id) REFERENCES prepared_item_productions(id)
+  INDEX idx_stock_item_production_items_stock_item (stock_item_id),
+  CONSTRAINT fk_stock_item_production_items_production
+    FOREIGN KEY (production_id) REFERENCES stock_item_productions(id)
     ON DELETE CASCADE,
-  CONSTRAINT fk_prepared_item_production_items_stock_item
+  CONSTRAINT fk_stock_item_production_items_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
     ON DELETE SET NULL
 );

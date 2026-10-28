@@ -1,7 +1,7 @@
 // Keeps recipe costs and menu HPP in step with stock average costs, like the
 // owner's COGS sheet:
 //   recipes.cost             = quantity x stock unit_cost (whole rupiah)
-//   prepared_item_recipes.cost = the same for a prepared item's composition
+//   stock_item_recipes.cost = the same for a prepared item's composition
 //   menu_item_prices.hpp_cost = sum of the menu's recipe costs
 //   gross_profit             = regular_price - hpp_cost
 // A menu keeps its manual HPP while its recipe costs nothing yet (no purchase
@@ -9,7 +9,7 @@
 // to limit the refresh; with neither, every recipe is refreshed.
 const refreshPreparedRecipeCosts = (connection, stockItemIds) =>
   connection.query(
-    `UPDATE prepared_item_recipes pr
+    `UPDATE stock_item_recipes pr
      JOIN stock_items si ON si.id = pr.stock_item_id
      SET pr.cost = ROUND(pr.quantity * si.unit_cost)
      ${stockItemIds ? "WHERE pr.stock_item_id IN (?)" : ""}`,

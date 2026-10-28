@@ -68,7 +68,7 @@ const attachPreparedDetails = async (stockItems) => {
   const [componentRows] = await pool.query(
     `SELECT pr.prepared_item_id, pr.stock_item_id, pr.quantity, pr.cost,
             si.name, si.unit, si.unit_cost
-     FROM prepared_item_recipes pr
+     FROM stock_item_recipes pr
      JOIN stock_items si ON si.id = pr.stock_item_id
      WHERE pr.prepared_item_id IN (?)
      ORDER BY pr.sort_order ASC, pr.id ASC`,
@@ -76,10 +76,10 @@ const attachPreparedDetails = async (stockItems) => {
   );
   const [productionRows] = await pool.query(
     `SELECT p.*, u.name AS user_name
-     FROM prepared_item_productions p
+     FROM stock_item_productions p
      JOIN (
        SELECT prepared_item_id, MAX(id) AS id
-       FROM prepared_item_productions
+       FROM stock_item_productions
        WHERE prepared_item_id IN (?)
        GROUP BY prepared_item_id
      ) latest ON latest.id = p.id
@@ -263,7 +263,7 @@ const findRecipeMenuNames = async (id) => {
 const findPreparedItemNames = async (id) => {
   const [rows] = await pool.query(
     `SELECT DISTINCT p.name
-     FROM prepared_item_recipes pr
+     FROM stock_item_recipes pr
      JOIN stock_items p ON p.id = pr.prepared_item_id
      WHERE pr.stock_item_id = ?
      ORDER BY p.name ASC`,
