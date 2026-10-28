@@ -1,4 +1,6 @@
 const createHttpError = require("http-errors");
+const { withTransaction } = require("../../infrastructure/database/pool");
+const SemiItem = require("../stock/semi.repository");
 const Recap = require("./recap.repository");
 
 const ALLOWED_PERIOD_TYPES = ["daily", "weekly", "monthly"];
@@ -19,7 +21,9 @@ const findAll = async (periodType) => {
   return [];
 };
 
-// A daily recap closes the day: orders on that date become read-only.
+// A daily recap closes the day: orders on that date become read-only and the
+// leftover of daily bahan setengah jadi (Nasi) is written off as kerugian, in
+// the same transaction.
 const createDaily = async (format, payload) => {
   if (await Recap.dailyRecapExistsForDate(payload.recapDate)) {
     throw createHttpError(
@@ -36,9 +40,16 @@ const createDaily = async (format, payload) => {
     ? null
     : await Recap.findByName("menu_items", payload.leastMenu);
 
-  const insertId = await Recap.insertDaily(format, payload, { user, bestMenu, leastMenu });
+  const { insertId, writtenOff } = await withTransaction(async (connection) => ({
+    insertId: await Recap.insertDaily(format, payload, { user, bestMenu, leastMenu }, connection),
+    writtenOff: await SemiItem.closeDay(connection, {
+      date: payload.recapDate,
+      userId: payload.createdBy,
+    }),
+  }));
   const recaps = await Recap.findDailyRecaps();
-  return recaps.find((recap) => recap.id === insertId) || null;
+  const recap = recaps.find((row) => row.id === insertId) || null;
+  return recap && { ...recap, writtenOff };
 };
 
 // Weekly and monthly recaps are upserted per period.

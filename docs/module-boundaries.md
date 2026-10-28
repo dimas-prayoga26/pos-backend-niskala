@@ -8,6 +8,7 @@ Setiap modul di `src/modules/<nama>/` memiliki tabelnya sendiri. Modul lain bole
 orders ──► stock (stock.movements: potong / kembalikan stok dari resep)
 stock, shopping ──► menu (menu.costs: hitung ulang recipes.cost dan HPP menu saat unit_cost berubah)
 stock, orders ──► menu (menu.recipeLines: baris resep menu dari recipes + stock_semi_item_menus)
+recaps ──► stock (semi.repository.closeDay: sisa bahan setengah jadi harian dibuang saat rekap harian disimpan)
 shared/middleware/authenticate ──► users (user.service: verifikasi token, ambil user)
 infrastructure/bootstrap ──► menu (menu.options: baris harga untuk seed)
 ```
@@ -21,7 +22,7 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 | users | `/api/user` | `users` | – | – |
 | categories | `/api/category` | `categories` | – | `menu:changed` |
 | menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `recipes` (pivot menu ↔ bahan baku), VIEW `recipe_details` (resep + nama menu/bahan + average cost + cost, baca-saja); menulis juga `stock_semi_item_menus` (baris bahan setengah jadi di resep menu) | `categories`, `stock_raw_items`, `stock_semi_items` (nama bahan) | `menu:changed` |
-| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items`, `stock_semi_item_menus` (bahan setengah jadi, `/api/stock-item/semi`) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
+| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items`, `stock_semi_item_menus`, `history_stock_semi_wastes` (bahan setengah jadi, `/api/stock-item/semi`) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
 | shopping | `/api/shopping` | `suplier`, `history_stock_raw_purchases`, `history_stock_raw_purchase_items`, `history_stock_raw_purchase_item_logs` | – | `shopping:changed`, `stock:changed` |
 | platforms | `/api/order-platform` | `meta_data_platform` | – | `platforms:changed` |
 | orders | `/api/order` | `orders`, `order_items`, `order_item_costs` (rincian HPP per bahan, dibekukan saat terjual), `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_prices`, `recipes`, `stock_raw_items`, `stock_semi_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
@@ -63,6 +64,12 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
   - `unit_cost` bahan setengah jadi menjadi rata-rata bergerak seperti belanja, dan `yield_quantity` diisi porsi per resep dari masak terakhir.
   - Menu yang memakai bahan setengah jadi memotong porsinya lewat `stock.movements` seperti bahan baku.
   - Bahan setengah jadi tidak bisa dibelanjakan dan tidak punya COGS manual. Hanya catatan masak terakhir yang bisa dibatalkan, selama porsinya masih ada.
+  - **Kerugian** (`history_stock_semi_wastes`): porsi yang dibuang beserta nilainya (`stock_value / stock` saat itu). Sumbernya:
+    - "Buang" (`POST /semi/:id/wastes`, alasan Basi/Tumpah/Lainnya);
+    - "Sesuaikan" ke angka yang lebih kecil (alasan Penyesuaian);
+    - Rekap Harian (alasan Sisa akhir hari).
+  - Bahan dengan `reset_daily` (mis. Nasi) dimulai dari 0 setiap hari. Saat rekap harian disimpan (`recap.service`, satu transaksi), sisanya dibuang. Porsi dari masak setelah tanggal rekap tetap disimpan, sehingga rekap yang disimpan besok pagi tidak ikut membuang nasi baru.
+  - Admin bisa membatalkan catatan buang terakhir per bahan; porsinya kembali ke stok.
   - Sebelum 2026-10-28 (develop saja) bahan ini adalah baris `stock_items` dengan `is_prepared`, dan sempat juga ada kolom `recipes.semi_item_id`; migrasi boot memindahkannya ke tabel di atas dan mengembalikan `recipes` ke bentuk aslinya (`semiItemsSchema.js`).
 
 ### shopping

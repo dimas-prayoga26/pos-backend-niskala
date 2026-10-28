@@ -13957,7 +13957,8 @@
      "createdBy": 2,
      "createdByName": "Kasir Uji",
      "createdAt": "<ts>",
-     "updatedAt": "<ts>"
+     "updatedAt": "<ts>",
+     "writtenOff": []
     }
    },
    "events": [
@@ -17489,6 +17490,10 @@
      }
     ]
    },
+   "history_stock_semi_wastes": {
+    "ddl": "CREATE TABLE `history_stock_semi_wastes` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `semi_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `waste_date` date NOT NULL,\n  `quantity` decimal(12,2) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `cost` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `reason` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_history_stock_semi_wastes_date` (`waste_date`),\n  KEY `idx_history_stock_semi_wastes_item` (`semi_item_id`,`waste_date`),\n  KEY `fk_history_stock_semi_wastes_user` (`user_id`),\n  CONSTRAINT `fk_history_stock_semi_wastes_semi_item` FOREIGN KEY (`semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_history_stock_semi_wastes_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "menu_item_prices": {
     "ddl": "CREATE TABLE `menu_item_prices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `menu_item_id` int unsigned NOT NULL,\n  `regular_price` decimal(12,2) NOT NULL,\n  `online_price` decimal(12,2) DEFAULT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_prices_menu_item` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_prices_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -21371,7 +21376,7 @@
     "rows": []
    },
    "stock_semi_items": {
-    "ddl": "CREATE TABLE `stock_semi_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `minimum_stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `portion_size` double NOT NULL DEFAULT '0',\n  `yield_quantity` double NOT NULL DEFAULT '0',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_stock_semi_items_is_active` (`is_active`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `stock_semi_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `minimum_stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `portion_size` double NOT NULL DEFAULT '0',\n  `yield_quantity` double NOT NULL DEFAULT '0',\n  `reset_daily` tinyint(1) NOT NULL DEFAULT '1',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_stock_semi_items_is_active` (`is_active`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "suplier": {
@@ -21793,6 +21798,10 @@
      }
     ]
    },
+   "history_stock_semi_wastes": {
+    "ddl": "CREATE TABLE `history_stock_semi_wastes` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `semi_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `waste_date` date NOT NULL,\n  `quantity` decimal(12,2) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `cost` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `reason` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_history_stock_semi_wastes_date` (`waste_date`),\n  KEY `idx_history_stock_semi_wastes_item` (`semi_item_id`,`waste_date`),\n  KEY `fk_history_stock_semi_wastes_user` (`user_id`),\n  CONSTRAINT `fk_history_stock_semi_wastes_semi_item` FOREIGN KEY (`semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_history_stock_semi_wastes_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "menu_item_prices": {
     "ddl": "CREATE TABLE `menu_item_prices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `menu_item_id` int unsigned NOT NULL,\n  `regular_price` decimal(12,2) NOT NULL,\n  `online_price` decimal(12,2) DEFAULT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_prices_menu_item` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_prices_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -25675,7 +25684,7 @@
     "rows": []
    },
    "stock_semi_items": {
-    "ddl": "CREATE TABLE `stock_semi_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `minimum_stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `portion_size` double NOT NULL DEFAULT '0',\n  `yield_quantity` double NOT NULL DEFAULT '0',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_stock_semi_items_is_active` (`is_active`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `stock_semi_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `minimum_stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `portion_size` double NOT NULL DEFAULT '0',\n  `yield_quantity` double NOT NULL DEFAULT '0',\n  `reset_daily` tinyint(1) NOT NULL DEFAULT '1',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_stock_semi_items_is_active` (`is_active`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "suplier": {

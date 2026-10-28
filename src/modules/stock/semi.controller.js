@@ -32,6 +32,8 @@ const normalizeSemiPayload = (body) => {
     unit: String(body.unit || "").trim() || "porsi",
     portionSize: roundRecipeQuantity(toNonNegativeNumber(body.portionSize)),
     minimumStock: toNonNegativeNumber(body.minimumStock),
+    // Leftover written off at the daily recap (Nasi); off for items that keep.
+    resetDaily: body.resetDaily === undefined ? true : Boolean(body.resetDaily),
     components: [...quantityByStockItemId].map(([stockItemId, quantity]) => ({
       stockItemId,
       quantity,
@@ -117,7 +119,8 @@ const deleteSemiItem = asyncHandler(async (req, res, next) => {
 const updateSemiStock = asyncHandler(async (req, res, next) => {
   const semiItem = await SemiItem.updateStock(
     Number(req.params.id),
-    toNonNegativeNumber(req.body.stock)
+    toNonNegativeNumber(req.body.stock),
+    req.user?.id || req.user?._id
   );
 
   if (!semiItem) return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));
@@ -172,13 +175,74 @@ const deleteProduction = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, message: "Catatan masak dibatalkan." });
 });
 
+// Reasons a cashier picks for portions thrown away during the day. The
+// system adds "Sisa akhir hari" (daily recap) and "Penyesuaian" (stock count).
+const WASTE_REASONS = ["Basi", "Tumpah", "Lainnya"];
+
+const recordWaste = asyncHandler(async (req, res, next) => {
+  const quantity = Math.round(toNonNegativeNumber(req.body.quantity) * 100) / 100;
+  const reason = String(req.body.reason || "").trim();
+  const note = String(req.body.note || "").trim().slice(0, 255);
+
+  if (quantity <= 0) {
+    return next(createHttpError(400, "Jumlah porsi yang dibuang harus lebih dari 0."));
+  }
+  if (!WASTE_REASONS.includes(reason)) {
+    return next(createHttpError(400, `Alasan harus salah satu dari: ${WASTE_REASONS.join(", ")}.`));
+  }
+
+  const semiId = Number(req.params.id);
+  const recorded = await SemiItem.recordWaste(
+    semiId,
+    { quantity, reason, note },
+    req.user?.id || req.user?._id
+  );
+  if (!recorded) return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));
+
+  emitStockChanged("semi-item-wasted", semiId);
+  res.status(201).json({
+    success: true,
+    message: "Kerugian dicatat.",
+    data: await SemiItem.findById(semiId),
+  });
+});
+
+const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
+
+const getWastes = asyncHandler(async (req, res, next) => {
+  const { from, to } = req.query;
+  if ((from && !isDate(from)) || (to && !isDate(to))) {
+    return next(createHttpError(400, "Tanggal harus berformat YYYY-MM-DD."));
+  }
+
+  res.status(200).json({
+    success: true,
+    data: await SemiItem.listWastes({
+      from: from || null,
+      to: to || null,
+      semiItemId: Number(req.query.semiItemId) || null,
+    }),
+  });
+});
+
+const deleteWaste = asyncHandler(async (req, res, next) => {
+  const semiId = await SemiItem.deleteWaste(Number(req.params.wasteId));
+  if (semiId === null) return next(createHttpError(404, "Catatan buang tidak ditemukan."));
+
+  emitStockChanged("semi-item-waste-deleted", semiId);
+  res.status(200).json({ success: true, message: "Catatan buang dibatalkan." });
+});
+
 module.exports = {
   addSemiItem,
   deleteProduction,
   deleteSemiItem,
+  deleteWaste,
   getProductions,
   getSemiItems,
+  getWastes,
   recordProduction,
+  recordWaste,
   updateSemiItem,
   updateSemiStock,
 };

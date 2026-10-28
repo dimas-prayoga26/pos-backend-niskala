@@ -14,9 +14,12 @@ const {
   addSemiItem,
   deleteProduction,
   deleteSemiItem,
+  deleteWaste,
   getProductions,
   getSemiItems,
+  getWastes,
   recordProduction,
+  recordWaste,
   updateSemiItem,
   updateSemiStock,
 } = require("./semi.controller");
@@ -35,6 +38,16 @@ router.delete(
   requireNumericId({ param: "productionId" }),
   deleteProduction
 );
+// Kerugian: portions thrown away (history_stock_semi_wastes).
+router.get("/semi/wastes", authenticate, getWastes);
+router.delete(
+  "/semi/wastes/:wasteId",
+  authenticate,
+  adminOnly,
+  requireNumericId({ param: "wasteId" }),
+  deleteWaste
+);
+router.post("/semi/:id/wastes", authenticate, requireNumericId(), staffOnly, recordWaste);
 router.put("/semi/:id", authenticate, adminOnly, requireNumericId(), updateSemiItem);
 router.delete("/semi/:id", authenticate, adminOnly, requireNumericId(), deleteSemiItem);
 router.patch("/semi/:id/stock", authenticate, requireNumericId(), staffOnly, updateSemiStock);

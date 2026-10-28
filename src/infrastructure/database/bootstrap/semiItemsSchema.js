@@ -8,6 +8,7 @@
 //                                      unit cost at that time
 //   stock_semi_item_menus              portions of a semi item in a menu's
 //                                      recipe (bahan baku lines stay in recipes)
+//   history_stock_semi_wastes          portions thrown away and their value
 // Cooking moves stock from the raw items to the semi item; selling a menu then
 // uses the semi item's portions like any other stock item.
 
@@ -260,6 +261,36 @@ const ensureSemiItemsSchema = async (db) => {
       FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE CASCADE,
     CONSTRAINT fk_stock_semi_item_menus_semi_item
       FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id) ON DELETE RESTRICT
+  ) ENGINE=InnoDB`);
+
+  // Semi items with reset_daily (e.g. Nasi) start each day from zero: their
+  // leftover is written off when the daily recap is saved.
+  await db
+    .query("ALTER TABLE stock_semi_items ADD COLUMN reset_daily BOOLEAN NOT NULL DEFAULT TRUE AFTER yield_quantity")
+    .catch(() => {});
+
+  // Portions thrown away (leftover at closing, spoiled, spilled, a lower
+  // stock count) with their value at that time: the kerugian of bahan
+  // setengah jadi. waste_date is the business day the loss belongs to.
+  await db.query(`CREATE TABLE IF NOT EXISTS history_stock_semi_wastes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    semi_item_id INT UNSIGNED NULL,
+    item_name VARCHAR(150) NOT NULL,
+    waste_date DATE NOT NULL,
+    quantity DECIMAL(12,2) NOT NULL,
+    unit VARCHAR(30) NOT NULL,
+    unit_cost INT NOT NULL DEFAULT 0,
+    cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+    reason VARCHAR(30) NOT NULL,
+    note VARCHAR(255) NULL,
+    user_id INT UNSIGNED NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_history_stock_semi_wastes_date (waste_date),
+    INDEX idx_history_stock_semi_wastes_item (semi_item_id, waste_date),
+    CONSTRAINT fk_history_stock_semi_wastes_semi_item
+      FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id) ON DELETE SET NULL,
+    CONSTRAINT fk_history_stock_semi_wastes_user
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
 
   await restoreRecipesTable(db);
