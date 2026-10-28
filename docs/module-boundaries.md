@@ -19,11 +19,11 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 |---|---|---|---|---|
 | users | `/api/user` | `users` | – | – |
 | categories | `/api/category` | `categories` | – | `menu:changed` |
-| menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `recipes` (pivot menu ↔ bahan stok), VIEW `recipe_details` (resep + nama menu/bahan + average cost + cost, baca-saja) | `categories`, `stock_items` (nama bahan) | `menu:changed` |
-| stock | `/api/stock-item` | `stock_items`, `stock_item_recipes`, `stock_item_productions`, `stock_item_production_items` (bahan olahan) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
+| menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `recipes` (pivot menu ↔ bahan baku atau bahan setengah jadi), VIEW `recipe_details` (resep + nama menu/bahan + jenis bahan + average cost + cost, baca-saja) | `categories`, `stock_raw_items`, `stock_semi_items` (nama bahan) | `menu:changed` |
+| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items` (bahan setengah jadi, `/api/stock-item/semi`) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
 | shopping | `/api/shopping` | `suplier`, `history_stock_purchases`, `history_stock_purchase_items`, `history_stock_purchase_item_logs` | – | `shopping:changed`, `stock:changed` |
 | platforms | `/api/order-platform` | `meta_data_platform` | – | `platforms:changed` |
-| orders | `/api/order` | `orders`, `order_items`, `order_item_costs` (rincian HPP per bahan, dibekukan saat terjual), `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_prices`, `recipes`, `stock_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
+| orders | `/api/order` | `orders`, `order_items`, `order_item_costs` (rincian HPP per bahan, dibekukan saat terjual), `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_prices`, `recipes`, `stock_raw_items`, `stock_semi_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
 | recaps | `/api/recap` | `meta_data_format_recap`, `daily_recaps`, `weekly_recaps`, `monthly_recaps` | `users`, `menu_items` (lookup nama) | `recaps:changed` |
 
 ## Detail per modul
@@ -44,22 +44,25 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
   - `menu.service`: orkestrasi;
   - `menu.repository`: SQL.
 - **Aturan:**
-  - `recipes.cost` = quantity × `stock_items.unit_cost` (harga per satuan, rata-rata dari belanja; rupiah bulat); `menu_item_prices.hpp_cost` = jumlah cost resep dan `gross_profit` = harga − HPP. Dihitung ulang oleh `menu.costs` saat resep disimpan, saat belanja/COGS mengubah unit_cost, dan setiap boot. Menu yang resepnya belum punya harga beli memakai HPP manual.
+  - Satu baris resep memakai bahan baku (`stock_item_id`) atau bahan setengah jadi (`semi_item_id`), tidak keduanya (CHECK `chk_recipes_one_item`).
+  - `recipes.cost` = quantity × `unit_cost` bahannya (harga per satuan, rata-rata dari belanja atau dari Catat Masak; rupiah bulat); `menu_item_prices.hpp_cost` = jumlah cost resep dan `gross_profit` = harga − HPP. Dihitung ulang oleh `menu.costs` saat resep disimpan, saat belanja/COGS mengubah unit_cost, dan setiap boot. Menu yang resepnya belum punya harga beli memakai HPP manual.
   - Setiap menu punya satu harga (tanpa ukuran dan tanpa varian Hot/Cold). Harga, harga online, HPP, dan gross profit ada di `menu_item_prices`, satu baris per menu.
   - `order_items.variant` hanya berisi label lama (mis. "Reguler / Cold") untuk order sebelum ukuran/varian dihapus.
   - Menu default hanya di-seed sekali saat database baru, sehingga edit dan hapus menu tidak pernah ditimpa saat boot.
 
 ### stock
-- **Isi:** CRUD `stock_items` (`stock.repository`, `stock.controller`) dan `stock.movements`.
-- **`stock.movements`:** satu-satunya kode yang memotong atau mengembalikan stok berdasarkan resep. Ia menerima *recipe lines* `{ menuItemId, quantity }` dan berjalan di koneksi transaksi pemanggil. Takaran resep selalu dalam satuan bahan di `stock_items`, jadi tidak ada konversi satuan; mengganti satuan stok antar satuan yang bisa dikonversi (mis. gr → kg) ikut menyesuaikan takaran resep.
-- **Status stok:** `HARUS ORDER` (stok ≤ minimum; `HARUS MASAK` untuk bahan olahan), `HAMPIR HABIS` (stok ≤ minimum + maks(1, 20%)), `AMAN`, atau `BEBAS STOK` untuk item unlimited.
-- **Bahan olahan** (`prepared.repository`, `prepared.controller`): `stock_items` dengan `is_prepared` (mis. Nasi dari Beras).
-  - Komposisinya untuk 1 resep ada di `stock_item_recipes` dan hanya boleh berisi bahan mentah.
-  - "Catat Masak" (`POST /:id/productions`) menyimpan satu baris `stock_item_productions` dan bahan terpakainya di `stock_item_production_items`.
-  - Saat Catat Masak, stok bahan mentah dipotong sebanyak resep × komposisi. Bahan olahan bertambah sejumlah porsi: berat hasil ÷ `portion_size`, atau dihitung langsung.
-  - `unit_cost` bahan olahan menjadi rata-rata bergerak seperti belanja, dan `yield_quantity` diisi porsi per resep dari masak terakhir.
-  - Menu yang memakai bahan olahan memotong porsinya lewat `stock.movements` seperti bahan biasa.
-  - Bahan olahan tidak bisa dibelanjakan, tidak bisa diubah COGS-nya secara manual, dan hanya catatan masak terakhir yang bisa dibatalkan selama porsinya masih ada.
+- **Isi:** CRUD bahan baku `stock_raw_items` (`stock.repository`, `stock.controller`), bahan setengah jadi `stock_semi_items` (`semi.repository`, `semi.controller`) dan `stock.movements`.
+- **`stock.movements`:** satu-satunya kode yang memotong atau mengembalikan stok berdasarkan resep. Ia menerima *recipe lines* `{ menuItemId, quantity }` dan berjalan di koneksi transaksi pemanggil. Setiap baris resep memotong `stock_raw_items` atau `stock_semi_items`. Takaran resep selalu dalam satuan bahannya, jadi tidak ada konversi satuan; mengganti satuan bahan baku antar satuan yang bisa dikonversi (mis. gr → kg) ikut menyesuaikan takaran resep menu dan komposisi bahan setengah jadi.
+- **Status stok:** `HARUS ORDER` (stok ≤ minimum; `HARUS MASAK` untuk bahan setengah jadi), `HAMPIR HABIS` (stok ≤ minimum + maks(1, 20%)), `AMAN`, atau `BEBAS STOK` untuk item unlimited.
+- **Nama** bahan baku dan bahan setengah jadi tidak boleh sama, agar pilihan resep menu tidak ganda.
+- **Bahan setengah jadi** (`/api/stock-item/semi`; mis. Nasi dari Beras):
+  - Komposisinya untuk 1 resep ada di `stock_semi_item_recipes` dan hanya berisi bahan baku.
+  - "Catat Masak" (`POST /semi/:id/productions`) menyimpan satu baris `stock_semi_item_productions` dan bahan baku terpakainya di `stock_semi_item_production_items`.
+  - Saat Catat Masak, stok bahan baku dipotong sebanyak resep × komposisi. Bahan setengah jadi bertambah sejumlah porsi: berat hasil ÷ `portion_size`, atau dihitung langsung.
+  - `unit_cost` bahan setengah jadi menjadi rata-rata bergerak seperti belanja, dan `yield_quantity` diisi porsi per resep dari masak terakhir.
+  - Menu yang memakai bahan setengah jadi memotong porsinya lewat `stock.movements` seperti bahan baku.
+  - Bahan setengah jadi tidak bisa dibelanjakan dan tidak punya COGS manual. Hanya catatan masak terakhir yang bisa dibatalkan, selama porsinya masih ada.
+  - Sebelum 2026-10-28 (develop saja) bahan ini adalah baris `stock_items` dengan `is_prepared`; migrasi boot memindahkannya ke tabel di atas (`semiItemsSchema.js`).
 
 ### shopping
 - **Isi:** `shopping.validation` (validasi strict, semua error 400), `shopping.service` (transaksi pembelian, dibuat dengan factory `createShoppingService(db)` agar bisa diuji di database lain), controller, dan route.
@@ -101,4 +104,4 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 
 1. **Seed dan backfill saat boot** (`infrastructure/database/bootstrap`) menulis ke tabel milik hampir semua modul.
 2. **categories → `menu_items.is_available`.** Repository kategori ikut mengubah ketersediaan menu saat status kategori berubah. Kode ini dipertahankan di sana karena harus satu transaksi dengan update kategori.
-3. **shopping → `stock_items`.** Pembelian menaikkan stok, mengubah average cost, dan membuat barang baru langsung di `stock_items`, di dalam transaksi pembelian. Pemindahan ke `stock.movements` perlu dilakukan bersamaan dengan perbaikan STK-3 (lihat laporan).
+3. **shopping → `stock_raw_items`.** Pembelian menaikkan stok, mengubah average cost, dan membuat barang baru langsung di `stock_raw_items`, di dalam transaksi pembelian. Pemindahan ke `stock.movements` perlu dilakukan bersamaan dengan perbaikan STK-3 (lihat laporan).

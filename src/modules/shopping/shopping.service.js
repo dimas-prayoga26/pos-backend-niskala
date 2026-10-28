@@ -75,7 +75,7 @@ const updatePurchaseTotal = async (connection, purchaseId) => {
 };
 const applyStockDelta = async (connection, stockItemId, deltaQty, deltaValue) => {
   const [[stock]] = await connection.query(
-    "SELECT * FROM stock_items WHERE id = ? FOR UPDATE",
+    "SELECT * FROM stock_raw_items WHERE id = ? FOR UPDATE",
     [stockItemId]
   );
   if (!stock) throw createError(404, "Barang stok tidak ditemukan.");
@@ -85,7 +85,7 @@ const applyStockDelta = async (connection, stockItemId, deltaQty, deltaValue) =>
   const nextAverageCost = nextStock > 0 ? roundCost(nextValue / nextStock) : 0;
 
   await connection.query(
-    "UPDATE stock_items SET stock = ?, stock_value = ?, unit_cost = ? WHERE id = ?",
+    "UPDATE stock_raw_items SET stock = ?, stock_value = ?, unit_cost = ? WHERE id = ?",
     [nextStock, nextValue, nextAverageCost, stockItemId]
   );
 
@@ -118,10 +118,12 @@ const createShoppingService = db => {
   };
   const createItem = async (connection, name) => {
     name = clean(name, 150, "Nama barang");
+    const [semiRows] = await connection.query("SELECT id FROM stock_semi_items WHERE name = ?", [name]);
+    if (semiRows.length) throw createError(400, `${name} adalah bahan setengah jadi, stoknya dari Catat Masak. Belanjakan bahan bakunya.`);
     // Unit is set on first purchase, after qty and unit have been entered.
-    await connection.query(`INSERT INTO stock_items (name, category, unit, stock, minimum_stock)
+    await connection.query(`INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock)
       VALUES (?, 'Umum', '', 0, 0) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [name]);
-    const row = (await connection.query("SELECT id, name, unit, stock, is_active FROM stock_items WHERE name = ?", [name]))[0][0];
+    const row = (await connection.query("SELECT id, name, unit, stock, is_active FROM stock_raw_items WHERE name = ?", [name]))[0][0];
     if (!row.is_active) throw createError(409, "Barang sudah ada tetapi tidak aktif. Aktifkan melalui pengelolaan stok.");
     return { id: row.id, name: row.name, unit: row.unit, stock: Number(row.stock) };
   };
@@ -149,12 +151,11 @@ const createShoppingService = db => {
       }
       const items = data.items.map(item => ({ ...item, stockItemId: item.stockItemId || newItems.get(item.itemName).id }));
       const ids = [...new Set(items.map(item => item.stockItemId))].sort((a,b) => a-b);
-      const [stocks] = await connection.query(`SELECT * FROM stock_items WHERE id IN (${ids.map(()=>"?").join(",")}) ORDER BY id FOR UPDATE`, ids);
+      const [stocks] = await connection.query(`SELECT * FROM stock_raw_items WHERE id IN (${ids.map(()=>"?").join(",")}) ORDER BY id FOR UPDATE`, ids);
       const byId = new Map(stocks.map(stock => [stock.id, stock]));
       for (const item of items) {
         const stock = byId.get(item.stockItemId);
         if (!stock || !stock.is_active) throw createError(400, "Salah satu barang tidak tersedia. Muat ulang daftar barang.");
-        if (stock.is_prepared) throw createError(400, `${stock.name} adalah bahan olahan, stoknya dari Catat Masak. Belanjakan bahan-bahannya.`);
         if (!stock.unit) {
           if (Number(stock.stock) !== 0) throw createError(400, `Lengkapi satuan ${stock.name} di Stok Barang terlebih dahulu.`);
           stock.unit = item.unit;
@@ -172,7 +173,7 @@ const createShoppingService = db => {
         stock.stock_value = roundCurrency(previousValue + purchaseValue);
         stock.unit_cost = stock.stock > 0 ? roundCost(stock.stock_value / stock.stock) : 0;
         await connection.query(
-          "UPDATE stock_items SET stock = ?, unit = ?, unit_cost = ?, stock_value = ?, supplier = ? WHERE id = ?",
+          "UPDATE stock_raw_items SET stock = ?, unit = ?, unit_cost = ?, stock_value = ?, supplier = ? WHERE id = ?",
           [stock.stock, stock.unit, stock.unit_cost, stock.stock_value, supplier.name, stock.id]
         );
         const [insertedItem] = await connection.query(`INSERT INTO history_stock_purchase_items
@@ -221,7 +222,7 @@ const createShoppingService = db => {
       if (!item.stock_item_id) throw createError(400, "Item belanja ini tidak terhubung ke stok.");
 
       const [[stock]] = await connection.query(
-        "SELECT * FROM stock_items WHERE id = ? FOR UPDATE",
+        "SELECT * FROM stock_raw_items WHERE id = ? FOR UPDATE",
         [item.stock_item_id]
       );
       if (!stock) throw createError(404, "Barang stok tidak ditemukan.");
@@ -330,7 +331,7 @@ const createShoppingService = db => {
          si.stock_value
        FROM history_stock_purchase_items i
        JOIN history_stock_purchases p ON p.id = i.purchase_id
-       LEFT JOIN stock_items si ON si.id = i.stock_item_id
+       LEFT JOIN stock_raw_items si ON si.id = i.stock_item_id
        ${itemWhere}
        ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
       [keyword, keyword]

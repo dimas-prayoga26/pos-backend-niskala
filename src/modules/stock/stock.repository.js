@@ -1,3 +1,4 @@
+// Bahan baku (stock_raw_items). Bahan setengah jadi: semi.repository.
 const { pool, withTransaction } = require("../../infrastructure/database/pool");
 const { refreshMenuCosts } = require("../menu/menu.costs");
 const {
@@ -5,16 +6,16 @@ const {
   convertBetweenUnits,
 } = require("../../shared/utils/units");
 
-// Traffic-light status shown on the stock dashboard. Prepared items (bahan
-// olahan) are cooked rather than ordered.
-const getStockStatus = (row) => {
+// Traffic-light status shown on the stock dashboard. Semi items are cooked
+// rather than ordered, so they pass lowLabel "HARUS MASAK".
+const getStockStatus = (row, lowLabel = "HARUS ORDER") => {
   if (row.is_unlimited) return "BEBAS STOK";
 
   const stock = Number(row.stock || 0);
   const minimumStock = Number(row.minimum_stock || 0);
   const warningLimit = minimumStock + Math.max(1, minimumStock * 0.2);
 
-  if (stock <= minimumStock) return row.is_prepared ? "HARUS MASAK" : "HARUS ORDER";
+  if (stock <= minimumStock) return lowLabel;
   if (stock <= warningLimit) return "HAMPIR HABIS";
   return "AMAN";
 };
@@ -34,9 +35,6 @@ const mapStockItem = (row) => {
     stockValue: Number(row.stock_value || 0),
     supplier: row.supplier || "",
     isUnlimited: Boolean(row.is_unlimited),
-    isPrepared: Boolean(row.is_prepared),
-    portionSize: Number(row.portion_size || 0),
-    yieldQuantity: Number(row.yield_quantity || 0),
     status: getStockStatus(row),
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
@@ -44,95 +42,35 @@ const mapStockItem = (row) => {
   };
 };
 
-const mapProduction = (row) => ({
-  id: row.id,
-  preparedItemId: row.prepared_item_id,
-  itemName: row.item_name,
-  batchQuantity: Number(row.batch_quantity),
-  outputWeight: row.output_weight == null ? null : Number(row.output_weight),
-  portionQuantity: Number(row.portion_quantity),
-  cost: Number(row.cost || 0),
-  unitCost: Number(row.unit_cost || 0),
-  note: row.note || "",
-  producedAt: row.produced_at,
-  userId: row.user_id,
-  userName: row.user_name || "",
-});
-
-// Adds to each prepared item its composition (one recipe, in each raw item's
-// unit), the cost of one recipe at current prices and its latest cooking.
-const attachPreparedDetails = async (stockItems) => {
-  const preparedIds = stockItems.filter((item) => item.isPrepared).map((item) => item.id);
-  if (!preparedIds.length) return stockItems;
-
-  const [componentRows] = await pool.query(
-    `SELECT pr.prepared_item_id, pr.stock_item_id, pr.quantity, pr.cost,
-            si.name, si.unit, si.unit_cost
-     FROM stock_item_recipes pr
-     JOIN stock_items si ON si.id = pr.stock_item_id
-     WHERE pr.prepared_item_id IN (?)
-     ORDER BY pr.sort_order ASC, pr.id ASC`,
-    [preparedIds]
-  );
-  const [productionRows] = await pool.query(
-    `SELECT p.*, u.name AS user_name
-     FROM stock_item_productions p
-     JOIN (
-       SELECT prepared_item_id, MAX(id) AS id
-       FROM stock_item_productions
-       WHERE prepared_item_id IN (?)
-       GROUP BY prepared_item_id
-     ) latest ON latest.id = p.id
-     LEFT JOIN users u ON u.id = p.user_id`,
-    [preparedIds]
-  );
-  const latestByItemId = new Map(
-    productionRows.map((row) => [row.prepared_item_id, mapProduction(row)])
-  );
-
-  return stockItems.map((item) => {
-    if (!item.isPrepared) return item;
-
-    const components = componentRows
-      .filter((row) => row.prepared_item_id === item.id)
-      .map((row) => ({
-        stockItemId: row.stock_item_id,
-        name: row.name,
-        unit: row.unit,
-        quantity: Number(row.quantity),
-        unitCost: Number(row.unit_cost || 0),
-        cost: Number(row.cost || 0),
-      }));
-
-    return {
-      ...item,
-      components,
-      recipeCost: components.reduce((total, component) => total + component.cost, 0),
-      lastProduction: latestByItemId.get(item.id) || null,
-    };
-  });
-};
-
 const findAll = async () => {
   const [rows] = await pool.query(
     `SELECT *
-     FROM stock_items
+     FROM stock_raw_items
      WHERE is_active = TRUE
      ORDER BY name ASC`
   );
 
-  return attachPreparedDetails(rows.map(mapStockItem));
+  return rows.map(mapStockItem);
 };
 
 const findById = async (id) => {
   const [rows] = await pool.query(
-    "SELECT * FROM stock_items WHERE id = ? LIMIT 1",
+    "SELECT * FROM stock_raw_items WHERE id = ? LIMIT 1",
     [id]
   );
-  if (!rows.length) return null;
 
-  const [stockItem] = await attachPreparedDetails([mapStockItem(rows[0])]);
-  return stockItem;
+  return mapStockItem(rows[0]);
+};
+
+// Names must be unique across bahan baku and bahan setengah jadi, so a menu
+// recipe never offers two items with the same name.
+const isSemiItemName = async (name) => {
+  const [rows] = await pool.query(
+    "SELECT id FROM stock_semi_items WHERE name = ? LIMIT 1",
+    [name]
+  );
+
+  return rows.length > 0;
 };
 
 const create = async ({
@@ -145,7 +83,7 @@ const create = async ({
   isUnlimited = false,
 }) => {
   const [result] = await pool.query(
-    `INSERT INTO stock_items
+    `INSERT INTO stock_raw_items
       (name, category, unit, stock, minimum_stock, unit_cost, stock_value, supplier, is_unlimited)
      VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)`,
     [name, category, unit, stock, minimumStock, supplier || null, isUnlimited ? 1 : 0]
@@ -172,13 +110,13 @@ const update = async (
 ) => {
   const updated = await withTransaction(async (connection) => {
     const [[current]] = await connection.query(
-      "SELECT unit FROM stock_items WHERE id = ? FOR UPDATE",
+      "SELECT unit FROM stock_raw_items WHERE id = ? FOR UPDATE",
       [id]
     );
     if (!current) return false;
 
     await connection.query(
-      `UPDATE stock_items
+      `UPDATE stock_raw_items
        SET name = ?,
            category = ?,
            unit = ?,
@@ -194,9 +132,14 @@ const update = async (
     const fromUnit = String(current.unit || "").trim().toLowerCase();
     const toUnit = String(unit || "").trim().toLowerCase();
     if (fromUnit !== toUnit && areConvertible(fromUnit, toUnit)) {
+      const factor = convertBetweenUnits(1, fromUnit, toUnit);
       await connection.query(
         "UPDATE recipes SET quantity = ROUND(quantity * ?, 4) WHERE stock_item_id = ?",
-        [convertBetweenUnits(1, fromUnit, toUnit), id]
+        [factor, id]
+      );
+      await connection.query(
+        "UPDATE stock_semi_item_recipes SET quantity = ROUND(quantity * ?, 4) WHERE stock_item_id = ?",
+        [factor, id]
       );
       await refreshMenuCosts(connection, { stockItemIds: [id] });
     }
@@ -209,7 +152,7 @@ const update = async (
 
 const updateStock = async (id, stock) => {
   const [result] = await pool.query(
-    `UPDATE stock_items SET stock_value = ${RESCALED_STOCK_VALUE}, stock = ? WHERE id = ?`,
+    `UPDATE stock_raw_items SET stock_value = ${RESCALED_STOCK_VALUE}, stock = ? WHERE id = ?`,
     [stock, stock, stock, id]
   );
 
@@ -221,7 +164,7 @@ const updateStock = async (id, stock) => {
 const updateCogs = async (id, { averageCost = 0, supplier }) => {
   const updated = await withTransaction(async (connection) => {
     const [result] = await connection.query(
-      `UPDATE stock_items
+      `UPDATE stock_raw_items
        SET unit_cost = ROUND(?),
            stock_value = ROUND(GREATEST(stock, 0) * ?, 2),
            supplier = COALESCE(NULLIF(?, ''), supplier)
@@ -238,7 +181,7 @@ const updateCogs = async (id, { averageCost = 0, supplier }) => {
 };
 
 const remove = async (id) => {
-  const [result] = await pool.query("DELETE FROM stock_items WHERE id = ?", [
+  const [result] = await pool.query("DELETE FROM stock_raw_items WHERE id = ?", [
     id,
   ]);
 
@@ -259,14 +202,14 @@ const findRecipeMenuNames = async (id) => {
   return rows.map((row) => row.name);
 };
 
-// Prepared items made from the stock item; they block deleting it (ON DELETE RESTRICT).
-const findPreparedItemNames = async (id) => {
+// Semi items made from the stock item; they block deleting it (ON DELETE RESTRICT).
+const findSemiItemNames = async (id) => {
   const [rows] = await pool.query(
-    `SELECT DISTINCT p.name
-     FROM stock_item_recipes pr
-     JOIN stock_items p ON p.id = pr.prepared_item_id
-     WHERE pr.stock_item_id = ?
-     ORDER BY p.name ASC`,
+    `SELECT DISTINCT ss.name
+     FROM stock_semi_item_recipes sr
+     JOIN stock_semi_items ss ON ss.id = sr.semi_item_id
+     WHERE sr.stock_item_id = ?
+     ORDER BY ss.name ASC`,
     [id]
   );
 
@@ -277,9 +220,10 @@ module.exports = {
   create,
   findAll,
   findById,
-  findPreparedItemNames,
   findRecipeMenuNames,
-  mapProduction,
+  findSemiItemNames,
+  getStockStatus,
+  isSemiItemName,
   remove,
   update,
   updateCogs,

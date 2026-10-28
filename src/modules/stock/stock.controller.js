@@ -15,9 +15,13 @@ const normalizeStockPayload = (body) => ({
   isUnlimited: Boolean(body.isUnlimited),
 });
 
-const validateStockPayload = ({ name, category, unit }) => {
+const validateStockPayload = async ({ name, category, unit }) => {
   if (!name || !category || !unit) {
     return createHttpError(400, "Name, category, and unit are required!");
+  }
+
+  if (await StockItem.isSemiItemName(name)) {
+    return createHttpError(409, `${name} sudah dipakai di bahan setengah jadi. Pilih nama lain.`);
   }
 
   return null;
@@ -25,13 +29,6 @@ const validateStockPayload = ({ name, category, unit }) => {
 
 const emitStockChanged = (action, stockItemId) =>
   emitRealtimeEvent("stock:changed", { action, stockItemId });
-
-// Prepared items (bahan olahan) are edited through their own form, and their
-// cost comes from cooking (prepared.controller).
-const rejectPrepared = async (id, message) => {
-  const stockItem = await StockItem.findById(id);
-  return stockItem?.isPrepared ? createHttpError(400, message) : null;
-};
 
 const getStockItems = asyncHandler(async (_req, res) => {
   const stockItems = await StockItem.findAll();
@@ -41,7 +38,7 @@ const getStockItems = asyncHandler(async (_req, res) => {
 
 const addStockItem = asyncHandler(async (req, res, next) => {
   const payload = normalizeStockPayload(req.body);
-  const validationError = validateStockPayload(payload);
+  const validationError = await validateStockPayload(payload);
 
   if (validationError) return next(validationError);
 
@@ -57,9 +54,7 @@ const addStockItem = asyncHandler(async (req, res, next) => {
 
 const updateStockItem = asyncHandler(async (req, res, next) => {
   const payload = normalizeStockPayload(req.body);
-  const validationError =
-    validateStockPayload(payload) ||
-    (await rejectPrepared(req.params.id, "Ubah bahan olahan lewat tab Bahan Olahan."));
+  const validationError = await validateStockPayload(payload);
 
   if (validationError) return next(validationError);
 
@@ -95,12 +90,6 @@ const updateStockQuantity = asyncHandler(async (req, res, next) => {
 });
 
 const updateStockCogs = asyncHandler(async (req, res, next) => {
-  const preparedError = await rejectPrepared(
-    req.params.id,
-    "COGS bahan olahan dihitung dari Catat Masak."
-  );
-  if (preparedError) return next(preparedError);
-
   // Exact cost: stock_value uses it, unit_cost is stored as whole rupiah.
   const averageCost = toNonNegativeNumber(req.body.averageCost);
   const supplier = String(req.body.supplier || "").trim();
@@ -131,12 +120,12 @@ const deleteStockItem = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const preparedItemNames = await StockItem.findPreparedItemNames(id);
-  if (preparedItemNames.length) {
+  const semiItemNames = await StockItem.findSemiItemNames(id);
+  if (semiItemNames.length) {
     return next(
       createHttpError(
         409,
-        `Bahan masih dipakai di bahan olahan: ${preparedItemNames.join(", ")}. Hapus dari komposisinya terlebih dahulu.`
+        `Bahan masih dipakai di bahan setengah jadi: ${semiItemNames.join(", ")}. Hapus dari komposisinya terlebih dahulu.`
       )
     );
   }

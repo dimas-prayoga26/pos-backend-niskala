@@ -4,7 +4,7 @@ const crypto = require("node:crypto");
 const mysql = require("mysql2/promise");
 const config = require("../../src/config/env");
 const { pool } = require("../../src/infrastructure/database/pool");
-const { ensurePreparedItemsSchema } = require("../../src/infrastructure/database/bootstrap/preparedItemsSchema");
+const { ensureSemiItemsSchema } = require("../../src/infrastructure/database/bootstrap/semiItemsSchema");
 const { ensureShoppingSchema } = require("../../src/infrastructure/database/bootstrap/shoppingSchema");
 const { createShoppingService: createShoppingModel } = require("../../src/modules/shopping/shopping.service");
 const { convertQuantity } = require("../../src/modules/shopping/shopping.validation");
@@ -19,7 +19,7 @@ let testPool, created = false;
   created = true;
   testPool = mysql.createPool({host:config.dbHost,port:config.dbPort,user:config.dbUser,password:config.dbPassword,database,dateStrings:true,connectionLimit:5});
   await testPool.query("CREATE TABLE users (id INT UNSIGNED PRIMARY KEY) ENGINE=InnoDB");
-  await testPool.query(`CREATE TABLE stock_items (
+  await testPool.query(`CREATE TABLE stock_raw_items (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL UNIQUE,
     category VARCHAR(100) NOT NULL, unit VARCHAR(30) NOT NULL, stock DECIMAL(12,2) NOT NULL DEFAULT 0,
     minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -28,18 +28,19 @@ let testPool, created = false;
     supplier VARCHAR(150),
     is_active BOOLEAN DEFAULT TRUE, is_unlimited BOOLEAN DEFAULT FALSE
   ) ENGINE=InnoDB`);
+  await testPool.query("CREATE TABLE stock_semi_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL UNIQUE, unit_cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
   // Minimal menu tables: purchases refresh recipe costs and menu HPP.
   await testPool.query("CREATE TABLE menu_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL) ENGINE=InnoDB");
   await testPool.query("CREATE TABLE menu_item_prices (menu_item_id INT UNSIGNED PRIMARY KEY, regular_price DECIMAL(12,2) NOT NULL, hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0, gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0) ENGINE=InnoDB");
-  await testPool.query("CREATE TABLE recipes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, menu_item_id INT UNSIGNED NOT NULL, stock_item_id INT UNSIGNED NOT NULL, quantity DOUBLE NOT NULL, cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
+  await testPool.query("CREATE TABLE recipes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, menu_item_id INT UNSIGNED NOT NULL, stock_item_id INT UNSIGNED NULL, semi_item_id INT UNSIGNED NULL, quantity DOUBLE NOT NULL, cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
   await testPool.query("INSERT INTO users VALUES (1)");
   await ensureShoppingSchema(testPool);
   await ensureShoppingSchema(testPool);
-  await ensurePreparedItemsSchema(testPool);
-  await ensurePreparedItemsSchema(testPool);
+  await ensureSemiItemsSchema(testPool);
+  await ensureSemiItemsSchema(testPool);
   const shopping = createShoppingModel(testPool);
   assert.deepEqual(await shopping.suppliers(), []);
-  const [seed] = await testPool.query("INSERT INTO stock_items (name,category,unit,stock,supplier) VALUES ('Kopi Uji','Umum','gr',-50,'Legacy Shop')");
+  const [seed] = await testPool.query("INSERT INTO stock_raw_items (name,category,unit,stock,supplier) VALUES ('Kopi Uji','Umum','gr',-50,'Legacy Shop')");
   const first = {id:seed.insertId};
   await testPool.query("INSERT INTO menu_items (id, name) VALUES (1, 'Kopi Resep')");
   await testPool.query("INSERT INTO menu_item_prices (menu_item_id, regular_price) VALUES (1, 20000)");
@@ -54,8 +55,8 @@ let testPool, created = false;
   assert.equal(results[0].id,results[1].id);
   assert.equal(results.filter(result=>!result.duplicate).length,1);
   assert.equal(results[0].total,156000);
-  const [[second]] = await testPool.query("SELECT id FROM stock_items WHERE name='Cup Uji'");
-  let [stocks] = await testPool.query("SELECT * FROM stock_items ORDER BY id");
+  const [[second]] = await testPool.query("SELECT id FROM stock_raw_items WHERE name='Cup Uji'");
+  let [stocks] = await testPool.query("SELECT * FROM stock_raw_items ORDER BY id");
   assert.equal(Number(stocks.find(stock=>stock.id===first.id).stock),1450);
   assert.equal(Number(stocks.find(stock=>stock.id===first.id).unit_cost),103);
   assert.equal(Number(stocks.find(stock=>stock.id===first.id).stock_value),150000);
@@ -67,19 +68,19 @@ let testPool, created = false;
   assert.equal(Number(stocks.find(stock=>stock.id===second.id).stock),3);
   assert.equal(Number(stocks.find(stock=>stock.id===second.id).unit_cost),2000);
   assert.equal(Number(stocks.find(stock=>stock.id===second.id).stock_value),6000);
-  const [liquidSeed] = await testPool.query("INSERT INTO stock_items (name,category,unit,stock,supplier) VALUES ('Susu Uji','Umum','ml',0,'Legacy Shop')");
+  const [liquidSeed] = await testPool.query("INSERT INTO stock_raw_items (name,category,unit,stock,supplier) VALUES ('Susu Uji','Umum','ml',0,'Legacy Shop')");
   const liquidPayload = {...payload,requestId:crypto.randomUUID(),items:[{stockItemId:liquidSeed.insertId,quantity:0.5,unit:"liter",unitPrice:40000}]};
   const liquidPurchase = await shopping.save(liquidPayload,1);
   assert.equal(liquidPurchase.total,20000);
-  const [[liquidStock]] = await testPool.query("SELECT stock, unit_cost, stock_value FROM stock_items WHERE id=?",[liquidSeed.insertId]);
+  const [[liquidStock]] = await testPool.query("SELECT stock, unit_cost, stock_value FROM stock_raw_items WHERE id=?",[liquidSeed.insertId]);
   assert.equal(Number(liquidStock.stock),500);
   assert.equal(Number(liquidStock.unit_cost),40);
   assert.equal(Number(liquidStock.stock_value),20000);
-  [stocks] = await testPool.query("SELECT * FROM stock_items ORDER BY id");
+  [stocks] = await testPool.query("SELECT * FROM stock_raw_items ORDER BY id");
   await assert.rejects(shopping.save({...payload,note:"changed"},1),error=>error.status===409);
   const before = JSON.stringify(stocks);
   await assert.rejects(shopping.save({...payload,requestId:crypto.randomUUID(),items:[payload.items[0],{...payload.items[1],unit:"kg"}]},1),error=>error.status===400);
-  [stocks] = await testPool.query("SELECT * FROM stock_items ORDER BY id");
+  [stocks] = await testPool.query("SELECT * FROM stock_raw_items ORDER BY id");
   assert.equal(JSON.stringify(stocks),before,"failed second line must roll back first stock increment");
   const [[count]] = await testPool.query("SELECT COUNT(*) AS n FROM history_stock_purchases");
   assert.equal(count.n,2);
@@ -95,23 +96,23 @@ let testPool, created = false;
   }
   // Different requests for the same stock must add quantities rather than overwrite.
   await Promise.all([1,2].map(()=>shopping.save({...payload,requestId:crypto.randomUUID(),items:[payload.items[1]]},1)));
-  const [[cup]] = await testPool.query("SELECT stock FROM stock_items WHERE id=?",[second.id]);
+  const [[cup]] = await testPool.query("SELECT stock FROM stock_raw_items WHERE id=?",[second.id]);
   assert.equal(Number(cup.stock),9);
   // New names and stock changes are rolled back together on a later invalid line.
   await assert.rejects(shopping.save({...payload,requestId:crypto.randomUUID(),suplierName:"Toko Gagal",
     items:[{itemName:"Barang Gagal",quantity:1,unit:"pcs",unitPrice:1000},{stockItemId:second.id,quantity:1,unit:"kg",unitPrice:1000}]},1),error=>error.status===400);
   assert.equal((await testPool.query("SELECT id FROM suplier WHERE name='Toko Gagal'"))[0].length,0);
-  assert.equal((await testPool.query("SELECT id FROM stock_items WHERE name='Barang Gagal'"))[0].length,0);
+  assert.equal((await testPool.query("SELECT id FROM stock_raw_items WHERE name='Barang Gagal'"))[0].length,0);
   // New-name submissions reuse case-insensitive existing names without duplicate masters.
   await shopping.save({...payload,requestId:crypto.randomUUID(),suplierName:"  toko   uji ",items:[{itemName:"cup uji",quantity:1,unit:"pcs",unitPrice:2000}]},1);
   assert.equal((await shopping.suppliers()).length,1);
-  assert.equal((await testPool.query("SELECT id FROM stock_items"))[0].length,3);
+  assert.equal((await testPool.query("SELECT id FROM stock_raw_items"))[0].length,3);
   const supplier = (await shopping.suppliers())[0];
   await shopping.save({...payload,requestId:crypto.randomUUID(),suplierName:undefined,suplierId:supplier.id,items:[{stockItemId:second.id,quantity:1,unit:"pcs",unitPrice:2000}]},1);
   await assert.rejects(shopping.save({...payload,suplierId:supplier.id},1),error=>error.status===400);
   // Concurrent purchases can create the same new shop/item only once.
   await Promise.all([1,2].map(()=>shopping.save({...payload,requestId:crypto.randomUUID(),suplierName:"Toko Bersama",items:[{itemName:"Barang Bersama",quantity:2,unit:"pcs",unitPrice:1000}]},1)));
-  const [shared] = await testPool.query("SELECT stock FROM stock_items WHERE name='Barang Bersama'");
+  const [shared] = await testPool.query("SELECT stock FROM stock_raw_items WHERE name='Barang Bersama'");
   assert.equal(shared.length,1);
   assert.equal(Number(shared[0].stock),4);
   const managed = await shopping.saveSupplier({name:"  Suplier Pengaturan  "});

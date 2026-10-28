@@ -1,7 +1,8 @@
 // Recipe-driven stock movements. Orders pass recipe lines
 // ({ menuItemId, quantity }); each menu item's recipe rows (recipes, quantities
-// in the stock item's unit) are applied to stock_items inside the caller's
-// transaction connection.
+// in the item's unit) are applied to stock_raw_items (bahan baku) or
+// stock_semi_items (bahan setengah jadi) inside the caller's transaction
+// connection.
 const createHttpError = require("http-errors");
 const { roundCurrency } = require("../../shared/utils/money");
 
@@ -9,6 +10,24 @@ const createStockValidationError = (insufficientStock) =>
   createHttpError(409, "Stok bahan tidak mencukupi.", {
     details: { insufficientStock },
   });
+
+// Semi items have no is_unlimited; only raw items can skip stock.
+const STOCK_UPDATES = {
+  raw: (sign) => `UPDATE stock_raw_items
+     SET stock = CASE
+       WHEN is_unlimited = TRUE THEN stock
+       ELSE stock ${sign} ?
+     END,
+     stock_value = CASE
+       WHEN is_unlimited = TRUE THEN stock_value
+       ELSE ${sign === "-" ? "GREATEST(stock_value - ?, 0)" : "stock_value + ?"}
+     END
+     WHERE id = ?`,
+  semi: (sign) => `UPDATE stock_semi_items
+     SET stock = stock ${sign} ?,
+         stock_value = ${sign === "-" ? "GREATEST(stock_value - ?, 0)" : "stock_value + ?"}
+     WHERE id = ?`,
+};
 
 const buildStockDeductions = async (connection, orderItems = []) => {
   if (!orderItems.length) return new Map();
@@ -18,15 +37,18 @@ const buildStockDeductions = async (connection, orderItems = []) => {
     `SELECT
        r.menu_item_id,
        r.stock_item_id,
+       r.semi_item_id,
        r.quantity,
-       si.name AS stock_name,
-       si.stock,
-       si.unit AS stock_unit,
-       si.unit_cost,
-       si.is_unlimited
+       COALESCE(si.name, ss.name) AS stock_name,
+       COALESCE(si.stock, ss.stock) AS stock,
+       COALESCE(si.unit, ss.unit) AS stock_unit,
+       COALESCE(si.unit_cost, ss.unit_cost) AS unit_cost,
+       COALESCE(si.is_unlimited, FALSE) AS is_unlimited
      FROM recipes r
-     JOIN stock_items si ON si.id = r.stock_item_id
+     LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
+     LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
      WHERE r.menu_item_id IN (?)
+       AND (si.id IS NOT NULL OR ss.id IS NOT NULL)
      ORDER BY r.sort_order ASC, r.id ASC`,
     [menuItemIds]
   );
@@ -41,13 +63,16 @@ const buildStockDeductions = async (connection, orderItems = []) => {
     );
 
     for (const ingredient of matchingIngredients) {
-      const stockItemId = Number(ingredient.stock_item_id);
+      const kind = ingredient.semi_item_id ? "semi" : "raw";
+      const itemId = Number(kind === "semi" ? ingredient.semi_item_id : ingredient.stock_item_id);
       const deduction = (Number(ingredient.quantity) || 0) * orderItem.quantity;
 
-      if (!stockItemId || deduction <= 0) continue;
+      if (!itemId || deduction <= 0) continue;
 
-      const currentDeduction = deductions.get(stockItemId) || {
-        stockItemId,
+      const key = `${kind}:${itemId}`;
+      const currentDeduction = deductions.get(key) || {
+        kind,
+        itemId,
         name: ingredient.stock_name,
         stock: Number(ingredient.stock || 0),
         unit: ingredient.stock_unit || "",
@@ -61,7 +86,7 @@ const buildStockDeductions = async (connection, orderItems = []) => {
       currentDeduction.requiredValue += roundCurrency(
         deduction * currentDeduction.averageCost
       );
-      deductions.set(stockItemId, currentDeduction);
+      deductions.set(key, currentDeduction);
     }
   }
 
@@ -75,7 +100,7 @@ const getInsufficientStock = (deductions) =>
         !deduction.isUnlimited && deduction.required > deduction.stock
     )
     .map((deduction) => ({
-      stockItemId: deduction.stockItemId,
+      [deduction.kind === "semi" ? "semiItemId" : "stockItemId"]: deduction.itemId,
       name: deduction.name,
       stock: deduction.stock,
       required: deduction.required,
@@ -83,21 +108,13 @@ const getInsufficientStock = (deductions) =>
       unit: deduction.unit,
     }));
 
-const applyStockDeductions = async (connection, deductions) => {
+const applyStockMovements = async (connection, deductions, sign) => {
   for (const deduction of deductions.values()) {
-    await connection.query(
-      `UPDATE stock_items
-       SET stock = CASE
-         WHEN is_unlimited = TRUE THEN stock
-         ELSE stock - ?
-       END,
-       stock_value = CASE
-         WHEN is_unlimited = TRUE THEN stock_value
-         ELSE GREATEST(stock_value - ?, 0)
-       END
-       WHERE id = ?`,
-      [deduction.required, deduction.requiredValue, deduction.stockItemId]
-    );
+    await connection.query(STOCK_UPDATES[deduction.kind](sign), [
+      deduction.required,
+      deduction.requiredValue,
+      deduction.itemId,
+    ]);
   }
 
   return deductions.size;
@@ -116,30 +133,14 @@ const deductIngredientStock = async (
     throw createStockValidationError(insufficientStock);
   }
 
-  return applyStockDeductions(connection, deductions);
+  return applyStockMovements(connection, deductions, "-");
 };
 
 const restoreIngredientStock = async (connection, items = []) => {
   const deductions = await buildStockDeductions(connection, items);
   if (!deductions.size) return 0;
 
-  for (const deduction of deductions.values()) {
-    await connection.query(
-      `UPDATE stock_items
-       SET stock = CASE
-         WHEN is_unlimited = TRUE THEN stock
-         ELSE stock + ?
-       END,
-       stock_value = CASE
-         WHEN is_unlimited = TRUE THEN stock_value
-         ELSE stock_value + ?
-       END
-       WHERE id = ?`,
-      [deduction.required, deduction.requiredValue, deduction.stockItemId]
-    );
-  }
-
-  return deductions.size;
+  return applyStockMovements(connection, deductions, "+");
 };
 
 module.exports = {

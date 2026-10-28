@@ -260,12 +260,13 @@ const insertOrderItemCosts = async (connection, orderItemId, costs = []) => {
 
   await connection.query(
     `INSERT INTO order_item_costs
-      (order_item_id, stock_item_id, stock_item_name, quantity, unit, unit_cost, cost)
+      (order_item_id, stock_item_id, semi_item_id, stock_item_name, quantity, unit, unit_cost, cost)
      VALUES ?`,
     [
       costs.map((line) => [
         orderItemId,
-        line.stockItemId,
+        line.stockItemId || null,
+        line.semiItemId || null,
         line.stockItemName,
         line.quantity,
         line.unit,

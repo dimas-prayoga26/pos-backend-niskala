@@ -131,6 +131,6 @@ Semua tes memakai database bernama `pos_*test*`. Helper menolak nama lain, jadi 
 | Tetap JavaScript (CommonJS), tidak migrasi ke TypeScript | Tujuan refactor adalah struktur tanpa perubahan perilaku; migrasi bahasa adalah proyek terpisah |
 | Tanpa container DI | Modul cukup memakai `require`; repository yang perlu diuji dengan DB lain menerima `db` (pola `createShoppingService(db)`) |
 | Service hanya di modul berlogika | Menghindari lapisan kosong yang hanya meneruskan panggilan |
-| Mutasi stok dari order ada di modul stock | Hanya modul stock yang mengubah `stock_items` dari resep; orders memanggil API-nya |
+| Mutasi stok dari order ada di modul stock | Hanya modul stock yang mengubah `stock_raw_items`/`stock_semi_items` dari resep; orders memanggil API-nya |
 | Kontrak response tidak diubah (termasuk alias `_id`/`id` dan envelope yang tidak seragam) | Frontend dan aplikasi RawBT bergantung padanya |
 | Konversi satuan dibuat dua varian (`convertRecipeQuantity` lenient, `convertQuantity` strict di shopping) | Semantik keduanya memang berbeda di kode lama. Resep kini tidak punya satuan sendiri; `convertRecipeQuantity` hanya dipakai migrasi boot untuk memindahkan takaran lama ke satuan stok |

@@ -35,12 +35,16 @@ describe("menu pricing", () => {
         { stockItemId: 7, quantity: 0.1 },
         { stockItemId: 7, quantity: "0.2" },
         { stockItemId: 8, quantity: 0.123456 },
+        // A semi item with the same id as a raw item is a different row.
+        { semiItemId: 4, quantity: 1 },
+        { semiItemId: "4", stockItemId: 9, quantity: 2 },
       ],
     });
     assert.deepEqual(record.normalizedIngredients, [
-      { stockItemId: 4, quantity: 15, note: "" },
-      { stockItemId: 7, quantity: 0.3, note: "" },
-      { stockItemId: 8, quantity: 0.1235, note: "" },
+      { stockItemId: 4, semiItemId: null, quantity: 15, note: "" },
+      { stockItemId: 7, semiItemId: null, quantity: 0.3, note: "" },
+      { stockItemId: 8, semiItemId: null, quantity: 0.1235, note: "" },
+      { stockItemId: null, semiItemId: 4, quantity: 3, note: "" },
     ]);
   });
 
