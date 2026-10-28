@@ -188,13 +188,13 @@ const save = (id, { name, category, unit, portionSize, minimumStock, components 
     return semiId;
   });
 
-// Menus whose recipe uses the semi item; recipes block deleting it (ON DELETE RESTRICT).
+// Menus whose recipe uses the semi item; they block deleting it (ON DELETE RESTRICT).
 const findRecipeMenuNames = async (id) => {
   const [rows] = await pool.query(
     `SELECT DISTINCT mi.name
-     FROM recipes r
-     JOIN menu_items mi ON mi.id = r.menu_item_id
-     WHERE r.semi_item_id = ?
+     FROM stock_semi_item_menus sm
+     JOIN menu_items mi ON mi.id = sm.menu_item_id
+     WHERE sm.semi_item_id = ?
      ORDER BY mi.name ASC`,
     [id]
   );

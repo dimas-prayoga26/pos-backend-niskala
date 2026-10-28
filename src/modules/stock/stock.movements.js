@@ -5,6 +5,7 @@
 // connection.
 const createHttpError = require("http-errors");
 const { roundCurrency } = require("../../shared/utils/money");
+const { findRecipeLines } = require("../menu/menu.recipeLines");
 
 const createStockValidationError = (insufficientStock) =>
   createHttpError(409, "Stok bahan tidak mencukupi.", {
@@ -33,25 +34,9 @@ const buildStockDeductions = async (connection, orderItems = []) => {
   if (!orderItems.length) return new Map();
 
   const menuItemIds = [...new Set(orderItems.map((item) => item.menuItemId))];
-  const [ingredientRows] = await connection.query(
-    `SELECT
-       r.menu_item_id,
-       r.stock_item_id,
-       r.semi_item_id,
-       r.quantity,
-       COALESCE(si.name, ss.name) AS stock_name,
-       COALESCE(si.stock, ss.stock) AS stock,
-       COALESCE(si.unit, ss.unit) AS stock_unit,
-       COALESCE(si.unit_cost, ss.unit_cost) AS unit_cost,
-       COALESCE(si.is_unlimited, FALSE) AS is_unlimited
-     FROM recipes r
-     LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
-     LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
-     WHERE r.menu_item_id IN (?)
-       AND (si.id IS NOT NULL OR ss.id IS NOT NULL)
-     ORDER BY r.sort_order ASC, r.id ASC`,
-    [menuItemIds]
-  );
+  // Bahan baku lines live in recipes, bahan setengah jadi lines in
+  // stock_semi_item_menus.
+  const ingredientRows = await findRecipeLines(connection, menuItemIds);
 
   if (!ingredientRows.length) return new Map();
 
@@ -63,7 +48,7 @@ const buildStockDeductions = async (connection, orderItems = []) => {
     );
 
     for (const ingredient of matchingIngredients) {
-      const kind = ingredient.semi_item_id ? "semi" : "raw";
+      const { kind } = ingredient;
       const itemId = Number(kind === "semi" ? ingredient.semi_item_id : ingredient.stock_item_id);
       const deduction = (Number(ingredient.quantity) || 0) * orderItem.quantity;
 
@@ -73,9 +58,9 @@ const buildStockDeductions = async (connection, orderItems = []) => {
       const currentDeduction = deductions.get(key) || {
         kind,
         itemId,
-        name: ingredient.stock_name,
+        name: ingredient.name,
         stock: Number(ingredient.stock || 0),
-        unit: ingredient.stock_unit || "",
+        unit: ingredient.unit || "",
         averageCost: Number(ingredient.unit_cost || 0),
         isUnlimited: Boolean(ingredient.is_unlimited),
         required: 0,

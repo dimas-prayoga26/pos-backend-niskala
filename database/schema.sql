@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS suplier (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS history_stock_purchases (
+CREATE TABLE IF NOT EXISTS history_stock_raw_purchases (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   request_id VARCHAR(64) NOT NULL UNIQUE,
   payload_hash CHAR(64) NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS history_stock_purchases (
     ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS history_stock_purchase_items (
+CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   purchase_id INT UNSIGNED NOT NULL,
   stock_item_id INT UNSIGNED NULL,
@@ -138,14 +138,14 @@ CREATE TABLE IF NOT EXISTS history_stock_purchase_items (
   stock_unit_cost INT NOT NULL DEFAULT 0,
   stock_value_after DECIMAL(14,2) NOT NULL DEFAULT 0,
   CONSTRAINT fk_stock_purchase_items_purchase
-    FOREIGN KEY (purchase_id) REFERENCES history_stock_purchases(id)
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_raw_purchases(id)
     ON DELETE CASCADE,
   CONSTRAINT fk_stock_purchase_items_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
     ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS history_stock_purchase_item_logs (
+CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_item_logs (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   purchase_item_id INT UNSIGNED NULL,
   purchase_id INT UNSIGNED NULL,
@@ -160,10 +160,10 @@ CREATE TABLE IF NOT EXISTS history_stock_purchase_item_logs (
   INDEX idx_stock_purchase_item_logs_item (stock_item_id, created_at),
   INDEX idx_stock_purchase_item_logs_purchase_item (purchase_item_id, created_at),
   CONSTRAINT fk_stock_purchase_item_logs_purchase_item
-    FOREIGN KEY (purchase_item_id) REFERENCES history_stock_purchase_items(id)
+    FOREIGN KEY (purchase_item_id) REFERENCES history_stock_raw_purchase_items(id)
     ON DELETE SET NULL,
   CONSTRAINT fk_stock_purchase_item_logs_purchase
-    FOREIGN KEY (purchase_id) REFERENCES history_stock_purchases(id)
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_raw_purchases(id)
     ON DELETE SET NULL,
   CONSTRAINT fk_stock_purchase_item_logs_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
@@ -173,36 +173,28 @@ CREATE TABLE IF NOT EXISTS history_stock_purchase_item_logs (
     ON DELETE SET NULL
 );
 
--- Recipes: pivot menu_items <-> stock items, one row per ingredient: either a
--- bahan baku (stock_item_id) or a bahan setengah jadi (semi_item_id).
--- Quantities are in that item's unit.
+-- Recipes: pivot menu_items <-> stock_raw_items, one row per ingredient. Quantities
+-- are in the stock item's unit. Bahan setengah jadi lines of a menu are in
+-- stock_semi_item_menus.
 CREATE TABLE IF NOT EXISTS recipes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   menu_item_id INT UNSIGNED NOT NULL,
-  stock_item_id INT UNSIGNED NULL,
-  semi_item_id INT UNSIGNED NULL,
+  stock_item_id INT UNSIGNED NOT NULL,
   quantity DOUBLE NOT NULL DEFAULT 0,
-  -- quantity x the item's unit_cost in whole rupiah, kept up to date by the app.
+  -- quantity x stock unit_cost in whole rupiah, kept up to date by the app.
   cost INT NOT NULL DEFAULT 0,
   sort_order INT NOT NULL DEFAULT 0,
   note VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uniq_recipes_menu_stock (menu_item_id, stock_item_id),
-  UNIQUE KEY uniq_recipes_menu_semi (menu_item_id, semi_item_id),
   INDEX idx_recipes_stock_item_id (stock_item_id),
-  INDEX idx_recipes_semi_item_id (semi_item_id),
   CONSTRAINT fk_recipes_menu_item
     FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
     ON DELETE CASCADE,
   CONSTRAINT fk_recipes_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
-    ON DELETE RESTRICT,
-  CONSTRAINT fk_recipes_semi_item
-    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
-    ON DELETE RESTRICT,
-  CONSTRAINT chk_recipes_one_item
-    CHECK ((stock_item_id IS NULL) <> (semi_item_id IS NULL))
+    ON DELETE RESTRICT
 );
 
 -- Recipes with menu and stock names, for reading (e.g. in phpMyAdmin).
@@ -210,22 +202,42 @@ CREATE OR REPLACE SQL SECURITY INVOKER VIEW recipe_details AS
 SELECT
   r.id,
   mi.name AS menu_name,
-  IF(r.semi_item_id IS NULL, 'Bahan baku', 'Setengah jadi') AS item_type,
-  COALESCE(si.name, ss.name) AS stock_item_name,
+  si.name AS stock_item_name,
   r.quantity,
-  COALESCE(si.unit, ss.unit) AS unit,
-  COALESCE(si.unit_cost, ss.unit_cost) AS unit_cost,
+  si.unit,
+  si.unit_cost,
   r.cost,
   r.note,
   r.menu_item_id,
   r.stock_item_id,
-  r.semi_item_id,
   r.sort_order
 FROM recipes r
 JOIN menu_items mi ON mi.id = r.menu_item_id
-LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
-LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
+JOIN stock_raw_items si ON si.id = r.stock_item_id
 ORDER BY mi.name, r.sort_order, r.id;
+
+-- Portions of a bahan setengah jadi in a menu's recipe (the semi side of
+-- recipes). sort_order shares one sequence with the menu's recipes rows.
+CREATE TABLE IF NOT EXISTS stock_semi_item_menus (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  menu_item_id INT UNSIGNED NOT NULL,
+  semi_item_id INT UNSIGNED NOT NULL,
+  quantity DOUBLE NOT NULL DEFAULT 0,
+  -- quantity x semi unit_cost in whole rupiah, kept up to date by the app.
+  cost INT NOT NULL DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
+  note VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_stock_semi_item_menus_menu_semi (menu_item_id, semi_item_id),
+  INDEX idx_stock_semi_item_menus_semi_item_id (semi_item_id),
+  CONSTRAINT fk_stock_semi_item_menus_menu_item
+    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_stock_semi_item_menus_semi_item
+    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
+    ON DELETE RESTRICT
+);
 
 -- Composition of one recipe (batch) of a bahan setengah jadi, in each bahan
 -- baku's unit.

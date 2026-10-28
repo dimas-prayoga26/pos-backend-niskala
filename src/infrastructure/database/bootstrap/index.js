@@ -213,15 +213,14 @@ const connectDB = async () => {
     )
   `);
 
-  // Recipes: pivot menu_items <-> stock items, one row per ingredient: either
-  // a bahan baku (stock_item_id) or a bahan setengah jadi (semi_item_id).
-  // Quantities are in that item's unit.
+  // Recipes: pivot menu_items <-> stock_raw_items, one row per ingredient. Quantities
+  // are in the stock item's unit. Bahan setengah jadi lines of a menu live in
+  // stock_semi_item_menus (semiItemsSchema).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS recipes (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       menu_item_id INT UNSIGNED NOT NULL,
-      stock_item_id INT UNSIGNED NULL,
-      semi_item_id INT UNSIGNED NULL,
+      stock_item_id INT UNSIGNED NOT NULL,
       quantity DOUBLE NOT NULL DEFAULT 0,
       cost INT NOT NULL DEFAULT 0,
       sort_order INT NOT NULL DEFAULT 0,
@@ -229,20 +228,13 @@ const connectDB = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       UNIQUE KEY uniq_recipes_menu_stock (menu_item_id, stock_item_id),
-      UNIQUE KEY uniq_recipes_menu_semi (menu_item_id, semi_item_id),
       INDEX idx_recipes_stock_item_id (stock_item_id),
-      INDEX idx_recipes_semi_item_id (semi_item_id),
       CONSTRAINT fk_recipes_menu_item
         FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
         ON DELETE CASCADE,
       CONSTRAINT fk_recipes_stock_item
         FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
-        ON DELETE RESTRICT,
-      CONSTRAINT fk_recipes_semi_item
-        FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
-        ON DELETE RESTRICT,
-      CONSTRAINT chk_recipes_one_item
-        CHECK ((stock_item_id IS NULL) <> (semi_item_id IS NULL))
+        ON DELETE RESTRICT
     )
   `);
   await removeMenuSizes();
@@ -251,22 +243,6 @@ const connectDB = async () => {
   // Cost of each recipe line in whole rupiah (quantity x average cost), kept up
   // to date by refreshMenuCosts.
   await runSafeMigration("ALTER TABLE recipes ADD COLUMN cost INT NOT NULL DEFAULT 0 AFTER quantity");
-  if (!(await getColumnNames("recipes")).has("semi_item_id")) {
-    await pool.query("ALTER TABLE recipes MODIFY COLUMN stock_item_id INT UNSIGNED NULL");
-    await pool.query(`
-      ALTER TABLE recipes
-        ADD COLUMN semi_item_id INT UNSIGNED NULL AFTER stock_item_id,
-        ADD UNIQUE KEY uniq_recipes_menu_semi (menu_item_id, semi_item_id),
-        ADD INDEX idx_recipes_semi_item_id (semi_item_id),
-        ADD CONSTRAINT fk_recipes_semi_item
-          FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
-          ON DELETE RESTRICT
-    `);
-    await runSafeMigration(`
-      ALTER TABLE recipes ADD CONSTRAINT chk_recipes_one_item
-        CHECK ((stock_item_id IS NULL) <> (semi_item_id IS NULL))
-    `);
-  }
   // Recipes with menu and stock names for reading in phpMyAdmin; the app reads
   // the tables. Optional, so a host without the CREATE VIEW privilege still boots.
   await runSafeMigration(`
@@ -274,21 +250,18 @@ const connectDB = async () => {
     SELECT
       r.id,
       mi.name AS menu_name,
-      IF(r.semi_item_id IS NULL, 'Bahan baku', 'Setengah jadi') AS item_type,
-      COALESCE(si.name, ss.name) AS stock_item_name,
+      si.name AS stock_item_name,
       r.quantity,
-      COALESCE(si.unit, ss.unit) AS unit,
-      COALESCE(si.unit_cost, ss.unit_cost) AS unit_cost,
+      si.unit,
+      si.unit_cost,
       r.cost,
       r.note,
       r.menu_item_id,
       r.stock_item_id,
-      r.semi_item_id,
       r.sort_order
     FROM recipes r
     JOIN menu_items mi ON mi.id = r.menu_item_id
-    LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
-    LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
+    JOIN stock_raw_items si ON si.id = r.stock_item_id
     ORDER BY mi.name, r.sort_order, r.id
   `);
   // Menu costing is stored in menu_item_prices now; the 30% overhead view is gone.

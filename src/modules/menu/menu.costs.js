@@ -1,10 +1,12 @@
 // Keeps recipe costs and menu HPP in step with stock average costs, like the
 // owner's COGS sheet:
-//   recipes.cost                  = quantity x unit_cost of its bahan baku
-//                                   (stock_raw_items) or bahan setengah jadi
-//                                   (stock_semi_items), whole rupiah
-//   stock_semi_item_recipes.cost  = the same for a semi item's composition
-//   menu_item_prices.hpp_cost     = sum of the menu's recipe costs
+//   recipes.cost                  = quantity x bahan baku unit_cost
+//                                   (stock_raw_items, whole rupiah)
+//   stock_semi_item_menus.cost    = quantity x bahan setengah jadi unit_cost
+//                                   (stock_semi_items) for a menu's semi lines
+//   stock_semi_item_recipes.cost  = quantity x bahan baku unit_cost for a semi
+//                                   item's composition
+//   menu_item_prices.hpp_cost     = sum of the menu's recipes and semi lines
 //   gross_profit                  = regular_price - hpp_cost
 // A menu keeps its manual HPP while its recipe costs nothing yet (no purchase
 // prices), the same fallback order HPP uses. Pass stockItemIds (raw),
@@ -33,8 +35,9 @@ const refreshMenuCosts = async (
     if (rawIds.length) await refreshSemiRecipeCosts(connection, rawIds);
 
     const [rows] = await connection.query(
-      `SELECT DISTINCT menu_item_id FROM recipes
-       WHERE stock_item_id IN (?) OR semi_item_id IN (?)`,
+      `SELECT menu_item_id FROM recipes WHERE stock_item_id IN (?)
+       UNION
+       SELECT menu_item_id FROM stock_semi_item_menus WHERE semi_item_id IN (?)`,
       [rawIds.length ? rawIds : [0], semiIds.length ? semiIds : [0]]
     );
     menuIds = rows.map((row) => row.menu_item_id);
@@ -44,29 +47,38 @@ const refreshMenuCosts = async (
 
   if (menuIds && !menuIds.length) return;
 
-  const filter = menuIds ? "WHERE r.menu_item_id IN (?)" : "";
+  const filter = (alias) => (menuIds ? `WHERE ${alias}.menu_item_id IN (?)` : "");
   const params = menuIds ? [menuIds] : [];
 
   await connection.query(
     `UPDATE recipes r
-     LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
-     LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
-     SET r.cost = ROUND(r.quantity * COALESCE(si.unit_cost, ss.unit_cost, 0))
-     ${filter}`,
+     JOIN stock_raw_items si ON si.id = r.stock_item_id
+     SET r.cost = ROUND(r.quantity * si.unit_cost)
+     ${filter("r")}`,
+    params
+  );
+  await connection.query(
+    `UPDATE stock_semi_item_menus sm
+     JOIN stock_semi_items ss ON ss.id = sm.semi_item_id
+     SET sm.cost = ROUND(sm.quantity * ss.unit_cost)
+     ${filter("sm")}`,
     params
   );
   await connection.query(
     `UPDATE menu_item_prices mip
      JOIN (
-       SELECT r.menu_item_id, SUM(r.cost) AS hpp
-       FROM recipes r
-       ${filter}
-       GROUP BY r.menu_item_id
+       SELECT recipe_lines.menu_item_id, SUM(recipe_lines.cost) AS hpp
+       FROM (
+         SELECT r.menu_item_id, r.cost FROM recipes r ${filter("r")}
+         UNION ALL
+         SELECT sm.menu_item_id, sm.cost FROM stock_semi_item_menus sm ${filter("sm")}
+       ) recipe_lines
+       GROUP BY recipe_lines.menu_item_id
      ) costs ON costs.menu_item_id = mip.menu_item_id
      SET mip.hpp_cost = costs.hpp,
          mip.gross_profit = mip.regular_price - costs.hpp
      WHERE costs.hpp > 0`,
-    params
+    [...params, ...params]
   );
 };
 

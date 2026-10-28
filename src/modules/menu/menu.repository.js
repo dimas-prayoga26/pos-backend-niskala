@@ -4,6 +4,7 @@ const {
   normalizeIngredients,
   toPriceRow,
 } = require("./menu.options");
+const { findRecipeLines } = require("./menu.recipeLines");
 
 const toNullableNumber = (value) =>
   value === null || value === undefined ? null : Number(value);
@@ -112,19 +113,9 @@ const menuItemOrder = `
 const attachRecipes = async (menuItems) => {
   if (!menuItems.length) return menuItems;
 
-  const ids = menuItems.map((item) => item.id);
-  const [ingredientRows] = await pool.query(
-    `SELECT
-       r.*,
-       COALESCE(si.name, ss.name) AS stock_item_name,
-       COALESCE(si.unit, ss.unit) AS stock_unit
-     FROM recipes r
-     LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
-     LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
-     WHERE r.menu_item_id IN (?)
-       AND (si.id IS NOT NULL OR ss.id IS NOT NULL)
-     ORDER BY r.sort_order ASC, r.id ASC`,
-    [ids]
+  const ingredientRows = await findRecipeLines(
+    pool,
+    menuItems.map((item) => item.id)
   );
 
   const ingredientsByMenuItemId = new Map();
@@ -139,11 +130,11 @@ const attachRecipes = async (menuItems) => {
       id: row.id,
       stockItemId: row.stock_item_id,
       semiItemId: row.semi_item_id,
-      stockItemName: row.stock_item_name,
-      ingredientName: row.stock_item_name,
-      name: row.stock_item_name,
+      stockItemName: row.name,
+      ingredientName: row.name,
+      name: row.name,
       quantity: Number(row.quantity),
-      unit: row.stock_unit,
+      unit: row.unit,
       note: row.note || "",
     });
   }
@@ -178,19 +169,45 @@ const replacePriceAndRecipe = async (
   await connection.query("DELETE FROM recipes WHERE menu_item_id = ?", [
     menuItemId,
   ]);
+  await connection.query("DELETE FROM stock_semi_item_menus WHERE menu_item_id = ?", [
+    menuItemId,
+  ]);
 
-  if (normalizedIngredients.length) {
+  // One sort_order sequence over both tables keeps the form's line order.
+  const rows = normalizedIngredients.map((ingredient, index) => ({
+    ...ingredient,
+    sortOrder: index + 1,
+  }));
+  const rawRows = rows.filter((row) => row.stockItemId);
+  const semiRows = rows.filter((row) => row.semiItemId);
+
+  if (rawRows.length) {
     await connection.query(
       `INSERT INTO recipes
-        (menu_item_id, stock_item_id, semi_item_id, quantity, sort_order, note)
+        (menu_item_id, stock_item_id, quantity, sort_order, note)
        VALUES ?`,
       [
-        normalizedIngredients.map((ingredient, index) => [
+        rawRows.map((ingredient) => [
           menuItemId,
           ingredient.stockItemId,
+          ingredient.quantity,
+          ingredient.sortOrder,
+          ingredient.note || null,
+        ]),
+      ]
+    );
+  }
+  if (semiRows.length) {
+    await connection.query(
+      `INSERT INTO stock_semi_item_menus
+        (menu_item_id, semi_item_id, quantity, sort_order, note)
+       VALUES ?`,
+      [
+        semiRows.map((ingredient) => [
+          menuItemId,
           ingredient.semiItemId,
           ingredient.quantity,
-          index + 1,
+          ingredient.sortOrder,
           ingredient.note || null,
         ]),
       ]

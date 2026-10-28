@@ -32,7 +32,7 @@ let testPool, created = false;
   // Minimal menu tables: purchases refresh recipe costs and menu HPP.
   await testPool.query("CREATE TABLE menu_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL) ENGINE=InnoDB");
   await testPool.query("CREATE TABLE menu_item_prices (menu_item_id INT UNSIGNED PRIMARY KEY, regular_price DECIMAL(12,2) NOT NULL, hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0, gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0) ENGINE=InnoDB");
-  await testPool.query("CREATE TABLE recipes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, menu_item_id INT UNSIGNED NOT NULL, stock_item_id INT UNSIGNED NULL, semi_item_id INT UNSIGNED NULL, quantity DOUBLE NOT NULL, cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
+  await testPool.query("CREATE TABLE recipes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, menu_item_id INT UNSIGNED NOT NULL, stock_item_id INT UNSIGNED NOT NULL, quantity DOUBLE NOT NULL, cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
   await testPool.query("INSERT INTO users VALUES (1)");
   await ensureShoppingSchema(testPool);
   await ensureShoppingSchema(testPool);
@@ -82,7 +82,7 @@ let testPool, created = false;
   await assert.rejects(shopping.save({...payload,requestId:crypto.randomUUID(),items:[payload.items[0],{...payload.items[1],unit:"kg"}]},1),error=>error.status===400);
   [stocks] = await testPool.query("SELECT * FROM stock_raw_items ORDER BY id");
   assert.equal(JSON.stringify(stocks),before,"failed second line must roll back first stock increment");
-  const [[count]] = await testPool.query("SELECT COUNT(*) AS n FROM history_stock_purchases");
+  const [[count]] = await testPool.query("SELECT COUNT(*) AS n FROM history_stock_raw_purchases");
   assert.equal(count.n,2);
   const history = await shopping.list({search:"Kopi",page:1});
   assert.equal(history.total,1);
