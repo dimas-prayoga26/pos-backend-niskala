@@ -47,7 +47,7 @@ const writeItemLog = async (connection, { item, action, oldData, newData, user }
   const by = actor(user);
 
   await connection.query(
-    `INSERT INTO history_stock_purchase_item_logs
+    `INSERT INTO history_stock_raw_purchase_item_logs
       (purchase_item_id, purchase_id, stock_item_id, item_name, action, old_data, new_data, user_id, user_name)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -65,10 +65,10 @@ const writeItemLog = async (connection, { item, action, oldData, newData, user }
 };
 const updatePurchaseTotal = async (connection, purchaseId) => {
   const [[totalRow]] = await connection.query(
-    "SELECT COALESCE(SUM(total), 0) AS total FROM history_stock_purchase_items WHERE purchase_id = ?",
+    "SELECT COALESCE(SUM(total), 0) AS total FROM history_stock_raw_purchase_items WHERE purchase_id = ?",
     [purchaseId]
   );
-  await connection.query("UPDATE history_stock_purchases SET total = ? WHERE id = ?", [
+  await connection.query("UPDATE history_stock_raw_purchases SET total = ? WHERE id = ?", [
     roundCurrency(totalRow.total),
     purchaseId,
   ]);
@@ -140,7 +140,7 @@ const createShoppingService = db => {
       if (!supplier) throw createError(400, "Toko/sumber tidak ditemukan.");
       const total = data.items.reduce((sum, item) => sum + Math.round(item.quantity * item.unitPrice * 100), 0) / 100;
       number(total, 0, 999999999999.99, 2, "Total belanja");
-      const [header] = await connection.query(`INSERT INTO history_stock_purchases
+      const [header] = await connection.query(`INSERT INTO history_stock_raw_purchases
         (request_id, payload_hash, purchase_date, suplier_id, suplier_name, payment_method, note, total, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.requestId, hash, data.date, supplier.id, supplier.name, data.paymentMethod, data.note, total, userId]);
@@ -176,12 +176,12 @@ const createShoppingService = db => {
           "UPDATE stock_raw_items SET stock = ?, unit = ?, unit_cost = ?, stock_value = ?, supplier = ? WHERE id = ?",
           [stock.stock, stock.unit, stock.unit_cost, stock.stock_value, supplier.name, stock.id]
         );
-        const [insertedItem] = await connection.query(`INSERT INTO history_stock_purchase_items
+        const [insertedItem] = await connection.query(`INSERT INTO history_stock_raw_purchase_items
           (purchase_id, stock_item_id, item_name, quantity, unit, unit_price, total, stock_quantity, stock_unit, stock_unit_cost, stock_value_after)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [header.insertId, stock.id, stock.name, item.quantity, item.unit, item.unitPrice, purchaseValue, stockQty, stock.unit, stock.unit_cost, stock.stock_value]);
         const [[createdItem]] = await connection.query(
-          "SELECT * FROM history_stock_purchase_items WHERE id = ?",
+          "SELECT * FROM history_stock_raw_purchase_items WHERE id = ?",
           [insertedItem.insertId]
         );
         await writeItemLog(connection, {
@@ -198,7 +198,7 @@ const createShoppingService = db => {
     } catch (error) {
       await connection.rollback();
       if (error.code === "ER_DUP_ENTRY") {
-        const [[existing]] = await connection.query("SELECT id, total, payload_hash FROM history_stock_purchases WHERE request_id = ?", [data.requestId]);
+        const [[existing]] = await connection.query("SELECT id, total, payload_hash FROM history_stock_raw_purchases WHERE request_id = ?", [data.requestId]);
         if (existing) {
           if (existing.payload_hash !== hash) throw createError(409, "Permintaan ini sudah disimpan dengan isi berbeda. Muat ulang form untuk belanja baru.");
           return { id: existing.id, total: Number(existing.total), duplicate: true };
@@ -215,7 +215,7 @@ const createShoppingService = db => {
     try {
       await connection.beginTransaction();
       const [[item]] = await connection.query(
-        "SELECT * FROM history_stock_purchase_items WHERE id = ? FOR UPDATE",
+        "SELECT * FROM history_stock_raw_purchase_items WHERE id = ? FOR UPDATE",
         [id]
       );
       if (!item) throw createError(404, "Item belanja tidak ditemukan.");
@@ -238,7 +238,7 @@ const createShoppingService = db => {
       );
 
       await connection.query(
-        `UPDATE history_stock_purchase_items
+        `UPDATE history_stock_raw_purchase_items
          SET quantity = ?, unit = ?, unit_price = ?, total = ?,
              stock_quantity = ?, stock_unit = ?, stock_unit_cost = ?, stock_value_after = ?
          WHERE id = ?`,
@@ -258,7 +258,7 @@ const createShoppingService = db => {
       await refreshMenuCosts(connection, { stockItemIds: [item.stock_item_id] });
 
       const [[updated]] = await connection.query(
-        "SELECT * FROM history_stock_purchase_items WHERE id = ?",
+        "SELECT * FROM history_stock_raw_purchase_items WHERE id = ?",
         [id]
       );
       const newData = snapshotItem(updated);
@@ -280,7 +280,7 @@ const createShoppingService = db => {
     try {
       await connection.beginTransaction();
       const [[item]] = await connection.query(
-        "SELECT * FROM history_stock_purchase_items WHERE id = ? FOR UPDATE",
+        "SELECT * FROM history_stock_raw_purchase_items WHERE id = ? FOR UPDATE",
         [id]
       );
       if (!item) throw createError(404, "Item belanja tidak ditemukan.");
@@ -294,7 +294,7 @@ const createShoppingService = db => {
         -Number(item.total || 0)
       );
       await writeItemLog(connection, { item, action: "delete", oldData, newData: null, user });
-      await connection.query("DELETE FROM history_stock_purchase_items WHERE id = ?", [id]);
+      await connection.query("DELETE FROM history_stock_raw_purchase_items WHERE id = ?", [id]);
       await updatePurchaseTotal(connection, item.purchase_id);
       await refreshMenuCosts(connection, { stockItemIds: [item.stock_item_id] });
 
@@ -310,12 +310,12 @@ const createShoppingService = db => {
   const list = async ({ page = 1, search = "" } = {}) => {
     page = Math.max(1, Math.floor(Number(page) || 1));
     const keyword = `%${String(search).slice(0,150)}%`;
-    const where = `WHERE p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM history_stock_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?)`;
+    const where = `WHERE p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM history_stock_raw_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?)`;
     const itemWhere = `WHERE p.suplier_name LIKE ? OR i.item_name LIKE ?`;
-    const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM history_stock_purchases p ${where}`, [keyword, keyword]);
-    const [rows] = await db.query(`SELECT p.* FROM history_stock_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [keyword, keyword, (page-1)*10]);
+    const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM history_stock_raw_purchases p ${where}`, [keyword, keyword]);
+    const [rows] = await db.query(`SELECT p.* FROM history_stock_raw_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [keyword, keyword, (page-1)*10]);
     if (rows.length) {
-      const [items] = await db.query(`SELECT * FROM history_stock_purchase_items WHERE purchase_id IN (${rows.map(()=>"?").join(",")}) ORDER BY id`, rows.map(row=>row.id));
+      const [items] = await db.query(`SELECT * FROM history_stock_raw_purchase_items WHERE purchase_id IN (${rows.map(()=>"?").join(",")}) ORDER BY id`, rows.map(row=>row.id));
       rows.forEach(row => { delete row.payload_hash; delete row.request_id; row.items = items.filter(item=>item.purchase_id===row.id); });
     }
     const [itemRows] = await db.query(
@@ -329,8 +329,8 @@ const createShoppingService = db => {
          si.unit AS current_unit,
          si.unit_cost,
          si.stock_value
-       FROM history_stock_purchase_items i
-       JOIN history_stock_purchases p ON p.id = i.purchase_id
+       FROM history_stock_raw_purchase_items i
+       JOIN history_stock_raw_purchases p ON p.id = i.purchase_id
        LEFT JOIN stock_raw_items si ON si.id = i.stock_item_id
        ${itemWhere}
        ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
@@ -384,7 +384,7 @@ const createShoppingService = db => {
     if (stockIds.length) {
       const [logs] = await db.query(
         `SELECT *
-         FROM history_stock_purchase_item_logs
+         FROM history_stock_raw_purchase_item_logs
          WHERE stock_item_id IN (${stockIds.map(() => "?").join(",")})
          ORDER BY created_at DESC, id DESC
          LIMIT 200`,

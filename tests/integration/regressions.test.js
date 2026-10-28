@@ -417,6 +417,13 @@ describe("regressions", () => {
       menu.body.data.ingredients.map((i) => [i.stockItemId, i.semiItemId, i.name, i.unit]),
       [[null, nasi.id, "Nasi Olahan", "porsi"]]
     );
+    // recipes keeps only bahan baku; semi lines go to stock_semi_item_menus.
+    const [[lineCounts]] = await db.query(
+      `SELECT (SELECT COUNT(*) FROM recipes WHERE menu_item_id = ?) AS raw_lines,
+              (SELECT COUNT(*) FROM stock_semi_item_menus WHERE menu_item_id = ?) AS semi_lines`,
+      [menuItemId, menuItemId]
+    );
+    assert.deepEqual({ ...lineCounts }, { raw_lines: 0, semi_lines: 1 });
     const menuHpp = async () => {
       const [[price]] = await db.query(
         "SELECT hpp_cost FROM menu_item_prices WHERE menu_item_id = ?",
@@ -438,6 +445,27 @@ describe("regressions", () => {
     });
     assert.deepEqual(await rawRow(berasId), { stock: 5, stockValue: 70000, unitCost: 14000 });
     assert.equal(await menuHpp(), 875);
+
+    // A menu mixing both kinds keeps its line order; HPP = 2 x 875 + 5 x 10.
+    const garamId = await addRaw("Garam Olahan", "gr", 1000, 10);
+    const mixed = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: {
+        categoryId: category.id,
+        name: "Nasi Garam Olahan",
+        price: 15000,
+        ingredients: [{ semiItemId: nasi.id, quantity: 2 }, { stockItemId: garamId, quantity: 5 }],
+      },
+    });
+    assert.deepEqual(
+      mixed.body.data.ingredients.map((i) => [i.name, i.quantity]),
+      [["Nasi Olahan", 2], ["Garam Olahan", 5]]
+    );
+    const [[mixedPrice]] = await db.query(
+      "SELECT hpp_cost FROM menu_item_prices WHERE menu_item_id = ?",
+      [mixed.body.data.id]
+    );
+    assert.equal(Number(mixedPrice.hpp_cost), 1800);
 
     const tooMuch = await request("POST", `/api/stock-item/semi/${nasi.id}/productions`, {
       as: "cashier",
