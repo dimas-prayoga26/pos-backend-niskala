@@ -24,7 +24,7 @@ const {
   seedStockItems,
 } = require("./seedData");
 const { refreshMenuCosts } = require("../../../modules/menu/menu.costs");
-const { ensurePreparedItemsSchema } = require("./preparedItemsSchema");
+const { ensureSemiItemsSchema } = require("./semiItemsSchema");
 const { ensureShoppingSchema } = require("./shoppingSchema");
 
 const connectDB = async () => {
@@ -144,8 +144,13 @@ const connectDB = async () => {
   await migrateLegacyOrderPlatformMaster();
   await seedMetaDataPlatforms();
 
+  // Bahan baku. Was stock_items until bahan setengah jadi moved to
+  // stock_semi_items (2026-10-28); renaming keeps every row and foreign key.
+  if ((await tableExists("stock_items")) && !(await tableExists("stock_raw_items"))) {
+    await pool.query("RENAME TABLE stock_items TO stock_raw_items");
+  }
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS stock_items (
+    CREATE TABLE IF NOT EXISTS stock_raw_items (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(150) NOT NULL UNIQUE,
       category VARCHAR(100) NOT NULL,
@@ -159,19 +164,21 @@ const connectDB = async () => {
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      INDEX idx_stock_items_category (category),
-      INDEX idx_stock_items_is_active (is_active)
+      INDEX idx_stock_raw_items_category (category),
+      INDEX idx_stock_raw_items_is_active (is_active)
     )
   `);
-  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN is_unlimited BOOLEAN NOT NULL DEFAULT FALSE AFTER supplier");
+  await runSafeMigration("ALTER TABLE stock_raw_items ADD COLUMN is_unlimited BOOLEAN NOT NULL DEFAULT FALSE AFTER supplier");
   // unit_cost was called average_cost; renaming before the ADD COLUMN below
   // keeps that from creating an empty second column.
-  await runSafeMigration("ALTER TABLE stock_items RENAME COLUMN average_cost TO unit_cost");
-  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN unit_cost INT NOT NULL DEFAULT 0 AFTER minimum_stock");
-  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER unit_cost");
+  await runSafeMigration("ALTER TABLE stock_raw_items RENAME COLUMN average_cost TO unit_cost");
+  await runSafeMigration("ALTER TABLE stock_raw_items ADD COLUMN unit_cost INT NOT NULL DEFAULT 0 AFTER minimum_stock");
+  await runSafeMigration("ALTER TABLE stock_raw_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER unit_cost");
+  await runSafeMigration("ALTER TABLE stock_raw_items RENAME INDEX idx_stock_items_category TO idx_stock_raw_items_category");
+  await runSafeMigration("ALTER TABLE stock_raw_items RENAME INDEX idx_stock_items_is_active TO idx_stock_raw_items_is_active");
 
   await pool.query(
-    `INSERT INTO stock_items
+    `INSERT INTO stock_raw_items
       (name, category, unit, stock, minimum_stock, supplier, is_unlimited)
      VALUES ?
      ON DUPLICATE KEY UPDATE
@@ -185,13 +192,36 @@ const connectDB = async () => {
     [seedStockItems]
   );
 
-  // Recipes: pivot menu_items <-> stock_items, one row per ingredient. Quantities
-  // are in the stock item's unit.
+  // Bahan setengah jadi (e.g. Nasi cooked from Beras), counted in portions.
+  // Their composition and cooking live in stock_semi_item_* (semiItemsSchema).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS stock_semi_items (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(150) NOT NULL UNIQUE,
+      category VARCHAR(100) NOT NULL,
+      unit VARCHAR(30) NOT NULL,
+      stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+      minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+      unit_cost INT NOT NULL DEFAULT 0,
+      stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
+      portion_size DOUBLE NOT NULL DEFAULT 0,
+      yield_quantity DOUBLE NOT NULL DEFAULT 0,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_stock_semi_items_is_active (is_active)
+    )
+  `);
+
+  // Recipes: pivot menu_items <-> stock items, one row per ingredient: either
+  // a bahan baku (stock_item_id) or a bahan setengah jadi (semi_item_id).
+  // Quantities are in that item's unit.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS recipes (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       menu_item_id INT UNSIGNED NOT NULL,
-      stock_item_id INT UNSIGNED NOT NULL,
+      stock_item_id INT UNSIGNED NULL,
+      semi_item_id INT UNSIGNED NULL,
       quantity DOUBLE NOT NULL DEFAULT 0,
       cost INT NOT NULL DEFAULT 0,
       sort_order INT NOT NULL DEFAULT 0,
@@ -199,13 +229,20 @@ const connectDB = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       UNIQUE KEY uniq_recipes_menu_stock (menu_item_id, stock_item_id),
+      UNIQUE KEY uniq_recipes_menu_semi (menu_item_id, semi_item_id),
       INDEX idx_recipes_stock_item_id (stock_item_id),
+      INDEX idx_recipes_semi_item_id (semi_item_id),
       CONSTRAINT fk_recipes_menu_item
         FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
         ON DELETE CASCADE,
       CONSTRAINT fk_recipes_stock_item
-        FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
-        ON DELETE RESTRICT
+        FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
+        ON DELETE RESTRICT,
+      CONSTRAINT fk_recipes_semi_item
+        FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
+        ON DELETE RESTRICT,
+      CONSTRAINT chk_recipes_one_item
+        CHECK ((stock_item_id IS NULL) <> (semi_item_id IS NULL))
     )
   `);
   await removeMenuSizes();
@@ -214,6 +251,22 @@ const connectDB = async () => {
   // Cost of each recipe line in whole rupiah (quantity x average cost), kept up
   // to date by refreshMenuCosts.
   await runSafeMigration("ALTER TABLE recipes ADD COLUMN cost INT NOT NULL DEFAULT 0 AFTER quantity");
+  if (!(await getColumnNames("recipes")).has("semi_item_id")) {
+    await pool.query("ALTER TABLE recipes MODIFY COLUMN stock_item_id INT UNSIGNED NULL");
+    await pool.query(`
+      ALTER TABLE recipes
+        ADD COLUMN semi_item_id INT UNSIGNED NULL AFTER stock_item_id,
+        ADD UNIQUE KEY uniq_recipes_menu_semi (menu_item_id, semi_item_id),
+        ADD INDEX idx_recipes_semi_item_id (semi_item_id),
+        ADD CONSTRAINT fk_recipes_semi_item
+          FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
+          ON DELETE RESTRICT
+    `);
+    await runSafeMigration(`
+      ALTER TABLE recipes ADD CONSTRAINT chk_recipes_one_item
+        CHECK ((stock_item_id IS NULL) <> (semi_item_id IS NULL))
+    `);
+  }
   // Recipes with menu and stock names for reading in phpMyAdmin; the app reads
   // the tables. Optional, so a host without the CREATE VIEW privilege still boots.
   await runSafeMigration(`
@@ -221,18 +274,21 @@ const connectDB = async () => {
     SELECT
       r.id,
       mi.name AS menu_name,
-      si.name AS stock_item_name,
+      IF(r.semi_item_id IS NULL, 'Bahan baku', 'Setengah jadi') AS item_type,
+      COALESCE(si.name, ss.name) AS stock_item_name,
       r.quantity,
-      si.unit,
-      si.unit_cost,
+      COALESCE(si.unit, ss.unit) AS unit,
+      COALESCE(si.unit_cost, ss.unit_cost) AS unit_cost,
       r.cost,
       r.note,
       r.menu_item_id,
       r.stock_item_id,
+      r.semi_item_id,
       r.sort_order
     FROM recipes r
     JOIN menu_items mi ON mi.id = r.menu_item_id
-    JOIN stock_items si ON si.id = r.stock_item_id
+    LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
+    LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
     ORDER BY mi.name, r.sort_order, r.id
   `);
   // Menu costing is stored in menu_item_prices now; the 30% overhead view is gone.
@@ -397,6 +453,7 @@ const connectDB = async () => {
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       order_item_id INT UNSIGNED NOT NULL,
       stock_item_id INT UNSIGNED NULL,
+      semi_item_id INT UNSIGNED NULL,
       stock_item_name VARCHAR(150) NOT NULL,
       quantity DOUBLE NOT NULL DEFAULT 0,
       unit VARCHAR(30) NOT NULL DEFAULT '',
@@ -405,16 +462,30 @@ const connectDB = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_order_item_costs_order_item_id (order_item_id),
       INDEX idx_order_item_costs_stock_item_id (stock_item_id),
+      INDEX idx_order_item_costs_semi_item_id (semi_item_id),
       CONSTRAINT fk_order_item_costs_order_item
         FOREIGN KEY (order_item_id) REFERENCES order_items(id)
         ON DELETE CASCADE,
       CONSTRAINT fk_order_item_costs_stock_item
-        FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+        FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
+        ON DELETE SET NULL,
+      CONSTRAINT fk_order_item_costs_semi_item
+        FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
         ON DELETE SET NULL
     )
   `);
   // unit_cost was first called unit_cost.
   await runSafeMigration("ALTER TABLE order_item_costs RENAME COLUMN average_cost TO unit_cost");
+  if (!(await getColumnNames("order_item_costs")).has("semi_item_id")) {
+    await pool.query(`
+      ALTER TABLE order_item_costs
+        ADD COLUMN semi_item_id INT UNSIGNED NULL AFTER stock_item_id,
+        ADD INDEX idx_order_item_costs_semi_item_id (semi_item_id),
+        ADD CONSTRAINT fk_order_item_costs_semi_item
+          FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
+          ON DELETE SET NULL
+    `);
+  }
 
   await runSafeMigration("DROP TABLE IF EXISTS order_item_addons");
   await runSafeMigration("DROP TABLE IF EXISTS add_ons");
@@ -599,7 +670,7 @@ const connectDB = async () => {
 const bootstrapDatabase = async () => {
   await connectDB();
   await ensureShoppingSchema(pool);
-  await ensurePreparedItemsSchema(pool);
+  await ensureSemiItemsSchema(pool);
   // Catches average costs changed outside the app (e.g. in phpMyAdmin).
   await refreshMenuCosts(pool);
 };

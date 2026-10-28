@@ -68,7 +68,7 @@ const migrateLegacyMenuIngredients = async (keptSizes) => {
     await runSafeMigration("ALTER TABLE menu_item_ingredients ADD COLUMN size_name VARCHAR(80) NULL AFTER stock_item_id");
     await pool.query(`
       UPDATE menu_item_ingredients mii
-      JOIN stock_items si ON si.name = mii.ingredient_name
+      JOIN stock_raw_items si ON si.name = mii.ingredient_name
       SET mii.stock_item_id = si.id
       WHERE mii.stock_item_id IS NULL
     `);
@@ -78,7 +78,7 @@ const migrateLegacyMenuIngredients = async (keptSizes) => {
              mii.unit, si.unit AS stock_unit, mii.sort_order, mii.note,
              mii.created_at, mii.updated_at
       FROM menu_item_ingredients mii
-      LEFT JOIN stock_items si ON si.id = mii.stock_item_id
+      LEFT JOIN stock_raw_items si ON si.id = mii.stock_item_id
       ORDER BY mii.id ASC
     `);
     const keptRows = rows.filter((row) => {
@@ -289,7 +289,7 @@ const removeRecipeUnits = async () => {
     const [rows] = await connection.query(`
       SELECT r.id, r.quantity, r.unit, si.unit AS stock_unit
       FROM recipes r
-      JOIN stock_items si ON si.id = r.stock_item_id
+      JOIN stock_raw_items si ON si.id = r.stock_item_id
       WHERE r.unit <> si.unit
     `);
 
@@ -343,7 +343,7 @@ const seedDefaultMenuIngredients = async () => {
     menuNames
   );
   const [stockRows] = await pool.query(
-    `SELECT id, name FROM stock_items
+    `SELECT id, name FROM stock_raw_items
      WHERE name IN (${stockNames.map(() => "?").join(", ")})`,
     stockNames
   );

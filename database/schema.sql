@@ -55,7 +55,8 @@ CREATE TABLE IF NOT EXISTS menu_item_prices (
     ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS stock_items (
+-- Bahan baku (raw items), bought through belanja.
+CREATE TABLE IF NOT EXISTS stock_raw_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL UNIQUE,
   category VARCHAR(100) NOT NULL,
@@ -66,8 +67,25 @@ CREATE TABLE IF NOT EXISTS stock_items (
   stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
   supplier VARCHAR(150),
   is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
-  -- Prepared item (bahan olahan, e.g. Nasi): stocked in portions from cooking.
-  is_prepared BOOLEAN NOT NULL DEFAULT FALSE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_stock_raw_items_category (category),
+  INDEX idx_stock_raw_items_is_active (is_active)
+);
+
+-- Bahan setengah jadi (e.g. Nasi from Beras), counted in portions and cooked
+-- from bahan baku ("Catat Masak"), never bought.
+CREATE TABLE IF NOT EXISTS stock_semi_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL UNIQUE,
+  category VARCHAR(100) NOT NULL,
+  unit VARCHAR(30) NOT NULL,
+  stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+  minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+  -- Moving average per portion, whole rupiah.
+  unit_cost INT NOT NULL DEFAULT 0,
+  stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
   -- Weight (gr) of one portion of the cooked result.
   portion_size DOUBLE NOT NULL DEFAULT 0,
   -- Portions per recipe found by the latest cooking (0 = never cooked).
@@ -75,8 +93,7 @@ CREATE TABLE IF NOT EXISTS stock_items (
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_stock_items_category (category),
-  INDEX idx_stock_items_is_active (is_active)
+  INDEX idx_stock_semi_items_is_active (is_active)
 );
 
 CREATE TABLE IF NOT EXISTS suplier (
@@ -124,7 +141,7 @@ CREATE TABLE IF NOT EXISTS history_stock_purchase_items (
     FOREIGN KEY (purchase_id) REFERENCES history_stock_purchases(id)
     ON DELETE CASCADE,
   CONSTRAINT fk_stock_purchase_items_stock_item
-    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+    FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
     ON DELETE SET NULL
 );
 
@@ -149,34 +166,43 @@ CREATE TABLE IF NOT EXISTS history_stock_purchase_item_logs (
     FOREIGN KEY (purchase_id) REFERENCES history_stock_purchases(id)
     ON DELETE SET NULL,
   CONSTRAINT fk_stock_purchase_item_logs_stock_item
-    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+    FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
     ON DELETE SET NULL,
   CONSTRAINT fk_stock_purchase_item_logs_user
     FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE SET NULL
 );
 
--- Recipes: pivot menu_items <-> stock_items, one row per ingredient. Quantities
--- are in the stock item's unit.
+-- Recipes: pivot menu_items <-> stock items, one row per ingredient: either a
+-- bahan baku (stock_item_id) or a bahan setengah jadi (semi_item_id).
+-- Quantities are in that item's unit.
 CREATE TABLE IF NOT EXISTS recipes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   menu_item_id INT UNSIGNED NOT NULL,
-  stock_item_id INT UNSIGNED NOT NULL,
+  stock_item_id INT UNSIGNED NULL,
+  semi_item_id INT UNSIGNED NULL,
   quantity DOUBLE NOT NULL DEFAULT 0,
-  -- quantity x stock unit_cost in whole rupiah, kept up to date by the app.
+  -- quantity x the item's unit_cost in whole rupiah, kept up to date by the app.
   cost INT NOT NULL DEFAULT 0,
   sort_order INT NOT NULL DEFAULT 0,
   note VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uniq_recipes_menu_stock (menu_item_id, stock_item_id),
+  UNIQUE KEY uniq_recipes_menu_semi (menu_item_id, semi_item_id),
   INDEX idx_recipes_stock_item_id (stock_item_id),
+  INDEX idx_recipes_semi_item_id (semi_item_id),
   CONSTRAINT fk_recipes_menu_item
     FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
     ON DELETE CASCADE,
   CONSTRAINT fk_recipes_stock_item
-    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
-    ON DELETE RESTRICT
+    FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_recipes_semi_item
+    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
+    ON DELETE RESTRICT,
+  CONSTRAINT chk_recipes_one_item
+    CHECK ((stock_item_id IS NULL) <> (semi_item_id IS NULL))
 );
 
 -- Recipes with menu and stock names, for reading (e.g. in phpMyAdmin).
@@ -184,25 +210,28 @@ CREATE OR REPLACE SQL SECURITY INVOKER VIEW recipe_details AS
 SELECT
   r.id,
   mi.name AS menu_name,
-  si.name AS stock_item_name,
+  IF(r.semi_item_id IS NULL, 'Bahan baku', 'Setengah jadi') AS item_type,
+  COALESCE(si.name, ss.name) AS stock_item_name,
   r.quantity,
-  si.unit,
-  si.unit_cost,
+  COALESCE(si.unit, ss.unit) AS unit,
+  COALESCE(si.unit_cost, ss.unit_cost) AS unit_cost,
   r.cost,
   r.note,
   r.menu_item_id,
   r.stock_item_id,
+  r.semi_item_id,
   r.sort_order
 FROM recipes r
 JOIN menu_items mi ON mi.id = r.menu_item_id
-JOIN stock_items si ON si.id = r.stock_item_id
+LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
+LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
 ORDER BY mi.name, r.sort_order, r.id;
 
--- Composition of one recipe (batch) of a prepared item, in each raw item's
--- unit. Components are raw items only.
-CREATE TABLE IF NOT EXISTS stock_item_recipes (
+-- Composition of one recipe (batch) of a bahan setengah jadi, in each bahan
+-- baku's unit.
+CREATE TABLE IF NOT EXISTS stock_semi_item_recipes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  prepared_item_id INT UNSIGNED NOT NULL,
+  semi_item_id INT UNSIGNED NOT NULL,
   stock_item_id INT UNSIGNED NOT NULL,
   quantity DOUBLE NOT NULL DEFAULT 0,
   -- quantity x stock unit_cost in whole rupiah, kept up to date by the app.
@@ -211,21 +240,21 @@ CREATE TABLE IF NOT EXISTS stock_item_recipes (
   note VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_stock_item_recipes_item_stock (prepared_item_id, stock_item_id),
-  INDEX idx_stock_item_recipes_stock_item_id (stock_item_id),
-  CONSTRAINT fk_stock_item_recipes_prepared_item
-    FOREIGN KEY (prepared_item_id) REFERENCES stock_items(id)
+  UNIQUE KEY uniq_stock_semi_item_recipes_item_stock (semi_item_id, stock_item_id),
+  INDEX idx_stock_semi_item_recipes_stock_item_id (stock_item_id),
+  CONSTRAINT fk_stock_semi_item_recipes_semi_item
+    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
     ON DELETE CASCADE,
-  CONSTRAINT fk_stock_item_recipes_stock_item
-    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+  CONSTRAINT fk_stock_semi_item_recipes_stock_item
+    FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
     ON DELETE RESTRICT
 );
 
 -- One row per cooking ("Catat Masak"): batch_quantity recipes gave
 -- portion_quantity portions (output_weight / portion_size when weighed).
-CREATE TABLE IF NOT EXISTS stock_item_productions (
+CREATE TABLE IF NOT EXISTS stock_semi_item_productions (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  prepared_item_id INT UNSIGNED NULL,
+  semi_item_id INT UNSIGNED NULL,
   item_name VARCHAR(150) NOT NULL,
   batch_quantity DOUBLE NOT NULL,
   output_weight DOUBLE NULL,
@@ -237,17 +266,17 @@ CREATE TABLE IF NOT EXISTS stock_item_productions (
   produced_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   user_id INT UNSIGNED NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_stock_item_productions_item (prepared_item_id, produced_at),
-  CONSTRAINT fk_stock_item_productions_prepared_item
-    FOREIGN KEY (prepared_item_id) REFERENCES stock_items(id)
+  INDEX idx_stock_semi_item_productions_item (semi_item_id, produced_at),
+  CONSTRAINT fk_stock_semi_item_productions_semi_item
+    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
     ON DELETE SET NULL,
-  CONSTRAINT fk_stock_item_productions_user
+  CONSTRAINT fk_stock_semi_item_productions_user
     FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE SET NULL
 );
 
--- Raw items a cooking used, frozen at that time's unit cost.
-CREATE TABLE IF NOT EXISTS stock_item_production_items (
+-- Bahan baku a cooking used, frozen at that time's unit cost.
+CREATE TABLE IF NOT EXISTS stock_semi_item_production_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   production_id INT UNSIGNED NOT NULL,
   stock_item_id INT UNSIGNED NULL,
@@ -256,12 +285,12 @@ CREATE TABLE IF NOT EXISTS stock_item_production_items (
   unit VARCHAR(30) NOT NULL,
   unit_cost INT NOT NULL DEFAULT 0,
   cost DECIMAL(14,2) NOT NULL DEFAULT 0,
-  INDEX idx_stock_item_production_items_stock_item (stock_item_id),
-  CONSTRAINT fk_stock_item_production_items_production
-    FOREIGN KEY (production_id) REFERENCES stock_item_productions(id)
+  INDEX idx_stock_semi_item_production_items_stock_item (stock_item_id),
+  CONSTRAINT fk_stock_semi_item_production_items_production
+    FOREIGN KEY (production_id) REFERENCES stock_semi_item_productions(id)
     ON DELETE CASCADE,
-  CONSTRAINT fk_stock_item_production_items_stock_item
-    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+  CONSTRAINT fk_stock_semi_item_production_items_stock_item
+    FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
     ON DELETE SET NULL
 );
 
@@ -387,7 +416,9 @@ CREATE TABLE IF NOT EXISTS order_items (
 CREATE TABLE IF NOT EXISTS order_item_costs (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_item_id INT UNSIGNED NOT NULL,
+  -- The bahan baku or bahan setengah jadi sold (NULL once deleted).
   stock_item_id INT UNSIGNED NULL,
+  semi_item_id INT UNSIGNED NULL,
   stock_item_name VARCHAR(150) NOT NULL,
   quantity DOUBLE NOT NULL DEFAULT 0,
   unit VARCHAR(30) NOT NULL DEFAULT '',
@@ -396,11 +427,15 @@ CREATE TABLE IF NOT EXISTS order_item_costs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_order_item_costs_order_item_id (order_item_id),
   INDEX idx_order_item_costs_stock_item_id (stock_item_id),
+  INDEX idx_order_item_costs_semi_item_id (semi_item_id),
   CONSTRAINT fk_order_item_costs_order_item
     FOREIGN KEY (order_item_id) REFERENCES order_items(id)
     ON DELETE CASCADE,
   CONSTRAINT fk_order_item_costs_stock_item
-    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
+    FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_order_item_costs_semi_item
+    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
     ON DELETE SET NULL
 );
 

@@ -55,7 +55,7 @@ const ensureShoppingSchema = async (db) => {
     stock_unit_cost INT NOT NULL DEFAULT 0,
     stock_value_after DECIMAL(14,2) NOT NULL DEFAULT 0,
     FOREIGN KEY (purchase_id) REFERENCES history_stock_purchases(id) ON DELETE CASCADE,
-    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id) ON DELETE SET NULL
+    FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
   await db.query(`CREATE TABLE IF NOT EXISTS history_stock_purchase_item_logs (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -73,21 +73,21 @@ const ensureShoppingSchema = async (db) => {
     INDEX idx_stock_purchase_item_logs_purchase_item (purchase_item_id, created_at),
     FOREIGN KEY (purchase_item_id) REFERENCES history_stock_purchase_items(id) ON DELETE SET NULL,
     FOREIGN KEY (purchase_id) REFERENCES history_stock_purchases(id) ON DELETE SET NULL,
-    FOREIGN KEY (stock_item_id) REFERENCES stock_items(id) ON DELETE SET NULL,
+    FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
   // unit_cost / stock_unit_cost were called average_cost / stock_average_cost;
   // rename before the ADD COLUMNs below so no empty duplicate is created.
-  await db.query("ALTER TABLE stock_items RENAME COLUMN average_cost TO unit_cost").catch(() => {});
+  await db.query("ALTER TABLE stock_raw_items RENAME COLUMN average_cost TO unit_cost").catch(() => {});
   await db.query("ALTER TABLE history_stock_purchase_items RENAME COLUMN stock_average_cost TO stock_unit_cost").catch(() => {});
-  await db.query("ALTER TABLE stock_items ADD COLUMN unit_cost INT NOT NULL DEFAULT 0 AFTER minimum_stock").catch(() => {});
-  await db.query("ALTER TABLE stock_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER unit_cost").catch(() => {});
+  await db.query("ALTER TABLE stock_raw_items ADD COLUMN unit_cost INT NOT NULL DEFAULT 0 AFTER minimum_stock").catch(() => {});
+  await db.query("ALTER TABLE stock_raw_items ADD COLUMN stock_value DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER unit_cost").catch(() => {});
   await db.query("ALTER TABLE history_stock_purchase_items ADD COLUMN stock_unit_cost INT NOT NULL DEFAULT 0 AFTER stock_unit").catch(() => {});
   await db.query("ALTER TABLE history_stock_purchase_items ADD COLUMN stock_value_after DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER stock_unit_cost").catch(() => {});
   // Average costs are whole rupiah (211, not 211.2500); converting the old
   // DECIMAL columns rounds half up. stock_value keeps the exact amount paid.
   for (const [table, column] of [
-    ["stock_items", "unit_cost"],
+    ["stock_raw_items", "unit_cost"],
     ["history_stock_purchase_items", "stock_unit_cost"],
   ]) {
     const [[info]] = await db.query(`SHOW COLUMNS FROM ${table} LIKE ?`, [column]);
@@ -96,7 +96,7 @@ const ensureShoppingSchema = async (db) => {
     }
   }
   await db.query(`
-    UPDATE stock_items si
+    UPDATE stock_raw_items si
     JOIN (
       SELECT stock_item_id, SUM(total) / NULLIF(SUM(stock_quantity), 0) AS unit_cost
       FROM history_stock_purchase_items

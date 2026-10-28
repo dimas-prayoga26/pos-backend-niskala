@@ -5,31 +5,46 @@
 const roundRecipeQuantity = (value) =>
   Math.round((Number(value) || 0) * 10000) / 10000;
 
-const normalizeIngredient = (ingredient) => ({
-  stockItemId: Number(ingredient?.stockItemId || ingredient?.stock_item_id) || null,
-  quantity: roundRecipeQuantity(ingredient?.quantity),
-  note: String(ingredient?.note || "").trim(),
-});
+// An ingredient is a bahan setengah jadi when semiItemId is set, otherwise a
+// bahan baku (stockItemId).
+const normalizeIngredient = (ingredient) => {
+  const semiItemId = Number(ingredient?.semiItemId || ingredient?.semi_item_id) || null;
 
-// Recipe rows must point at a stock item; quantities are in the stock item's
-// unit. The recipes table allows one row per stock item, so repeats are summed.
+  return {
+    stockItemId: semiItemId
+      ? null
+      : Number(ingredient?.stockItemId || ingredient?.stock_item_id) || null,
+    semiItemId,
+    quantity: roundRecipeQuantity(ingredient?.quantity),
+    note: String(ingredient?.note || "").trim(),
+  };
+};
+
+// Recipe rows must point at a stock item; quantities are in that item's unit.
+// The recipes table allows one row per item, so repeats are summed.
 const normalizeIngredients = (ingredients) => {
-  const ingredientsByStockItemId = new Map();
+  const ingredientsByItemKey = new Map();
 
   (Array.isArray(ingredients) ? ingredients : [])
     .map(normalizeIngredient)
-    .filter((ingredient) => ingredient.stockItemId > 0 && ingredient.quantity >= 0)
+    .filter(
+      (ingredient) =>
+        (ingredient.stockItemId > 0 || ingredient.semiItemId > 0) && ingredient.quantity >= 0
+    )
     .forEach((ingredient) => {
-      const existing = ingredientsByStockItemId.get(ingredient.stockItemId);
+      const key = ingredient.semiItemId
+        ? `semi:${ingredient.semiItemId}`
+        : `raw:${ingredient.stockItemId}`;
+      const existing = ingredientsByItemKey.get(key);
 
       if (existing) {
         existing.quantity = roundRecipeQuantity(existing.quantity + ingredient.quantity);
       } else {
-        ingredientsByStockItemId.set(ingredient.stockItemId, ingredient);
+        ingredientsByItemKey.set(key, ingredient);
       }
     });
 
-  return [...ingredientsByStockItemId.values()];
+  return [...ingredientsByItemKey.values()];
 };
 
 const PRICE_ROW_COLUMNS =

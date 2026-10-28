@@ -5,7 +5,7 @@ UI: Dashboard → Stok → Bahan Belanjaan → Tambah Bahan Belanjaan (admin).
 - Satu belanja memiliki tanggal, satu toko/sumber, pembayaran, catatan, dan banyak barang.
 - Urutan per barang: nama (Select2), qty, satuan, harga satuan, jumlah. Jumlah = qty × harga satuan.
 - Pilih opsi **Buat** pada Select2 untuk menambahkan nama sementara ke form. Mengetik, memilih, atau menutup form belum menulis data ke database.
-- Saat **Simpan Belanjaan** diklik, toko baru dibuat di **suplier**, barang baru di **stock_items**, riwayat dicatat, dan stok ditambahkan dalam satu transaksi. Jika gagal, seluruh perubahan dibatalkan.
+- Saat **Simpan Belanjaan** diklik, toko baru dibuat di **suplier**, barang baru di **stock_raw_items** (bahan baku), riwayat dicatat, dan stok ditambahkan dalam satu transaksi. Jika gagal, seluruh perubahan dibatalkan.
 - Barang baru memakai kategori `Umum`, minimum stok 0, dan satuan dari baris pembelian pertamanya. Nama yang sudah ada digunakan kembali, termasuk jika dibuat pengguna lain selama form terbuka.
 - Pilihan sementara yang tidak dipakai pada belanja tidak ikut disimpan. Form yang ditutup masih menyimpan draf selama komponen terbuka; memuat ulang halaman membuang draf.
 - Inisialisasi schema hanya menyiapkan tabel dan tidak menambahkan supplier secara otomatis. Data yang sudah tersimpan tetap tersedia.

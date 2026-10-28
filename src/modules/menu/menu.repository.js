@@ -116,11 +116,13 @@ const attachRecipes = async (menuItems) => {
   const [ingredientRows] = await pool.query(
     `SELECT
        r.*,
-       si.name AS stock_item_name,
-       si.unit AS stock_unit
+       COALESCE(si.name, ss.name) AS stock_item_name,
+       COALESCE(si.unit, ss.unit) AS stock_unit
      FROM recipes r
-     JOIN stock_items si ON si.id = r.stock_item_id
+     LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
+     LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
      WHERE r.menu_item_id IN (?)
+       AND (si.id IS NOT NULL OR ss.id IS NOT NULL)
      ORDER BY r.sort_order ASC, r.id ASC`,
     [ids]
   );
@@ -136,6 +138,7 @@ const attachRecipes = async (menuItems) => {
       _id: row.id,
       id: row.id,
       stockItemId: row.stock_item_id,
+      semiItemId: row.semi_item_id,
       stockItemName: row.stock_item_name,
       ingredientName: row.stock_item_name,
       name: row.stock_item_name,
@@ -179,12 +182,13 @@ const replacePriceAndRecipe = async (
   if (normalizedIngredients.length) {
     await connection.query(
       `INSERT INTO recipes
-        (menu_item_id, stock_item_id, quantity, sort_order, note)
+        (menu_item_id, stock_item_id, semi_item_id, quantity, sort_order, note)
        VALUES ?`,
       [
         normalizedIngredients.map((ingredient, index) => [
           menuItemId,
           ingredient.stockItemId,
+          ingredient.semiItemId,
           ingredient.quantity,
           index + 1,
           ingredient.note || null,

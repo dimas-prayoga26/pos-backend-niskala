@@ -6,22 +6,28 @@ const { parseNominal } = require("../../shared/utils/money");
 const findMenuItemSnapshot = async (connection, menuItemId) => {
   if (!menuItemId) return { menuItemId: null, hppCost: 0, costs: [] };
 
+  // Each line is a bahan baku (stock_raw_items) or bahan setengah jadi
+  // (stock_semi_items).
   const [recipeRows] = await connection.query(
     `SELECT
        r.stock_item_id,
-       si.name AS stock_item_name,
+       r.semi_item_id,
+       COALESCE(si.name, ss.name) AS stock_item_name,
        r.quantity,
-       si.unit,
-       si.unit_cost,
-       ROUND(r.quantity * si.unit_cost) AS cost
+       COALESCE(si.unit, ss.unit) AS unit,
+       COALESCE(si.unit_cost, ss.unit_cost) AS unit_cost,
+       ROUND(r.quantity * COALESCE(si.unit_cost, ss.unit_cost)) AS cost
      FROM recipes r
-     JOIN stock_items si ON si.id = r.stock_item_id
+     LEFT JOIN stock_raw_items si ON si.id = r.stock_item_id
+     LEFT JOIN stock_semi_items ss ON ss.id = r.semi_item_id
      WHERE r.menu_item_id = ?
+       AND (si.id IS NOT NULL OR ss.id IS NOT NULL)
      ORDER BY r.sort_order ASC, r.id ASC`,
     [menuItemId]
   );
   const costs = recipeRows.map((row) => ({
     stockItemId: row.stock_item_id,
+    semiItemId: row.semi_item_id,
     stockItemName: row.stock_item_name,
     quantity: Number(row.quantity) || 0,
     unit: row.unit || "",
