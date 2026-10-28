@@ -155,8 +155,6 @@ const connectDB = async () => {
       stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
       supplier VARCHAR(150),
       is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
-      is_prepared BOOLEAN NOT NULL DEFAULT FALSE,
-      yield_quantity DOUBLE NOT NULL DEFAULT 1,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -165,10 +163,6 @@ const connectDB = async () => {
     )
   `);
   await runSafeMigration("ALTER TABLE stock_items ADD COLUMN is_unlimited BOOLEAN NOT NULL DEFAULT FALSE AFTER supplier");
-  // Prepared items (bahan olahan, e.g. Nasi from Beras): made from other stock
-  // items; one batch yields yield_quantity units (porsi / x pakai).
-  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN is_prepared BOOLEAN NOT NULL DEFAULT FALSE AFTER is_unlimited");
-  await runSafeMigration("ALTER TABLE stock_items ADD COLUMN yield_quantity DOUBLE NOT NULL DEFAULT 1 AFTER is_prepared");
   // unit_cost was called average_cost; renaming before the ADD COLUMN below
   // keeps that from creating an empty second column.
   await runSafeMigration("ALTER TABLE stock_items RENAME COLUMN average_cost TO unit_cost");
@@ -209,30 +203,6 @@ const connectDB = async () => {
         FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
         ON DELETE CASCADE,
       CONSTRAINT fk_recipes_stock_item
-        FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
-        ON DELETE RESTRICT
-    )
-  `);
-  // Components of a prepared item for one batch, in each component's stock
-  // unit (e.g. Nasi: Beras 1 kg -> yield 10 porsi). Components are raw stock
-  // items; cost = quantity x component unit_cost, kept up to date by refreshMenuCosts.
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS prepared_item_recipes (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      prepared_item_id INT UNSIGNED NOT NULL,
-      stock_item_id INT UNSIGNED NOT NULL,
-      quantity DOUBLE NOT NULL DEFAULT 0,
-      cost INT NOT NULL DEFAULT 0,
-      sort_order INT NOT NULL DEFAULT 0,
-      note VARCHAR(255) NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      UNIQUE KEY uniq_prepared_item_recipes_item_stock (prepared_item_id, stock_item_id),
-      INDEX idx_prepared_item_recipes_stock_item_id (stock_item_id),
-      CONSTRAINT fk_prepared_item_recipes_prepared_item
-        FOREIGN KEY (prepared_item_id) REFERENCES stock_items(id)
-        ON DELETE CASCADE,
-      CONSTRAINT fk_prepared_item_recipes_stock_item
         FOREIGN KEY (stock_item_id) REFERENCES stock_items(id)
         ON DELETE RESTRICT
     )

@@ -3,11 +3,9 @@ const authenticate = require("../../shared/middleware/authenticate");
 const { requireRole } = require("../../shared/middleware/authorize");
 const { requireNumericId } = require("../../shared/middleware/validateParams");
 const {
-  addPreparedItem,
   addStockItem,
   deleteStockItem,
   getStockItems,
-  updatePreparedItem,
   updateStockCogs,
   updateStockItem,
   updateStockQuantity,
@@ -19,8 +17,6 @@ const staffOnly = requireRole(["admin", "cashier"], "Only admin or cashier can u
 
 router.get("/", authenticate, getStockItems);
 router.post("/", authenticate, adminOnly, addStockItem);
-router.post("/prepared", authenticate, adminOnly, addPreparedItem);
-router.put("/:id/prepared", authenticate, adminOnly, requireNumericId(), updatePreparedItem);
 router.put("/:id", authenticate, adminOnly, requireNumericId(), updateStockItem);
 router.delete("/:id", authenticate, adminOnly, requireNumericId(), deleteStockItem);
 router.patch("/:id/cogs", authenticate, adminOnly, requireNumericId(), updateStockCogs);
