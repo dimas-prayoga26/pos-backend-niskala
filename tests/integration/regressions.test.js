@@ -325,4 +325,219 @@ describe("regressions", () => {
     assert.equal(cogs.body.data.averageCost, 20);
     assert.equal(cogs.body.data.stockValue, 0, "the dialog preview shows Rp 0 as well");
   });
+
+  it("cooks prepared items from raw stock and sells their portions", async () => {
+    const addRaw = async (name, unit, stock, averageCost) => {
+      const created = await request("POST", "/api/stock-item", {
+        as: "admin",
+        body: { name, category: "Bahan", unit, stock },
+      });
+      await request("PATCH", `/api/stock-item/${created.body.data.id}/cogs`, {
+        as: "admin",
+        body: { averageCost },
+      });
+      return created.body.data.id;
+    };
+    const stockRow = async (id) => {
+      const [[row]] = await db.query(
+        "SELECT stock, stock_value, unit_cost, yield_quantity FROM stock_items WHERE id = ?",
+        [id]
+      );
+      return {
+        stock: Number(row.stock),
+        stockValue: Number(row.stock_value),
+        unitCost: row.unit_cost,
+        yieldQuantity: row.yield_quantity,
+      };
+    };
+    const berasId = await addRaw("Beras Olahan", "kg", 10, 14000);
+
+    // Nasi: 1 kg beras per recipe, one portion = 150 gr of cooked rice.
+    const nasiBody = {
+      name: "Nasi Olahan",
+      unit: "porsi",
+      portionSize: 150,
+      components: [{ stockItemId: berasId, quantity: 1 }],
+    };
+    assert.equal(
+      (await request("POST", "/api/stock-item/prepared", { as: "cashier", body: nasiBody })).status,
+      403
+    );
+    const created = await request("POST", "/api/stock-item/prepared", { as: "admin", body: nasiBody });
+    assert.equal(created.status, 201);
+    const nasi = created.body.data;
+    assert.equal(nasi.isPrepared, true);
+    assert.equal(nasi.category, "Olahan");
+    assert.equal(nasi.status, "HARUS MASAK");
+    assert.equal(nasi.recipeCost, 14000);
+    assert.deepEqual(nasi.components.map((c) => [c.name, c.quantity, c.unit, c.cost]), [
+      ["Beras Olahan", 1, "kg", 14000],
+    ]);
+
+    const nested = await request("POST", "/api/stock-item/prepared", {
+      as: "admin",
+      body: { name: "Nasi Goreng Olahan", components: [{ stockItemId: nasi.id, quantity: 1 }] },
+    });
+    assert.equal(nested.status, 400, "a composition only uses raw items");
+
+    const [[category]] = await db.query("SELECT id FROM categories ORDER BY id LIMIT 1");
+    const menu = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: {
+        categoryId: category.id,
+        name: "Nasi Ayam Olahan",
+        price: 20000,
+        hppCost: 5000,
+        ingredients: [{ stockItemId: nasi.id, quantity: 1 }],
+      },
+    });
+    const menuItemId = menu.body.data.id;
+    const menuHpp = async () => {
+      const [[price]] = await db.query(
+        "SELECT hpp_cost FROM menu_item_prices WHERE menu_item_id = ?",
+        [menuItemId]
+      );
+      return Number(price.hpp_cost);
+    };
+    assert.equal(await menuHpp(), 5000, "manual HPP until the first cooking");
+
+    // Catat Masak: 5 kg beras, 12.000 gr nasi / 150 gr = 80 portions.
+    const cooked = await request("POST", `/api/stock-item/${nasi.id}/productions`, {
+      as: "cashier",
+      body: { batchQuantity: 5, outputWeight: 12000 },
+    });
+    assert.equal(cooked.status, 201);
+    assert.equal(cooked.body.data.lastProduction.portionQuantity, 80);
+    assert.deepEqual(await stockRow(nasi.id), {
+      stock: 80, stockValue: 70000, unitCost: 875, yieldQuantity: 16,
+    });
+    assert.deepEqual(await stockRow(berasId), {
+      stock: 5, stockValue: 70000, unitCost: 14000, yieldQuantity: 0,
+    });
+    assert.equal(await menuHpp(), 875);
+
+    const tooMuch = await request("POST", `/api/stock-item/${nasi.id}/productions`, {
+      as: "cashier",
+      body: { batchQuantity: 10, outputWeight: 24000 },
+    });
+    assert.equal(tooMuch.status, 409);
+    assert.match(tooMuch.body.message, /Beras Olahan butuh 10 kg, sisa 5 kg/);
+
+    // Selling uses the nasi portions, not the beras.
+    const order = await request("POST", "/api/order", {
+      as: "cashier",
+      body: {
+        customerDetails: { name: "Olahan" },
+        orderType: "Offline",
+        orderStatus: "In Progress",
+        bills: { total: 40000, tax: 0, totalWithTax: 40000 },
+        items: [{
+          id: `${category.id}-${menuItemId}`,
+          sourceMenuItemId: menuItemId,
+          name: "Nasi Ayam Olahan",
+          quantity: 2,
+          pricePerQuantity: 20000,
+          price: 40000,
+        }],
+        paymentMethod: "Cash",
+      },
+    });
+    assert.equal(order.status, 201);
+    assert.equal((await stockRow(nasi.id)).stock, 78);
+    assert.equal((await stockRow(berasId)).stock, 5);
+    const [[soldCost]] = await db.query(
+      `SELECT c.stock_item_name, c.quantity, c.unit, c.unit_cost, c.cost
+       FROM order_item_costs c
+       JOIN order_items oi ON oi.id = c.order_item_id
+       WHERE oi.order_id = ?`,
+      [order.body.data.id]
+    );
+    assert.deepEqual({ ...soldCost }, {
+      stock_item_name: "Nasi Olahan", quantity: 1, unit: "porsi", unit_cost: 875, cost: 875,
+    });
+
+    // Prepared items are not bought, priced by hand or edited as raw items,
+    // and their raw items cannot be deleted while used.
+    const purchase = await request("POST", "/api/shopping/purchases", {
+      as: "admin",
+      body: {
+        requestId: "olahan-purchase-0001",
+        date: "2026-10-28",
+        suplierName: "Toko Olahan",
+        paymentMethod: "Cash",
+        items: [{ stockItemId: nasi.id, quantity: 10, unit: "porsi", unitPrice: 1000 }],
+      },
+    });
+    assert.equal(purchase.status, 400);
+    assert.match(purchase.body.message, /bahan olahan/);
+    assert.equal(
+      (await request("PATCH", `/api/stock-item/${nasi.id}/cogs`, { as: "admin", body: { averageCost: 1 } })).status,
+      400
+    );
+    assert.equal(
+      (await request("PUT", `/api/stock-item/${nasi.id}`, {
+        as: "admin",
+        body: { name: "Nasi Olahan", category: "Olahan", unit: "porsi" },
+      })).status,
+      400
+    );
+    const deleteBeras = await request("DELETE", `/api/stock-item/${berasId}`, { as: "admin" });
+    assert.equal(deleteBeras.status, 409);
+    assert.match(deleteBeras.body.message, /bahan olahan: Nasi Olahan/);
+
+    // A new beras price: the composition follows, the portions in stock keep
+    // their cost until the next cooking (moving average, as in belanja).
+    await request("PATCH", `/api/stock-item/${berasId}/cogs`, {
+      as: "admin",
+      body: { averageCost: 16000 },
+    });
+    const [[component]] = await db.query(
+      "SELECT cost FROM prepared_item_recipes WHERE prepared_item_id = ?",
+      [nasi.id]
+    );
+    assert.equal(component.cost, 16000);
+    assert.equal((await stockRow(nasi.id)).unitCost, 875);
+
+    // Counted directly: 1 kg, 15 portions. 68.250 + 16.000 over 93 portions.
+    const counted = await request("POST", `/api/stock-item/${nasi.id}/productions`, {
+      as: "admin",
+      body: { batchQuantity: 1, portionQuantity: 15, note: "dibagi langsung" },
+    });
+    assert.equal(counted.status, 201);
+    assert.deepEqual(await stockRow(nasi.id), {
+      stock: 93, stockValue: 84250, unitCost: 906, yieldQuantity: 15,
+    });
+    assert.equal(await menuHpp(), 906);
+
+    const history = await request("GET", `/api/stock-item/${nasi.id}/productions`, { as: "cashier" });
+    assert.deepEqual(
+      history.body.data.map((p) => [p.batchQuantity, p.outputWeight, p.portionQuantity, p.cost, p.unitCost]),
+      [[1, null, 15, 16000, 1067], [5, 12000, 80, 70000, 875]]
+    );
+    assert.deepEqual(history.body.data[1].items, [{
+      stockItemId: berasId, name: "Beras Olahan", quantity: 5, unit: "kg", unitCost: 14000, cost: 70000,
+    }]);
+
+    // Undo: only the latest cooking, and only while its portions are in stock.
+    const [latest, first] = history.body.data;
+    assert.equal(
+      (await request("DELETE", `/api/stock-item/productions/${first.id}`, { as: "admin" })).status,
+      409
+    );
+    assert.equal(
+      (await request("DELETE", `/api/stock-item/productions/${latest.id}`, { as: "cashier" })).status,
+      403
+    );
+    assert.equal(
+      (await request("DELETE", `/api/stock-item/productions/${latest.id}`, { as: "admin" })).status,
+      200
+    );
+    assert.deepEqual(await stockRow(nasi.id), {
+      stock: 78, stockValue: 68250, unitCost: 875, yieldQuantity: 16,
+    });
+    assert.equal((await stockRow(berasId)).stock, 5);
+    assert.equal(await menuHpp(), 875);
+    const usedUp = await request("DELETE", `/api/stock-item/productions/${first.id}`, { as: "admin" });
+    assert.equal(usedUp.status, 409, "2 of its 80 portions were sold");
+  });
 });
