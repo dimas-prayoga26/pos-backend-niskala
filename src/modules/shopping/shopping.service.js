@@ -154,6 +154,7 @@ const createShoppingService = db => {
       for (const item of items) {
         const stock = byId.get(item.stockItemId);
         if (!stock || !stock.is_active) throw createError(400, "Salah satu barang tidak tersedia. Muat ulang daftar barang.");
+        if (stock.is_prepared) throw createError(400, `${stock.name} adalah bahan olahan dan tidak dibeli. Belanjakan bahan-bahannya.`);
         if (!stock.unit) {
           if (Number(stock.stock) !== 0) throw createError(400, `Lengkapi satuan ${stock.name} di Stok Barang terlebih dahulu.`);
           stock.unit = item.unit;

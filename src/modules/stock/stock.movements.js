@@ -1,7 +1,8 @@
 // Recipe-driven stock movements. Orders pass recipe lines
 // ({ menuItemId, quantity }); each menu item's recipe rows (recipes, quantities
 // in the stock item's unit) are applied to stock_items inside the caller's
-// transaction connection.
+// transaction connection. A prepared item in a recipe (e.g. Nasi) is not
+// stocked itself: its components (Beras) are used in proportion to its yield.
 const createHttpError = require("http-errors");
 const { roundCurrency } = require("../../shared/utils/money");
 
@@ -23,7 +24,9 @@ const buildStockDeductions = async (connection, orderItems = []) => {
        si.stock,
        si.unit AS stock_unit,
        si.unit_cost,
-       si.is_unlimited
+       si.is_unlimited,
+       si.is_prepared,
+       si.yield_quantity
      FROM recipes r
      JOIN stock_items si ON si.id = r.stock_item_id
      WHERE r.menu_item_id IN (?)
@@ -33,6 +36,52 @@ const buildStockDeductions = async (connection, orderItems = []) => {
 
   if (!ingredientRows.length) return new Map();
 
+  const preparedIds = [
+    ...new Set(
+      ingredientRows
+        .filter((ingredient) => ingredient.is_prepared)
+        .map((ingredient) => Number(ingredient.stock_item_id))
+    ),
+  ];
+  const componentsByPreparedId = new Map();
+  if (preparedIds.length) {
+    const [componentRows] = await connection.query(
+      `SELECT
+         pr.prepared_item_id,
+         pr.stock_item_id,
+         pr.quantity,
+         si.name AS stock_name,
+         si.stock,
+         si.unit AS stock_unit,
+         si.unit_cost,
+         si.is_unlimited
+       FROM prepared_item_recipes pr
+       JOIN stock_items si ON si.id = pr.stock_item_id
+       WHERE pr.prepared_item_id IN (?)
+       ORDER BY pr.sort_order ASC, pr.id ASC`,
+      [preparedIds]
+    );
+    for (const component of componentRows) {
+      const id = Number(component.prepared_item_id);
+      if (!componentsByPreparedId.has(id)) componentsByPreparedId.set(id, []);
+      componentsByPreparedId.get(id).push(component);
+    }
+  }
+
+  // Stock rows one portion of a recipe line uses, with their quantities.
+  const toStockLines = (ingredient) => {
+    const quantity = Number(ingredient.quantity) || 0;
+    if (!ingredient.is_prepared) return [{ row: ingredient, quantity }];
+
+    const yieldQuantity = Number(ingredient.yield_quantity) || 1;
+    return (componentsByPreparedId.get(Number(ingredient.stock_item_id)) || []).map(
+      (component) => ({
+        row: component,
+        quantity: (quantity * (Number(component.quantity) || 0)) / yieldQuantity,
+      })
+    );
+  };
+
   const deductions = new Map();
 
   for (const orderItem of orderItems) {
@@ -40,19 +89,19 @@ const buildStockDeductions = async (connection, orderItems = []) => {
       (ingredient) => Number(ingredient.menu_item_id) === orderItem.menuItemId
     );
 
-    for (const ingredient of matchingIngredients) {
-      const stockItemId = Number(ingredient.stock_item_id);
-      const deduction = (Number(ingredient.quantity) || 0) * orderItem.quantity;
+    for (const line of matchingIngredients.flatMap(toStockLines)) {
+      const stockItemId = Number(line.row.stock_item_id);
+      const deduction = line.quantity * orderItem.quantity;
 
       if (!stockItemId || deduction <= 0) continue;
 
       const currentDeduction = deductions.get(stockItemId) || {
         stockItemId,
-        name: ingredient.stock_name,
-        stock: Number(ingredient.stock || 0),
-        unit: ingredient.stock_unit || "",
-        averageCost: Number(ingredient.unit_cost || 0),
-        isUnlimited: Boolean(ingredient.is_unlimited),
+        name: line.row.stock_name,
+        stock: Number(line.row.stock || 0),
+        unit: line.row.stock_unit || "",
+        averageCost: Number(line.row.unit_cost || 0),
+        isUnlimited: Boolean(line.row.is_unlimited),
         required: 0,
         requiredValue: 0,
       };
