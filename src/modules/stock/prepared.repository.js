@@ -53,11 +53,11 @@ const savePrepared = (id, { name, category, unit, portionSize, minimumStock, com
       preparedId = result.insertId;
     }
 
-    await connection.query("DELETE FROM prepared_item_recipes WHERE prepared_item_id = ?", [
+    await connection.query("DELETE FROM stock_item_recipes WHERE prepared_item_id = ?", [
       preparedId,
     ]);
     await connection.query(
-      `INSERT INTO prepared_item_recipes (prepared_item_id, stock_item_id, quantity, sort_order)
+      `INSERT INTO stock_item_recipes (prepared_item_id, stock_item_id, quantity, sort_order)
        VALUES ?`,
       [components.map((component, index) => [
         preparedId,
@@ -67,7 +67,7 @@ const savePrepared = (id, { name, category, unit, portionSize, minimumStock, com
       ])]
     );
     await connection.query(
-      `UPDATE prepared_item_recipes pr
+      `UPDATE stock_item_recipes pr
        JOIN stock_items si ON si.id = pr.stock_item_id
        SET pr.cost = ROUND(pr.quantity * si.unit_cost)
        WHERE pr.prepared_item_id = ?`,
@@ -91,7 +91,7 @@ const recordProduction = (preparedId, { batchQuantity, outputWeight, portionQuan
     const [components] = await connection.query(
       `SELECT pr.stock_item_id, pr.quantity AS recipe_quantity,
               si.name, si.unit, si.stock, si.unit_cost, si.is_unlimited
-       FROM prepared_item_recipes pr
+       FROM stock_item_recipes pr
        JOIN stock_items si ON si.id = pr.stock_item_id
        WHERE pr.prepared_item_id = ?
        ORDER BY si.id
@@ -176,7 +176,7 @@ const recordProduction = (preparedId, { batchQuantity, outputWeight, portionQuan
     );
 
     const [production] = await connection.query(
-      `INSERT INTO prepared_item_productions
+      `INSERT INTO stock_item_productions
         (prepared_item_id, item_name, batch_quantity, output_weight, portion_quantity,
          cost, unit_cost, note, user_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -193,7 +193,7 @@ const recordProduction = (preparedId, { batchQuantity, outputWeight, portionQuan
       ]
     );
     await connection.query(
-      `INSERT INTO prepared_item_production_items
+      `INSERT INTO stock_item_production_items
         (production_id, stock_item_id, item_name, quantity, unit, unit_cost, cost)
        VALUES ?`,
       [usedItems.map((used) => [
@@ -215,7 +215,7 @@ const recordProduction = (preparedId, { batchQuantity, outputWeight, portionQuan
 const listProductions = async (preparedId, limit = 30) => {
   const [rows] = await pool.query(
     `SELECT p.*, u.name AS user_name
-     FROM prepared_item_productions p
+     FROM stock_item_productions p
      LEFT JOIN users u ON u.id = p.user_id
      WHERE p.prepared_item_id = ?
      ORDER BY p.id DESC
@@ -225,7 +225,7 @@ const listProductions = async (preparedId, limit = 30) => {
   if (!rows.length) return [];
 
   const [itemRows] = await pool.query(
-    `SELECT * FROM prepared_item_production_items
+    `SELECT * FROM stock_item_production_items
      WHERE production_id IN (?)
      ORDER BY id ASC`,
     [rows.map((row) => row.id)]
@@ -252,7 +252,7 @@ const listProductions = async (preparedId, limit = 30) => {
 const deleteProduction = (productionId) =>
   withTransaction(async (connection) => {
     const [[production]] = await connection.query(
-      "SELECT * FROM prepared_item_productions WHERE id = ? FOR UPDATE",
+      "SELECT * FROM stock_item_productions WHERE id = ? FOR UPDATE",
       [productionId]
     );
     if (!production) return null;
@@ -263,7 +263,7 @@ const deleteProduction = (productionId) =>
 
     if (preparedId) {
       const [[latest]] = await connection.query(
-        "SELECT MAX(id) AS id FROM prepared_item_productions WHERE prepared_item_id = ?",
+        "SELECT MAX(id) AS id FROM stock_item_productions WHERE prepared_item_id = ?",
         [preparedId]
       );
       if (latest.id !== production.id) {
@@ -283,7 +283,7 @@ const deleteProduction = (productionId) =>
     }
 
     const [usedItems] = await connection.query(
-      "SELECT * FROM prepared_item_production_items WHERE production_id = ? AND stock_item_id IS NOT NULL",
+      "SELECT * FROM stock_item_production_items WHERE production_id = ? AND stock_item_id IS NOT NULL",
       [productionId]
     );
     for (const used of usedItems) {
@@ -296,12 +296,12 @@ const deleteProduction = (productionId) =>
       );
     }
 
-    await connection.query("DELETE FROM prepared_item_productions WHERE id = ?", [productionId]);
+    await connection.query("DELETE FROM stock_item_productions WHERE id = ?", [productionId]);
 
     if (item) {
       const [[previous]] = await connection.query(
         `SELECT unit_cost, portion_quantity / batch_quantity AS yield_quantity
-         FROM prepared_item_productions
+         FROM stock_item_productions
          WHERE prepared_item_id = ?
          ORDER BY id DESC
          LIMIT 1`,
