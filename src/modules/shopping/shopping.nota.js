@@ -1,5 +1,5 @@
 // The nota engine shared by belanja bahan baku (shopping.service) and belanja
-// perlengkapan (shopping.supply). A nota is a header with its footer
+// lainnya (shopping.supply). A nota is a header with its footer
 // (subtotal, ongkir, diskon, PPN, grand total) and item lines.
 // - Saved as "draft" it moves nothing; staff can change or delete it.
 // - Posting it (admin) creates new items, raises stock by each line's
@@ -14,11 +14,34 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { PURCHASE_RECEIPT_DIR } = require("../../config/paths");
 const { roundCost, roundCurrency } = require("../../shared/utils/money");
-const { clean, number, todayKey } = require("../../shared/utils/validate");
+const { clean, dateKey, number, todayKey } = require("../../shared/utils/validate");
 const { findPurchaseSourceId, postMutation } = require("../paymentSources/paymentSource.ledger");
 const { receiveIntoStock } = require("./shopping.costing");
 const { NO_ADJUSTMENTS, adjustmentsFromHeader, computeNotaTotals } = require("./shopping.totals");
 const { convertQuantity, normalizeItemPatch } = require("./shopping.validation");
+
+const NOTA_PAGE_SIZE = 10;
+
+// The optional ?itemId= of a history list: one barang, or none ("").
+const itemFilter = value => {
+  if (value === undefined || value === null || value === "") return null;
+  const id = Number(value);
+  if (!Number.isInteger(id) || id <= 0) throw createError(400, "ID barang tidak valid.");
+  return id;
+};
+
+// The optional ?from=&to= (YYYY-MM-DD) of a history list, the period filter of
+// the Belanja page: purchases dated in it, both days included. As SQL on the
+// nota alias p, with its params; no dates is no limit.
+const dateRange = ({ from, to } = {}) => {
+  const start = from == null || from === "" ? null : dateKey(from, "Tanggal awal");
+  const end = to == null || to === "" ? null : dateKey(to, "Tanggal akhir");
+  if (start && end && start > end) throw createError(400, "Tanggal awal tidak boleh setelah tanggal akhir.");
+  return {
+    sql: `${start ? " AND p.purchase_date >= ?" : ""}${end ? " AND p.purchase_date <= ?" : ""}`,
+    params: [...(start ? [start] : []), ...(end ? [end] : [])],
+  };
+};
 
 const actor = user => {
   if (typeof user === "number" || typeof user === "string") {
@@ -117,10 +140,16 @@ const createNotaEngine = (db, cfg) => {
       }
       const stock = byId.get(id);
       if (!stock || !stock.is_active) throw createError(400, "Salah satu barang tidak tersedia. Muat ulang daftar barang.");
-      if (stock.unit) convertQuantity(item.quantity, item.unit, stock.unit);
+      if (stock.unit && item.unit) convertQuantity(item.quantity, item.unit, stock.unit);
     }
     return byId;
   };
+
+  // Lines sent without unit (cfg.defaultUnit kinds) take their item's unit.
+  const withUnits = (items, stocksById) =>
+    items.map(item =>
+      item.unit ? item : { ...item, unit: stocksById.get(item[cfg.itemIdKey])?.unit || cfg.defaultUnit }
+    );
 
   const insertLines = async (connection, purchaseId, items, totals, stocksById) => {
     for (const [index, item] of items.entries()) {
@@ -273,7 +302,7 @@ const createNotaEngine = (db, cfg) => {
           [data.requestId, hash, ...notaValues(data, supplier, source, totals), userId]
         );
         const stocksById = await checkLines(connection, data.items);
-        await insertLines(connection, header.insertId, data.items, totals, stocksById);
+        await insertLines(connection, header.insertId, withUnits(data.items, stocksById), totals, stocksById);
         const payment = status === "posted" ? await post(connection, header.insertId, user) : null;
         return { id: header.insertId, total: totals.total, duplicate: false, ...paymentResult(payment), status };
       });
@@ -314,7 +343,7 @@ const createNotaEngine = (db, cfg) => {
         [...notaValues(data, supplier, source, totals), purchaseId]
       );
       await connection.query(`DELETE FROM ${cfg.items} WHERE purchase_id = ?`, [purchaseId]);
-      await insertLines(connection, purchaseId, data.items, totals, stocksById);
+      await insertLines(connection, purchaseId, withUnits(data.items, stocksById), totals, stocksById);
       const payment = status === "posted" ? await post(connection, purchaseId, user) : null;
       return { id: purchaseId, total: totals.total, ...paymentResult(payment), status };
     });
@@ -341,7 +370,7 @@ const createNotaEngine = (db, cfg) => {
   // Edit (patch) or delete (remove) one line of a posted nota.
   const changeLine = async (lineId, { patch, remove = false }, user) => {
     lineId = number(lineId, 1, 4294967295, 0, "ID item belanja");
-    const edit = patch ? normalizeItemPatch(patch) : null;
+    const edit = patch ? normalizeItemPatch(patch, { unitRequired: !cfg.defaultUnit }) : null;
     return withTransaction(async connection => {
       const [[target]] = await connection.query(`SELECT * FROM ${cfg.items} WHERE id = ? FOR UPDATE`, [lineId]);
       if (!target) throw createError(404, "Item belanja tidak ditemukan.");
@@ -357,13 +386,14 @@ const createNotaEngine = (db, cfg) => {
       if (edit) {
         const [[stock]] = await connection.query(`SELECT unit FROM ${cfg.stockTable} WHERE id = ?`, [target[cfg.itemFk]]);
         const stockUnit = stock?.unit || target.stock_unit;
+        const lineUnit = edit.unit || target.unit;
         edited = {
           ...target,
           quantity: edit.quantity,
-          unit: edit.unit,
+          unit: lineUnit,
           unit_price: edit.unitPrice,
           total: roundCurrency(edit.quantity * edit.unitPrice),
-          stock_quantity: convertQuantity(edit.quantity, edit.unit, stockUnit),
+          stock_quantity: convertQuantity(edit.quantity, lineUnit, stockUnit),
           stock_unit: stockUnit,
         };
       }
@@ -445,20 +475,21 @@ const createNotaEngine = (db, cfg) => {
     });
   };
 
-  // Drafts waiting to be posted, newest first, with what the form needs to
-  // open them again.
-  const listDrafts = async () => {
-    const [headers] = await db.query(
-      `SELECT p.*, u.name AS created_by_name
-       FROM ${cfg.purchases} p
-       LEFT JOIN users u ON u.id = p.created_by
-       WHERE p.status = 'draft'
-       ORDER BY p.created_at DESC, p.id DESC`
-    );
+  // Nota with their lines and bukti. Drafts carry what the form needs to open
+  // them again; posted nota (posted) also their posting, what each line put
+  // into stock and the COGS (and stock value) right after it, with the
+  // kategori its barang has now (Lainnya).
+  const describeNotas = async (headers, { posted = false } = {}) => {
     if (!headers.length) return [];
     const ids = headers.map(header => header.id);
     const placeholders = ids.map(() => "?").join(",");
-    const [lines] = await db.query(`SELECT * FROM ${cfg.items} WHERE purchase_id IN (${placeholders}) ORDER BY id`, ids);
+    const [lines] = await db.query(
+      `SELECT i.*${cfg.lineCategory ? ", COALESCE(s.category, i.category) AS current_category" : ""}
+       FROM ${cfg.items} i
+       LEFT JOIN ${cfg.stockTable} s ON s.id = i.${cfg.itemFk}
+       WHERE i.purchase_id IN (${placeholders}) ORDER BY i.id`,
+      ids
+    );
     const [attachments] = await db.query(
       `SELECT id, purchase_id, original_name FROM ${cfg.attachments} WHERE purchase_id IN (${placeholders}) ORDER BY id`,
       ids
@@ -483,17 +514,25 @@ const createNotaEngine = (db, cfg) => {
       total: Number(header.total),
       createdBy: header.created_by_name || "",
       createdAt: header.created_at,
+      ...(posted && { postedBy: header.posted_by_name || "", postedAt: header.posted_at }),
       items: lines
         .filter(line => line.purchase_id === header.id)
         .map(line => ({
           id: line.id,
           [cfg.itemIdKey]: line[cfg.itemFk],
           itemName: line.item_name,
-          ...(cfg.lineCategory && { category: line.category }),
+          ...(cfg.lineCategory && { category: posted ? line.current_category : line.category }),
           quantity: Number(line.quantity),
           unit: line.unit,
           unitPrice: Number(line.unit_price),
           total: Number(line.total),
+          ...(posted && {
+            costTotal: Number(line.cost_total ?? line.total),
+            stockQuantity: Number(line.stock_quantity),
+            stockUnit: line.stock_unit,
+            stockAverageCost: Number(line.stock_unit_cost || 0),
+            stockValueAfter: Number(line.stock_value_after || 0),
+          }),
         })),
       attachments: attachments
         .filter(attachment => attachment.purchase_id === header.id)
@@ -501,14 +540,70 @@ const createNotaEngine = (db, cfg) => {
     }));
   };
 
+  // Drafts waiting to be posted, newest first.
+  const listDrafts = async () => {
+    const [headers] = await db.query(
+      `SELECT p.*, u.name AS created_by_name
+       FROM ${cfg.purchases} p
+       LEFT JOIN users u ON u.id = p.created_by
+       WHERE p.status = 'draft'
+       ORDER BY p.created_at DESC, p.id DESC`
+    );
+    return describeNotas(headers);
+  };
+
+  // The "Per Nota" history: posted nota, newest first, 10 per page. search
+  // matches the toko or a barang (or kategori) on the nota; category (Lainnya)
+  // keeps the nota holding a barang of that kategori, by its current one.
+  // totalSpending is the Grand Total of every matching nota (all pages).
+  // from/to keep a period (dateRange); pageSize (up to 1000) is for exports.
+  const listPosted = async ({ page = 1, search = "", category = "", from, to, pageSize } = {}) => {
+    page = Math.max(1, Math.floor(Number(page) || 1));
+    const period = dateRange({ from, to });
+    const size = pageSize == null || pageSize === "" ? NOTA_PAGE_SIZE : number(pageSize, 1, 1000, 0, "Jumlah per halaman");
+    if (category && !cfg.categories?.includes(category)) {
+      throw createError(400, cfg.categories ? `Kategori harus ${cfg.categories.join(", ")}.` : "Kategori tidak dikenal.");
+    }
+    const keyword = `%${String(search).slice(0, 150)}%`;
+    const where = `p.status = 'posted'
+       AND (p.suplier_name LIKE ? OR EXISTS (
+         SELECT 1 FROM ${cfg.items} si WHERE si.purchase_id = p.id
+           AND (si.item_name LIKE ?${cfg.lineCategory ? " OR si.category LIKE ?" : ""})))
+       ${category ? `AND EXISTS (
+         SELECT 1 FROM ${cfg.items} ci LEFT JOIN ${cfg.stockTable} cs ON cs.id = ci.${cfg.itemFk}
+         WHERE ci.purchase_id = p.id AND COALESCE(cs.category, ci.category) = ?)` : ""}${period.sql}`;
+    const params = [keyword, keyword, ...(cfg.lineCategory ? [keyword] : []), ...(category ? [category] : []), ...period.params];
+    const [[count]] = await db.query(
+      `SELECT COUNT(*) AS total, COALESCE(SUM(p.total), 0) AS spending FROM ${cfg.purchases} p WHERE ${where}`,
+      params
+    );
+    const [headers] = await db.query(
+      `SELECT p.*, u.name AS created_by_name, pu.name AS posted_by_name
+       FROM ${cfg.purchases} p
+       LEFT JOIN users u ON u.id = p.created_by
+       LEFT JOIN users pu ON pu.id = p.posted_by
+       WHERE ${where}
+       ORDER BY p.purchase_date DESC, p.id DESC
+       LIMIT ? OFFSET ?`,
+      [...params, size, (page - 1) * size]
+    );
+    return {
+      notas: await describeNotas(headers, { posted: true }),
+      total: Number(count.total),
+      totalSpending: Number(count.spending),
+      page,
+    };
+  };
+
   return {
     create,
     updateDraft,
     removeDraft,
     listDrafts,
+    listPosted,
     updateItem: (id, body, user) => changeLine(id, { patch: body || {} }, user),
     deleteItem: (id, user) => changeLine(id, { remove: true }, user),
   };
 };
 
-module.exports = { actor, createNotaEngine, findOrCreateSupplier, postPurchaseDifference };
+module.exports = { actor, createNotaEngine, dateRange, findOrCreateSupplier, itemFilter, postPurchaseDifference };

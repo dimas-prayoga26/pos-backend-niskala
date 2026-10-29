@@ -16,9 +16,11 @@ const {
   deleteSupplyPurchaseItem,
   getPurchaseAttachment,
   getPurchaseDrafts,
+  getPurchaseNotas,
   getPurchases,
   getSupplyPurchaseAttachment,
   getSupplyPurchaseDrafts,
+  getSupplyPurchaseNotas,
   getSupplyPurchases,
   getSuppliers,
   updatePurchaseDraft,
@@ -42,6 +44,7 @@ router.put("/suppliers/:id", adminOnly, updateSupplier);
 
 // Belanja bahan baku (stock_raw_items).
 router.get("/purchases", getPurchases);
+router.get("/purchases/notas", getPurchaseNotas);
 router.get("/purchases/drafts", staffOnly, getPurchaseDrafts);
 router.post("/purchases", staffOnly, createPurchase);
 router.put("/purchases/:id", staffOnly, requireNumericId(), updatePurchaseDraft);
@@ -53,8 +56,10 @@ router.delete("/purchase-attachments/:id", staffOnly, requireNumericId(), delete
 router.put("/purchase-items/:id", adminOnly, updatePurchaseItem);
 router.delete("/purchase-items/:id", adminOnly, deletePurchaseItem);
 
-// Belanja perlengkapan (stock_supply_items): peralatan, operasional, promosi.
+// Belanja lainnya (stock_supply_items): peralatan, perlengkapan, promosi, lain-lain.
+// GET takes ?category= for the Belanja tabs.
 router.get("/supply-purchases", getSupplyPurchases);
+router.get("/supply-purchases/notas", getSupplyPurchaseNotas);
 router.get("/supply-purchases/drafts", staffOnly, getSupplyPurchaseDrafts);
 router.post("/supply-purchases", staffOnly, createSupplyPurchase);
 router.put("/supply-purchases/:id", staffOnly, requireNumericId(), updateSupplyPurchaseDraft);

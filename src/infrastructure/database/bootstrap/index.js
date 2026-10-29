@@ -137,7 +137,7 @@ const connectDB = async () => {
   `);
 
   // Menus no longer have temperature variants or sizes (sizes are folded away
-  // by removeMenuSizes once recipes exist).
+  // by removeMenuSizes once menu_item_recipes exists).
   await runSafeMigration("DROP TABLE IF EXISTS menu_item_variants");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN large_price");
   await runSafeMigration("ALTER TABLE menu_items DROP COLUMN variants_json");
@@ -217,11 +217,18 @@ const connectDB = async () => {
     )
   `);
 
+  // menu_item_recipes was called recipes (renamed 2026-10-29). RENAME TABLE
+  // keeps the rows, indexes and foreign keys, whose names stay fk_recipes_* /
+  // uniq_recipes_* / idx_recipes_*; the CREATE below uses the same names.
+  if ((await tableExists("recipes")) && !(await tableExists("menu_item_recipes"))) {
+    await pool.query("RENAME TABLE recipes TO menu_item_recipes");
+  }
+
   // Recipes: pivot menu_items <-> stock_raw_items, one row per ingredient. Quantities
   // are in the stock item's unit. Bahan setengah jadi lines of a menu live in
   // stock_semi_item_menus (semiItemsSchema).
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS recipes (
+    CREATE TABLE IF NOT EXISTS menu_item_recipes (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       menu_item_id INT UNSIGNED NOT NULL,
       stock_item_id INT UNSIGNED NOT NULL,
@@ -246,7 +253,7 @@ const connectDB = async () => {
   await useDoubleRecipeQuantities();
   // Cost of each recipe line in whole rupiah (quantity x average cost), kept up
   // to date by refreshMenuCosts.
-  await runSafeMigration("ALTER TABLE recipes ADD COLUMN cost INT NOT NULL DEFAULT 0 AFTER quantity");
+  await runSafeMigration("ALTER TABLE menu_item_recipes ADD COLUMN cost INT NOT NULL DEFAULT 0 AFTER quantity");
   // Recipes with menu and stock names for reading in phpMyAdmin; the app reads
   // the tables. Optional, so a host without the CREATE VIEW privilege still boots.
   await runSafeMigration(`
@@ -263,7 +270,7 @@ const connectDB = async () => {
       r.menu_item_id,
       r.stock_item_id,
       r.sort_order
-    FROM recipes r
+    FROM menu_item_recipes r
     JOIN menu_items mi ON mi.id = r.menu_item_id
     JOIN stock_raw_items si ON si.id = r.stock_item_id
     ORDER BY mi.name, r.sort_order, r.id

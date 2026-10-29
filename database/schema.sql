@@ -264,8 +264,9 @@ ALTER TABLE history_stock_raw_purchases
     FOREIGN KEY (posted_by) REFERENCES users(id)
     ON DELETE SET NULL;
 
--- Perlengkapan: bought items that are not bahan baku. category: Peralatan,
--- Operasional or Promosi. Stocked like stock_raw_items (moving average
+-- Barang "Lainnya" (formerly perlengkapan): bought items that are not bahan
+-- baku, counted per piece (unit defaults to pcs). category: Peralatan,
+-- Perlengkapan, Promosi or Lain-lain. Stocked like stock_raw_items (moving average
 -- unit_cost, stock_value) but never used by recipes, so never part of HPP.
 CREATE TABLE IF NOT EXISTS stock_supply_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -284,8 +285,8 @@ CREATE TABLE IF NOT EXISTS stock_supply_items (
   INDEX idx_stock_supply_items_category (category, name)
 );
 
--- Belanja perlengkapan: the same nota as history_stock_raw_purchases, made
--- from the same "Tambah Bahan Belanjaan" form (Jenis Belanja: Perlengkapan).
+-- Belanja lainnya: the same nota as history_stock_raw_purchases, made
+-- from the same "Tambah Belanja" form (Jenis Belanja: Lainnya).
 -- Paid from a payment source it posts saldo keluar with reference_type
 -- supply_purchase.
 CREATE TABLE IF NOT EXISTS history_stock_supply_purchases (
@@ -329,7 +330,7 @@ ALTER TABLE history_stock_supply_purchases
     FOREIGN KEY (posted_by) REFERENCES users(id)
     ON DELETE SET NULL;
 
--- Lines of a belanja perlengkapan; item_name and category are snapshots.
+-- Lines of a belanja lainnya; item_name and category are snapshots.
 CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   purchase_id INT UNSIGNED NOT NULL,
@@ -354,7 +355,7 @@ CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_items (
     ON DELETE SET NULL
 );
 
--- Bukti nota of a belanja perlengkapan (files in storage/purchase-receipts,
+-- Bukti nota of a belanja lainnya (files in storage/purchase-receipts,
 -- named supply-<purchase>-<random>).
 CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_attachments (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -377,7 +378,7 @@ CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_attachments (
 -- Recipes: pivot menu_items <-> stock_raw_items, one row per ingredient. Quantities
 -- are in the stock item's unit. Bahan setengah jadi lines of a menu are in
 -- stock_semi_item_menus.
-CREATE TABLE IF NOT EXISTS recipes (
+CREATE TABLE IF NOT EXISTS menu_item_recipes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   menu_item_id INT UNSIGNED NOT NULL,
   stock_item_id INT UNSIGNED NOT NULL,
@@ -412,7 +413,7 @@ SELECT
   r.menu_item_id,
   r.stock_item_id,
   r.sort_order
-FROM recipes r
+FROM menu_item_recipes r
 JOIN menu_items mi ON mi.id = r.menu_item_id
 JOIN stock_raw_items si ON si.id = r.stock_item_id
 ORDER BY mi.name, r.sort_order, r.id;

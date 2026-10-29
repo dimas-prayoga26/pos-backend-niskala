@@ -37,10 +37,14 @@ const notifyNota = (prefix, action, movedStock) => {
   emitRealtimeEvent("shopping:changed", { action: `${prefix}-${action}` });
 };
 
-// Handlers for one kind of nota (belanja bahan baku or perlengkapan).
+// Handlers for one kind of nota (belanja bahan baku or lainnya).
 const notaHandlers = (service, prefix) => ({
   list: asyncHandler(async (req, res) => {
     res.json({ success: true, data: await service.list(req.query) });
+  }),
+  // The "Per Nota" history: posted nota with all their lines.
+  listNotas: asyncHandler(async (req, res) => {
+    res.json({ success: true, data: await service.listNotas(req.query) });
   }),
   listDrafts: asyncHandler(async (req, res) => {
     res.json({ success: true, data: await service.listDrafts() });
@@ -124,9 +128,11 @@ module.exports = {
   deleteSupplyPurchaseItem: supply.deleteItem,
   getPurchaseAttachment: rawReceipts.get,
   getPurchaseDrafts: raw.listDrafts,
+  getPurchaseNotas: raw.listNotas,
   getPurchases: raw.list,
   getSupplyPurchaseAttachment: supplyReceipts.get,
   getSupplyPurchaseDrafts: supply.listDrafts,
+  getSupplyPurchaseNotas: supply.listNotas,
   getSupplyPurchases: supply.list,
   getSuppliers,
   updatePurchaseDraft: raw.updateDraft,

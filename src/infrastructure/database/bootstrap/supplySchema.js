@@ -1,12 +1,13 @@
-// Perlengkapan: things bought that are not bahan baku (peralatan, operasional,
-// promosi). They are stocked like bahan baku but never used by recipes, so
-// they never reach HPP.
+// Barang "Lainnya" (formerly perlengkapan; the tables keep the supply name):
+// things bought that are not bahan baku. Kategori: Peralatan, Perlengkapan,
+// Lain-lain, Promosi. They are stocked like bahan baku (counted per piece)
+// but never used by recipes, so they never reach HPP.
 //   stock_supply_items                         the items and their stock/value
 //   history_stock_supply_purchases (+ _items)  belanja perlengkapan; the same
 //                                              nota as belanja bahan baku
 //   history_stock_supply_purchase_attachments  bukti nota photos
-// Purchases are created from the same "Tambah Bahan Belanjaan" form
-// (Jenis Belanja: Perlengkapan). See SHOPPING.md.
+// Purchases are created from the same "Tambah Belanja" form (Jenis Belanja:
+// Lainnya). See SHOPPING.md.
 const ensureSupplySchema = async (db) => {
   await db.query(`CREATE TABLE IF NOT EXISTS stock_supply_items (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -71,6 +72,9 @@ const ensureSupplySchema = async (db) => {
     FOREIGN KEY (purchase_id) REFERENCES history_stock_supply_purchases(id) ON DELETE CASCADE,
     FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
+  // Kategori were Peralatan, Operasional, Promosi; Operasional became Perlengkapan.
+  await db.query("UPDATE stock_supply_items SET category = 'Perlengkapan' WHERE category = 'Operasional'");
+  await db.query("UPDATE history_stock_supply_purchase_items SET category = 'Perlengkapan' WHERE category = 'Operasional'");
 };
 
 module.exports = { ensureSupplySchema };

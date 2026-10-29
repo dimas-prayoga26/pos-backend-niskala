@@ -53,16 +53,16 @@ const findKeptMenuSizes = async () => {
   return keptSizes;
 };
 
-// Legacy menu_item_ingredients -> recipes. Unlinked rows are matched to stock by
+// Legacy menu_item_ingredients -> menu_item_recipes. Unlinked rows are matched to stock by
 // name, rows still without a stock item are dropped, and rows of other sizes
 // than the kept one are dropped. Quantities are converted to the stock item's
-// unit and repeats of a stock item summed. Copying only into an empty recipes
+// unit and repeats of a stock item summed. Copying only into an empty menu_item_recipes
 // table keeps a re-run after a crash between the copy and the drop from
 // doubling quantities.
 const migrateLegacyMenuIngredients = async (keptSizes) => {
   if (!(await tableExists("menu_item_ingredients"))) return;
 
-  const [[recipeCount]] = await pool.query("SELECT COUNT(*) AS total FROM recipes");
+  const [[recipeCount]] = await pool.query("SELECT COUNT(*) AS total FROM menu_item_recipes");
 
   if (Number(recipeCount.total) === 0) {
     await runSafeMigration("ALTER TABLE menu_item_ingredients ADD COLUMN size_name VARCHAR(80) NULL AFTER stock_item_id");
@@ -91,13 +91,13 @@ const migrateLegacyMenuIngredients = async (keptSizes) => {
 
     if (keptRows.length < rows.length) {
       logger.warn(
-        `Dropping ${rows.length - keptRows.length} recipe row(s) without a stock item or for a removed menu size while migrating to recipes`
+        `Dropping ${rows.length - keptRows.length} recipe row(s) without a stock item or for a removed menu size while migrating to menu_item_recipes`
       );
     }
 
     if (keptRows.length) {
       await pool.query(
-        `INSERT INTO recipes
+        `INSERT INTO menu_item_recipes
           (menu_item_id, stock_item_id, quantity, sort_order, note,
            created_at, updated_at)
          VALUES ?
@@ -122,14 +122,14 @@ const migrateLegacyMenuIngredients = async (keptSizes) => {
   await pool.query("DROP TABLE menu_item_ingredients");
 };
 
-// recipes with a size_name column: rows of the kept size join the menu's
+// menu_item_recipes with a size_name column: rows of the kept size join the menu's
 // recipe (summed into an existing row with the same unit), other sizes go.
 const removeRecipeSizes = async (keptSizes) => {
-  if (!(await getColumnNames("recipes")).has("size_name")) return;
+  if (!(await getColumnNames("menu_item_recipes")).has("size_name")) return;
 
   await withTransaction(async (connection) => {
     const [sizeRows] = await connection.query(
-      "SELECT * FROM recipes WHERE size_name <> '' ORDER BY id ASC"
+      "SELECT * FROM menu_item_recipes WHERE size_name <> '' ORDER BY id ASC"
     );
     let summedRows = 0;
 
@@ -139,23 +139,23 @@ const removeRecipeSizes = async (keptSizes) => {
       }
 
       const [[baseRow]] = await connection.query(
-        `SELECT id, unit FROM recipes
+        `SELECT id, unit FROM menu_item_recipes
          WHERE menu_item_id = ? AND stock_item_id = ? AND size_name = ''`,
         [row.menu_item_id, row.stock_item_id]
       );
 
       if (!baseRow) {
-        await connection.query("UPDATE recipes SET size_name = '' WHERE id = ?", [row.id]);
+        await connection.query("UPDATE menu_item_recipes SET size_name = '' WHERE id = ?", [row.id]);
       } else if (baseRow.unit === row.unit) {
         await connection.query(
-          "UPDATE recipes SET quantity = ROUND(quantity + ?, 4) WHERE id = ?",
+          "UPDATE menu_item_recipes SET quantity = ROUND(quantity + ?, 4) WHERE id = ?",
           [row.quantity, baseRow.id]
         );
         summedRows += 1;
       }
     }
 
-    const [deleted] = await connection.query("DELETE FROM recipes WHERE size_name <> ''");
+    const [deleted] = await connection.query("DELETE FROM menu_item_recipes WHERE size_name <> ''");
     if (deleted.affectedRows > summedRows) {
       logger.warn(
         `Dropping ${deleted.affectedRows - summedRows} recipe row(s) of removed menu sizes`
@@ -164,7 +164,7 @@ const removeRecipeSizes = async (keptSizes) => {
   });
 
   await pool.query(`
-    ALTER TABLE recipes
+    ALTER TABLE menu_item_recipes
       DROP INDEX uniq_recipes_menu_size_stock,
       ADD UNIQUE KEY uniq_recipes_menu_stock (menu_item_id, stock_item_id),
       DROP COLUMN size_name
@@ -275,42 +275,42 @@ const removePriceSizes = async (keptSizes) => {
   `);
 };
 
-// recipes with a unit column: quantities move to the stock item's unit the same
+// menu_item_recipes with a unit column: quantities move to the stock item's unit the same
 // way stock deduction converted them (incompatible units keep the raw number),
 // so stock movements and HPP stay the same. Each converted row also takes the
 // stock unit, which keeps a re-run after a crash from converting it twice.
 const removeRecipeUnits = async () => {
-  if (!(await getColumnNames("recipes")).has("unit")) return;
+  if (!(await getColumnNames("menu_item_recipes")).has("unit")) return;
 
   await pool.query(
-    "ALTER TABLE recipes MODIFY COLUMN quantity DECIMAL(14,4) NOT NULL DEFAULT 0"
+    "ALTER TABLE menu_item_recipes MODIFY COLUMN quantity DECIMAL(14,4) NOT NULL DEFAULT 0"
   );
   await withTransaction(async (connection) => {
     const [rows] = await connection.query(`
       SELECT r.id, r.quantity, r.unit, si.unit AS stock_unit
-      FROM recipes r
+      FROM menu_item_recipes r
       JOIN stock_raw_items si ON si.id = r.stock_item_id
       WHERE r.unit <> si.unit
     `);
 
     for (const row of rows) {
       await connection.query(
-        "UPDATE recipes SET quantity = ?, unit = ? WHERE id = ?",
+        "UPDATE menu_item_recipes SET quantity = ?, unit = ? WHERE id = ?",
         [convertRecipeQuantity(row.quantity, row.unit, row.stock_unit), row.stock_unit, row.id]
       );
     }
   });
-  await pool.query("ALTER TABLE recipes DROP COLUMN unit");
+  await pool.query("ALTER TABLE menu_item_recipes DROP COLUMN unit");
 };
 
 // Recipe quantities become plain numbers so phpMyAdmin shows 8 instead of
 // 8.0000 (values were stored with at most 4 decimals, so nothing is lost).
 const useDoubleRecipeQuantities = async () => {
-  const [[column]] = await pool.query("SHOW COLUMNS FROM recipes LIKE 'quantity'");
+  const [[column]] = await pool.query("SHOW COLUMNS FROM menu_item_recipes LIKE 'quantity'");
   if (!column || /^double/i.test(column.Type)) return;
 
   await pool.query(
-    "ALTER TABLE recipes MODIFY COLUMN quantity DOUBLE NOT NULL DEFAULT 0"
+    "ALTER TABLE menu_item_recipes MODIFY COLUMN quantity DOUBLE NOT NULL DEFAULT 0"
   );
 };
 
@@ -356,7 +356,7 @@ const seedDefaultMenuIngredients = async () => {
     if (!menuItemId) continue;
 
     const [[recipeCount]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM recipes WHERE menu_item_id = ?",
+      "SELECT COUNT(*) AS total FROM menu_item_recipes WHERE menu_item_id = ?",
       [menuItemId]
     );
     if (Number(recipeCount.total) > 0) continue;
@@ -373,7 +373,7 @@ const seedDefaultMenuIngredients = async () => {
     if (!recipeRows.length) continue;
 
     await pool.query(
-      `INSERT IGNORE INTO recipes
+      `INSERT IGNORE INTO menu_item_recipes
         (menu_item_id, stock_item_id, quantity, sort_order)
        VALUES ?`,
       [recipeRows]

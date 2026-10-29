@@ -66,25 +66,26 @@ const normalizeNota = (body, normalizeItem, { requireRequestId = true } = {}) =>
     ...(status === "draft" && { status }),
   };
 };
-const normalizeLine = (item, idKey) => ({
+// unitRequired false: a line without unit takes its item's unit (Lainnya).
+const normalizeLine = (item, idKey, { unitRequired = true } = {}) => ({
   ...reference(item?.[idKey], item?.itemName, idKey, "itemName", "Barang"),
   quantity: number(item?.quantity, 0.001, 999999999, 3, "Qty"),
-  unit: unit(item?.unit),
+  ...(unitRequired || item?.unit ? { unit: unit(item?.unit) } : {}),
   unitPrice: number(item?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
 });
 const normalizePurchase = (body, options) => normalizeNota(body, item => normalizeLine(item, "stockItemId"), options);
-// A new perlengkapan (itemName) also needs its category.
+// Barang Lainnya need no unit; a new one (itemName) needs its category.
 const normalizeSupplyPurchase = (body, options) => normalizeNota(body, item => {
-  const line = normalizeLine(item, "supplyItemId");
+  const line = normalizeLine(item, "supplyItemId", { unitRequired: false });
   if (!line.itemName) return line;
   if (!SUPPLY_CATEGORIES.includes(item?.category)) {
     throw createError(400, `Pilih kategori ${line.itemName}: ${SUPPLY_CATEGORIES.join(", ")}.`);
   }
   return { ...line, category: item.category };
 }, options);
-const normalizeItemPatch = body => ({
+const normalizeItemPatch = (body, { unitRequired = true } = {}) => ({
   quantity: number(body?.quantity, 0.001, 999999999, 3, "Qty"),
-  unit: unit(body?.unit),
+  ...(unitRequired || body?.unit ? { unit: unit(body?.unit) } : {}),
   unitPrice: number(body?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
 });
 

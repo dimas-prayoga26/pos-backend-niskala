@@ -7,7 +7,7 @@ const { findRecipeLines } = require("../menu/menu.recipeLines");
 const findMenuItemSnapshot = async (connection, menuItemId) => {
   if (!menuItemId) return { menuItemId: null, hppCost: 0, costs: [] };
 
-  // Bahan baku lines (recipes) and bahan setengah jadi lines
+  // Bahan baku lines (menu_item_recipes) and bahan setengah jadi lines
   // (stock_semi_item_menus) of the menu.
   const recipeRows = await findRecipeLines(connection, [menuItemId]);
   const costs = recipeRows.map((row) => ({

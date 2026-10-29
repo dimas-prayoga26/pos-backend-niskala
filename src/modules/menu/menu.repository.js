@@ -166,7 +166,7 @@ const replacePriceAndRecipe = async (
   if (!Array.isArray(ingredients)) return;
 
   const normalizedIngredients = normalizeIngredients(ingredients);
-  await connection.query("DELETE FROM recipes WHERE menu_item_id = ?", [
+  await connection.query("DELETE FROM menu_item_recipes WHERE menu_item_id = ?", [
     menuItemId,
   ]);
   await connection.query("DELETE FROM stock_semi_item_menus WHERE menu_item_id = ?", [
@@ -183,7 +183,7 @@ const replacePriceAndRecipe = async (
 
   if (rawRows.length) {
     await connection.query(
-      `INSERT INTO recipes
+      `INSERT INTO menu_item_recipes
         (menu_item_id, stock_item_id, quantity, sort_order, note)
        VALUES ?`,
       [

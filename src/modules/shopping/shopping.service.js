@@ -8,7 +8,7 @@ const { pool } = require("../../infrastructure/database/pool");
 const { refreshMenuCosts } = require("../menu/menu.costs");
 const { REFERENCE_TYPES } = require("../paymentSources/paymentSource.ledger");
 const { RECEIPT_TARGETS, attachmentUrl } = require("./shopping.attachments");
-const { actor, createNotaEngine } = require("./shopping.nota");
+const { actor, createNotaEngine, dateRange, itemFilter } = require("./shopping.nota");
 const { clean, normalizePurchase, number } = require("./shopping.validation");
 
 const parseJson = value => {
@@ -57,7 +57,7 @@ const checkNewItem = async (connection, { itemName }) => {
   const [semiRows] = await connection.query("SELECT id FROM stock_semi_items WHERE name = ?", [name]);
   if (semiRows.length) throw createError(400, `${name} adalah bahan setengah jadi, stoknya dari Catat Masak. Belanjakan bahan bakunya.`);
   const [supplyRows] = await connection.query("SELECT id FROM stock_supply_items WHERE name = ?", [name]);
-  if (supplyRows.length) throw createError(400, `${name} ada di Perlengkapan. Pilih Jenis Belanja Perlengkapan.`);
+  if (supplyRows.length) throw createError(400, `${name} ada di Stok → Lainnya. Pilih Jenis Belanja Lainnya.`);
   const [[existing]] = await connection.query("SELECT is_active FROM stock_raw_items WHERE name = ?", [name]);
   if (existing && !existing.is_active) throw createError(409, "Barang sudah ada tetapi tidak aktif. Aktifkan melalui pengelolaan stok.");
 };
@@ -116,14 +116,19 @@ const createShoppingService = (db, { receiptDir } = {}) => {
       throw error;
     }
   };
-  const list = async ({ page = 1, search = "" } = {}) => {
+  // itemId keeps one bahan baku: its detail (COGS, riwayat, log) opened from a
+  // line of the Per Nota history. from/to keep a period (dateRange).
+  const list = async ({ page = 1, search = "", itemId = "", from, to } = {}) => {
     page = Math.max(1, Math.floor(Number(page) || 1));
     const keyword = `%${String(search).slice(0,150)}%`;
+    const stockItemId = itemFilter(itemId);
+    const period = dateRange({ from, to });
+    const params = [keyword, keyword, ...(stockItemId ? [stockItemId] : []), ...period.params];
     // Drafts are listed separately (listDrafts) until they are posted.
-    const where = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM history_stock_raw_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?))`;
-    const itemWhere = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR i.item_name LIKE ?)`;
-    const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM history_stock_raw_purchases p ${where}`, [keyword, keyword]);
-    const [rows] = await db.query(`SELECT p.* FROM history_stock_raw_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [keyword, keyword, (page-1)*10]);
+    const where = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM history_stock_raw_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?))${stockItemId ? " AND EXISTS (SELECT 1 FROM history_stock_raw_purchase_items fi WHERE fi.purchase_id = p.id AND fi.stock_item_id = ?)" : ""}${period.sql}`;
+    const itemWhere = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR i.item_name LIKE ?)${stockItemId ? " AND i.stock_item_id = ?" : ""}${period.sql}`;
+    const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM history_stock_raw_purchases p ${where}`, params);
+    const [rows] = await db.query(`SELECT p.* FROM history_stock_raw_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [...params, (page-1)*10]);
     if (rows.length) {
       const [items] = await db.query(`SELECT * FROM history_stock_raw_purchase_items WHERE purchase_id IN (${rows.map(()=>"?").join(",")}) ORDER BY id`, rows.map(row=>row.id));
       rows.forEach(row => { delete row.payload_hash; delete row.request_id; row.items = items.filter(item=>item.purchase_id===row.id); });
@@ -144,7 +149,7 @@ const createShoppingService = (db, { receiptDir } = {}) => {
        LEFT JOIN stock_raw_items si ON si.id = i.stock_item_id
        ${itemWhere}
        ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
-      [keyword, keyword]
+      params
     );
     const attachmentsByPurchase = new Map();
     const purchaseIds = [...new Set([...rows.map(row => row.id), ...itemRows.map(row => row.purchase_id)])];
@@ -259,6 +264,7 @@ const createShoppingService = (db, { receiptDir } = {}) => {
     updateDraft: nota.updateDraft,
     removeDraft: nota.removeDraft,
     listDrafts: nota.listDrafts,
+    listNotas: nota.listPosted,
     updateItem: nota.updateItem,
     deleteItem: nota.deleteItem,
     list,

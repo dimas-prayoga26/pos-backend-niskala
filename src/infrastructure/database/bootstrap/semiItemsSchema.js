@@ -7,7 +7,7 @@
 //   stock_semi_item_production_items   raw items used by that cooking, with the
 //                                      unit cost at that time
 //   stock_semi_item_menus              portions of a semi item in a menu's
-//                                      recipe (bahan baku lines stay in recipes)
+//                                      recipe (bahan baku lines stay in menu_item_recipes)
 //   history_stock_semi_wastes          portions thrown away and their value
 // Cooking moves stock from the raw items to the semi item; selling a menu then
 // uses the semi item's portions like any other stock item.
@@ -60,10 +60,10 @@ const moveRecipeLines = async (connection, where, params, semiIdSql, semiParams 
     `INSERT IGNORE INTO stock_semi_item_menus
       (menu_item_id, semi_item_id, quantity, cost, sort_order, note, created_at)
      SELECT menu_item_id, ${semiIdSql}, quantity, cost, sort_order, note, created_at
-     FROM recipes WHERE ${where}`,
+     FROM menu_item_recipes WHERE ${where}`,
     [...semiParams, ...params]
   );
-  await connection.query(`DELETE FROM recipes WHERE ${where}`, params);
+  await connection.query(`DELETE FROM menu_item_recipes WHERE ${where}`, params);
 };
 
 // Copies the legacy rows into stock_semi_items and stock_semi_item_*, points
@@ -170,22 +170,22 @@ const migrateLegacyPreparedItems = async (db) => {
   }
 };
 
-// recipes briefly had semi_item_id (develop only, 2026-10-28). Its semi lines
-// move to stock_semi_item_menus and recipes gets its original shape back.
+// menu_item_recipes (then still named recipes) briefly had semi_item_id (develop only, 2026-10-28). Its semi lines
+// move to stock_semi_item_menus and menu_item_recipes gets its original shape back.
 const restoreRecipesTable = async (db) => {
-  if (!(await findColumns(db, "recipes")).has("semi_item_id")) return;
+  if (!(await findColumns(db, "menu_item_recipes")).has("semi_item_id")) return;
 
   await inTransaction(db, (connection) =>
     moveRecipeLines(connection, "semi_item_id IS NOT NULL", [], "semi_item_id")
   );
 
   const ignoreMissing = () => {};
-  await db.query("ALTER TABLE recipes DROP CONSTRAINT chk_recipes_one_item").catch(ignoreMissing);
-  await db.query("ALTER TABLE recipes DROP FOREIGN KEY fk_recipes_semi_item").catch(ignoreMissing);
-  await db.query("ALTER TABLE recipes DROP INDEX uniq_recipes_menu_semi").catch(ignoreMissing);
-  await db.query("ALTER TABLE recipes DROP INDEX idx_recipes_semi_item_id").catch(ignoreMissing);
-  await db.query("ALTER TABLE recipes DROP COLUMN semi_item_id");
-  await db.query("ALTER TABLE recipes MODIFY COLUMN stock_item_id INT UNSIGNED NOT NULL");
+  await db.query("ALTER TABLE menu_item_recipes DROP CONSTRAINT chk_recipes_one_item").catch(ignoreMissing);
+  await db.query("ALTER TABLE menu_item_recipes DROP FOREIGN KEY fk_recipes_semi_item").catch(ignoreMissing);
+  await db.query("ALTER TABLE menu_item_recipes DROP INDEX uniq_recipes_menu_semi").catch(ignoreMissing);
+  await db.query("ALTER TABLE menu_item_recipes DROP INDEX idx_recipes_semi_item_id").catch(ignoreMissing);
+  await db.query("ALTER TABLE menu_item_recipes DROP COLUMN semi_item_id");
+  await db.query("ALTER TABLE menu_item_recipes MODIFY COLUMN stock_item_id INT UNSIGNED NOT NULL");
 };
 
 const ensureSemiItemsSchema = async (db) => {
@@ -243,8 +243,8 @@ const ensureSemiItemsSchema = async (db) => {
       FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
 
-  // Portions of a semi item per menu, the bahan setengah jadi side of recipes.
-  // sort_order shares one sequence with the menu's recipes rows.
+  // Portions of a semi item per menu, the bahan setengah jadi side of menu_item_recipes.
+  // sort_order shares one sequence with the menu's menu_item_recipes rows.
   await db.query(`CREATE TABLE IF NOT EXISTS stock_semi_item_menus (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     menu_item_id INT UNSIGNED NOT NULL,
