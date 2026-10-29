@@ -1,6 +1,6 @@
 # Belanja
 
-UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posting: admin). Menu **Stok** hanya berisi isi gudang: Bahan Baku, Bahan Setengah Jadi, Perlengkapan. Badge angka di menu Belanja = jumlah draft nota yang menunggu posting.
+UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posting: admin). Menu **Stok** hanya berisi isi gudang: Bahan Baku, Bahan Setengah Jadi, Lainnya. Badge angka di menu Belanja = jumlah draft nota yang menunggu posting.
 
 - Satu belanja (nota) memiliki tanggal, satu toko/sumber, sumber pembayaran, catatan, foto bukti nota, dan banyak barang.
 - Urutan per barang: nama (Select2), qty, satuan, harga satuan, jumlah. Jumlah = qty × harga satuan.
@@ -16,7 +16,7 @@ UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posti
 ## Ringkasan & Finalisasi Nota
 
 - Footer form: **Subtotal** (jumlah baris barang), **Ongkos Kirim / Ekspedisi**, **Diskon Nota** (Rp atau %, paling besar sebesar subtotal), **Pajak (PPN)** bila supplier mengenakan (persen dari subtotal setelah diskon, default 11%), dan **Grand Total** = subtotal − diskon + PPN + ongkir. Grand Total inilah yang memotong saldo sumber pembayaran.
-- Disimpan di header nota (`subtotal`, `shipping_cost`, `discount_type`/`discount_value`/`discount_amount`, `tax_percent`/`tax_amount`, `total`) untuk bahan baku dan perlengkapan.
+- Disimpan di header nota (`subtotal`, `shipping_cost`, `discount_type`/`discount_value`/`discount_amount`, `tax_percent`/`tax_amount`, `total`) untuk bahan baku dan lainnya.
 - Selisih Grand Total − Subtotal dibagi ke setiap baris sebanding nilainya (`cost_total`; sisa pembulatan ke baris terbesar). `cost_total` yang masuk ke nilai stok dan COGS, jadi ongkir dan PPN ikut HPP dan diskon menguranginya.
 
 ## HPP Rata-rata saat Posting
@@ -31,11 +31,24 @@ UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posti
 
 ## Draft dan Posting
 
-- **Simpan Draft** (admin atau kasir): nota tersimpan dengan `status = draft`. Stok, COGS, dan saldo belum berubah; barang/perlengkapan baru belum dibuat; riwayat belanja belum menampilkannya. Bukti nota boleh ditambah ke draft.
+- **Simpan Draft** (admin atau kasir): nota tersimpan dengan `status = draft`. Stok, COGS, dan saldo belum berubah; barang baru belum dibuat; riwayat belanja belum menampilkannya. Bukti nota boleh ditambah ke draft.
 - **Simpan & Posting** (admin saja): stok naik, barang baru dibuat, saldo keluar dicatat, `status = posted`, `posted_at`/`posted_by` diisi. Kasir yang mencoba posting mendapat 403.
 - Menu Belanja menampilkan **Draft Nota Menunggu Posting**: admin membuka dengan *Periksa & Posting*, kasir dengan *Ubah*; keduanya bisa menghapus draft (beserta fotonya). Nota yang sudah diposting tidak bisa dihapus atau diubah lewat draft.
 - API: `POST /purchases` (`status: "draft"` atau tanpa status = posting), `GET /purchases/drafts`, `PUT /purchases/:id` (ubah draft; `status: "posted"` memposting), `DELETE /purchases/:id` (draft saja); sama untuk `/supply-purchases`.
 - Kasir melihat daftar sumber pembayaran tanpa saldo (`balance: null`).
+
+## Riwayat Belanja: Per Struk dan Per Bahan
+
+- **Filter Periode (atas riwayat):** Hari Ini, Minggu Ini (Senin–Minggu), Bulan Ini (bawaan), Tahun Ini, Semua Waktu, atau Custom Date (kalender yang sama dengan filter tanggal Pesanan: pilih dua tanggal lalu Apply, Today, Reset; hari dihitung menurut zona Jakarta). Berlaku untuk Per Struk, Per Bahan/Per Barang, dan TOTAL PENGELUARAN (dikirim sebagai `from`/`to`, YYYY-MM-DD, kedua tanggal ikut). **Peralatan** adalah aset sehingga tabnya selalu seumur hidup: filter periode dimatikan di sana. Draft nota dan detail barang tidak ikut difilter.
+- **Export Excel / PDF:** semua nota tab, periode, dan pencarian yang aktif (semua halaman, `pageSize` sampai 1000), disusun seperti sheet REKAP PENGELUARAN: tanggal, nota, toko di baris pertama tiap nota, barang, sumber pembayaran, qty, harga, jumlah, baris Ongkir/Diskon/PPN, Total, dan TOTAL PENGELUARAN di akhir. PDF memakai halaman cetak browser (Simpan sebagai PDF); jendelanya dibuka saat tombol diklik agar tidak diblokir sebagai pop-up.
+- Tab kategori sudah menunjukkan kategorinya, jadi baris barang tidak memakai label kategori.
+- Riwayat di menu Belanja punya dua tampilan (tombol **Per Struk | Per Bahan**; di tab Lainnya **Per Struk | Per Barang**), keduanya mengikuti tab Bahan Baku / kategori Lainnya dan kotak pencarian, 10 per halaman.
+- **Per Struk** (tampilan awal): nota yang sudah diposting, terbaru dulu, disusun seperti notanya: nama toko sebagai judul (tanggal, nomor nota, pembuat dan pemosting, catatan, tombol **Bukti**), lalu satu baris per barang: sumber pembayaran (sekali per nota), qty, harga, dan jumlah. Lalu baris Ongkir / Diskon / PPN bila ada, dan **Total** (Grand Total) di bawah kolom Jumlah. Contoh: Shopee, Niskala, Spork 500 × Rp 275 = Rp 137.500, Cutlery Set 500 × Rp 505 = Rp 252.500, Ongkir 1 × Rp 336, Total Rp 390.336.
+- Baris terakhir tabel: **TOTAL PENGELUARAN**, jumlah Grand Total semua nota di tab dan pencarian itu (semua halaman, bukan hanya halaman yang tampil), beserta jumlah notanya (`totalSpending` dan `total` dari endpoint). Nota campuran (mis. Peralatan + Promosi) dihitung penuh di setiap tab kategori yang memuatnya.
+- Kolom Masuk Stok dan COGS tidak ditampilkan di Per Struk; lihat Per Bahan atau detail barang.
+- **Per Bahan / Per Barang**: satu baris per barang dengan belanja terakhirnya (tanggal, nomor nota, toko, qty, harga, jumlah, Masuk Stok, COGS Setelah), dari `GET /api/shopping/purchases` / `GET /api/shopping/supply-purchases` (Lainnya dengan `category`). Tidak ada TOTAL PENGELUARAN di sini karena tiap baris hanya menampilkan belanja terakhir.
+- Klik barang (di kedua tampilan) membuka detail barang itu: Stok Sekarang, Nilai Asset, COGS Sekarang, riwayat belanjanya (dengan COGS Setelah) dan Log Aktivitas. Admin mengubah atau menghapus baris belanja dari sini (Update/Delete).
+- Endpoint: `GET /api/shopping/purchases/notas` dan `GET /api/shopping/supply-purchases/notas` (`search`, `page`; Lainnya juga `category`). Pencarian cocok dengan nama toko atau salah satu barang di nota. Di tab kategori, nota tampil jika memuat barang dengan kategori itu (kategori barang yang sekarang), jadi nota campuran Peralatan + Promosi muncul di kedua tab dengan semua barangnya. Detail barang memakai `GET /api/shopping/purchases?itemId=` / `GET /api/shopping/supply-purchases?itemId=` (riwayat satu barang).
 
 ## Sumber Pembayaran dan Saldo
 
@@ -55,17 +68,21 @@ UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posti
 - Jika unggah foto gagal, belanja tetap tersimpan; tambahkan fotonya dari riwayat.
 - **Backup production:** sertakan folder `storage/` selain database.
 
-## Belanja Perlengkapan (Peralatan, Operasional, Promosi)
+## Belanja Lainnya (Peralatan, Perlengkapan, Promosi, Lain-lain)
 
-- Satu pintu: belanja perlengkapan dibuat dari form yang sama, **Tambah Belanja**, dengan **Jenis Belanja: Perlengkapan**. Informasi Nota (tanggal, toko, sumber pembayaran, bukti nota) sama dengan belanja bahan baku. Mengganti jenis mengosongkan baris barang, header nota tetap.
-- Barangnya disimpan di `stock_supply_items` (tab **Perlengkapan** di Stok), bukan di `stock_raw_items`: tidak muncul di resep menu dan tidak masuk HPP. Barang baru (opsi **Buat**) wajib diberi kategori Peralatan, Operasional, atau Promosi.
-- Nota disimpan di `history_stock_supply_purchases` + `_items` (`POST /api/shopping/supply-purchases`, idempoten dengan `request_id` seperti belanja bahan baku). Stok dan harga per satuan memakai rata-rata bergerak; konversi satuan sama (kg↔gr, liter↔ml).
+Dulu bernama "Perlengkapan"; tabelnya tetap `stock_supply_*` dan endpoint-nya tetap `/supply-...`.
+
+- Satu pintu: belanja lainnya dibuat dari form yang sama, **Tambah Belanja**, dengan **Jenis Belanja: Lainnya**. Informasi Nota (tanggal, toko, sumber pembayaran, bukti nota) sama dengan belanja bahan baku. Mengganti jenis mengosongkan baris barang, header nota tetap.
+- Barangnya disimpan di `stock_supply_items` (tab **Lainnya** di Stok), bukan di `stock_raw_items`: tidak muncul di resep menu dan tidak masuk HPP. Barang baru (opsi **Buat**) wajib diberi kategori Peralatan, Perlengkapan, Promosi, atau Lain-lain (kategori lama Operasional otomatis menjadi Perlengkapan).
+- **Tanpa satuan:** barang Lainnya dihitung per barang. Form, riwayat, dan tab Lainnya tidak menampilkan satuan; baris tanpa satuan memakai satuan barangnya, barang baru `pcs`.
+- Nota disimpan di `history_stock_supply_purchases` + `_items` (`POST /api/shopping/supply-purchases`, idempoten dengan `request_id` seperti belanja bahan baku). Stok dan harga per barang memakai rata-rata bergerak.
+- Karena tidak masuk HPP, riwayat dan detail barang Lainnya menyebut rata-rata itu **Harga Rata-rata** (Harga Rata-rata Sekarang / Setelah), bukan COGS. Angka yang sama dipakai untuk Nilai Asset.
 - Dibayar dari sumber pembayaran: total dicatat sebagai saldo keluar `supply_purchase`; ubah/hapus item mencatat selisihnya (`supply_purchase_edit` / `supply_purchase_delete`).
 - Bukti nota: `history_stock_supply_purchase_attachments`, endpoint `/api/shopping/supply-purchases/:id/attachments` dan `/api/shopping/supply-purchase-attachments/:id`.
-- Nama barang hanya boleh ada di satu jenis: nama bahan baku/setengah jadi ditolak sebagai perlengkapan, dan sebaliknya.
-- Riwayat: menu Belanja punya pilihan **Bahan Baku | Perlengkapan** (`GET /api/shopping/supply-purchases`, bentuk data sama dengan riwayat bahan baku).
-- Tab Perlengkapan tidak punya tombol tambah: barang dan stok awal masuk lewat belanja (stok awal dicatat sebagai belanja, misalnya dari "Stok Awal Niskala"). Di sana ada **Sesuaikan** (hitung ulang stok, admin/kasir), **Ubah** dan **Hapus** (admin). Pemakaian barang belum dicatat terpisah.
-- Pengeluaran tanpa stok (iklan, listrik, sewa): tandai barangnya **Bebas Stok**.
+- Nama barang hanya boleh ada di satu jenis: nama bahan baku/setengah jadi ditolak sebagai barang lainnya, dan sebaliknya.
+- Riwayat: menu Belanja punya tab **Bahan Baku | Peralatan | Perlengkapan | Promosi | Lain-lain**. Tab kategori memanggil `GET /api/shopping/supply-purchases?category=...` (bentuk data sama dengan riwayat bahan baku) dan memakai kategori barang yang sekarang, jadi barang yang kategorinya diubah pindah tab beserta riwayatnya. Setelah posting, riwayat membuka tab kategori baris pertama nota.
+- Tab Lainnya menampilkan **Qty**, Nilai, dan Harga per Barang. Barang Lainnya bukan bahan yang di-restock, jadi tidak ada Minimum, status stok (AMAN/HAMPIR HABIS), atau Bebas Stok; semua barang dihitung qty-nya sesuai belanja (termasuk Lain-lain dan Promosi).
+- Tab Lainnya tidak punya tombol tambah: barang dan qty awal masuk lewat belanja (qty awal dicatat sebagai belanja, misalnya dari "Stok Awal Niskala"). Di sana ada **Sesuaikan** (hitung ulang qty, admin/kasir), **Ubah** (nama, kategori, supplier) dan **Hapus** (admin). Pemakaian barang belum dicatat terpisah.
 
 ## Pengaturan Suplier
 

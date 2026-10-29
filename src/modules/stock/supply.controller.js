@@ -1,4 +1,5 @@
-// Perlengkapan (stock_supply_items): /api/stock-item/supply.
+// Barang "Lainnya" (stock_supply_items: peralatan, perlengkapan, promosi,
+// lain-lain): /api/stock-item/supply.
 const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
@@ -19,8 +20,8 @@ const normalizeSupplyPayload = (body) => ({
 });
 
 const validateSupplyPayload = async ({ name, category, unit }) => {
-  if (!name || !unit || name.length > 150 || unit.length > 30) {
-    return createHttpError(400, "Nama dan satuan perlengkapan wajib diisi.");
+  if (!name || name.length > 150 || unit.length > 30) {
+    return createHttpError(400, "Nama barang wajib diisi, maksimal 150 karakter.");
   }
   if (!SupplyItem.SUPPLY_CATEGORIES.includes(category)) {
     return createHttpError(400, `Kategori harus ${SupplyItem.SUPPLY_CATEGORIES.join(", ")}.`);
@@ -33,7 +34,7 @@ const validateSupplyPayload = async ({ name, category, unit }) => {
 
 const rethrowDuplicateName = (name) => (error) => {
   if (isDuplicateEntryError(error)) {
-    throw createHttpError(409, `${name} sudah ada di Perlengkapan.`);
+    throw createHttpError(409, `${name} sudah ada di Stok → Lainnya.`);
   }
   throw error;
 };
@@ -61,7 +62,7 @@ const updateSupplyItem = asyncHandler(async (req, res, next) => {
   if (validationError) return next(validationError);
 
   const item = await SupplyItem.update(req.params.id, payload).catch(rethrowDuplicateName(payload.name));
-  if (!item) return next(createHttpError(404, "Perlengkapan tidak ditemukan."));
+  if (!item) return next(createHttpError(404, "Barang lainnya tidak ditemukan."));
 
   emitSupplyChanged("supply-item-updated", item.id);
   res.status(200).json({ success: true, data: item });
@@ -69,7 +70,7 @@ const updateSupplyItem = asyncHandler(async (req, res, next) => {
 
 const updateSupplyStock = asyncHandler(async (req, res, next) => {
   const item = await SupplyItem.updateStock(req.params.id, toNonNegativeNumber(req.body.stock));
-  if (!item) return next(createHttpError(404, "Perlengkapan tidak ditemukan."));
+  if (!item) return next(createHttpError(404, "Barang lainnya tidak ditemukan."));
 
   emitSupplyChanged("supply-stock-updated", item.id);
   res.status(200).json({ success: true, data: item });
@@ -77,10 +78,10 @@ const updateSupplyStock = asyncHandler(async (req, res, next) => {
 
 const deleteSupplyItem = asyncHandler(async (req, res, next) => {
   const deleted = await SupplyItem.remove(req.params.id);
-  if (!deleted) return next(createHttpError(404, "Perlengkapan tidak ditemukan."));
+  if (!deleted) return next(createHttpError(404, "Barang lainnya tidak ditemukan."));
 
   emitSupplyChanged("supply-item-deleted", Number(req.params.id));
-  res.status(200).json({ success: true, message: "Perlengkapan dihapus." });
+  res.status(200).json({ success: true, message: "Barang lainnya dihapus." });
 });
 
 module.exports = {

@@ -21,7 +21,7 @@ const normalizeIngredient = (ingredient) => {
 };
 
 // Recipe rows must point at a stock item; quantities are in that item's unit.
-// The recipes table allows one row per item, so repeats are summed.
+// The menu_item_recipes table allows one row per item, so repeats are summed.
 const normalizeIngredients = (ingredients) => {
   const ingredientsByItemKey = new Map();
 

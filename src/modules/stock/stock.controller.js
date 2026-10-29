@@ -34,7 +34,7 @@ const validateStockPayload = async ({ name, category, unit }) => {
   }
 
   if (await isSupplyItemName(name)) {
-    return createHttpError(409, `${name} sudah ada di Perlengkapan. Pilih nama lain.`);
+    return createHttpError(409, `${name} sudah ada di Stok → Lainnya. Pilih nama lain.`);
   }
 
   return null;

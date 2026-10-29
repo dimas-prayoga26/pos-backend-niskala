@@ -1,4 +1,4 @@
-// Recipe lines of menus: bahan baku rows (recipes -> stock_raw_items) and
+// Recipe lines of menus: bahan baku rows (menu_item_recipes -> stock_raw_items) and
 // bahan setengah jadi rows (stock_semi_item_menus -> stock_semi_items), in each
 // menu's line order. Two queries instead of a UNION, so tables created with
 // different collations (older tables vs. the database default) still combine.
@@ -9,7 +9,7 @@ const findRecipeLines = async (connection, menuItemIds) => {
     `SELECT r.id, r.menu_item_id, r.stock_item_id, r.quantity, r.note, r.sort_order,
             si.name, si.unit, si.stock, si.unit_cost, si.is_unlimited,
             ROUND(r.quantity * si.unit_cost) AS line_cost
-     FROM recipes r
+     FROM menu_item_recipes r
      JOIN stock_raw_items si ON si.id = r.stock_item_id
      WHERE r.menu_item_id IN (?)`,
     [menuItemIds]

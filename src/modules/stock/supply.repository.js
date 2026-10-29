@@ -6,7 +6,9 @@ const { roundCost } = require("../../shared/utils/money");
 const { areConvertible, convertBetweenUnits } = require("../../shared/utils/units");
 const { RESCALED_STOCK_VALUE, getStockStatus } = require("./stock.repository");
 
-const SUPPLY_CATEGORIES = ["Peralatan", "Operasional", "Promosi"];
+const SUPPLY_CATEGORIES = ["Peralatan", "Perlengkapan", "Promosi", "Lain-lain"];
+// Barang "Lainnya" are counted per piece; the form asks no unit.
+const DEFAULT_SUPPLY_UNIT = "pcs";
 
 const mapSupplyItem = (row) => {
   if (!row) return null;
@@ -59,13 +61,14 @@ const create = async ({ name, category, unit, stock = 0, minimumStock = 0, suppl
     `INSERT INTO stock_supply_items
       (name, category, unit, stock, minimum_stock, unit_cost, stock_value, supplier, is_unlimited)
      VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)`,
-    [name, category, unit, stock, minimumStock, supplier || null, isUnlimited ? 1 : 0]
+    [name, category, unit || DEFAULT_SUPPLY_UNIT, stock, minimumStock, supplier || null, isUnlimited ? 1 : 0]
   );
   return findById(result.insertId);
 };
 
 // Switching between convertible units (e.g. gr -> kg) converts the stock and
-// keeps its value; other unit changes keep the number as it is.
+// keeps its value; other unit changes keep the number as it is. Without a
+// unit (the form no longer asks one) the item keeps its own.
 const update = async (id, { name, category, unit, minimumStock = 0, supplier, isUnlimited = false }) => {
   const updated = await withTransaction(async (connection) => {
     const [[current]] = await connection.query(
@@ -75,7 +78,7 @@ const update = async (id, { name, category, unit, minimumStock = 0, supplier, is
     if (!current) return false;
 
     const fromUnit = String(current.unit || "").trim().toLowerCase();
-    const toUnit = String(unit || "").trim().toLowerCase();
+    const toUnit = String(unit || current.unit || DEFAULT_SUPPLY_UNIT).trim().toLowerCase();
     let stock = Number(current.stock || 0);
     if (fromUnit && fromUnit !== toUnit && areConvertible(fromUnit, toUnit)) {
       stock = Math.round(convertBetweenUnits(stock, fromUnit, toUnit) * 100) / 100;
@@ -87,7 +90,7 @@ const update = async (id, { name, category, unit, minimumStock = 0, supplier, is
        SET name = ?, category = ?, unit = ?, stock = ?, unit_cost = ?,
            minimum_stock = ?, supplier = ?, is_unlimited = ?
        WHERE id = ?`,
-      [name, category, unit, stock, unitCost, minimumStock, supplier || null, isUnlimited ? 1 : 0, id]
+      [name, category, toUnit, stock, unitCost, minimumStock, supplier || null, isUnlimited ? 1 : 0, id]
     );
     return true;
   });
@@ -112,6 +115,7 @@ const remove = async (id) => {
 };
 
 module.exports = {
+  DEFAULT_SUPPLY_UNIT,
   SUPPLY_CATEGORIES,
   create,
   findAll,

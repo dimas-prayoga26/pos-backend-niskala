@@ -10,6 +10,7 @@ const {
 } = require("../../src/modules/orders/thermalPrint.store");
 const { normalizePayload, validatePayload } = require("../../src/modules/recaps/recap.payload");
 const { convertQuantity, normalizePurchase } = require("../../src/modules/shopping/shopping.validation");
+const { getStockStatus } = require("../../src/modules/stock/stock.repository");
 
 describe("menu pricing", () => {
   it("derives gross profit from price and HPP for single-price items", () => {
@@ -154,5 +155,19 @@ describe("shopping validation", () => {
     assert.throws(() => normalizePurchase({ ...base, requestId: "short" }), { status: 400 });
     assert.throws(() => normalizePurchase({ ...base, date: "2026-02-30" }), { status: 400 });
     assert.throws(() => normalizePurchase({ ...base, suplierId: 1 }), { status: 400 });
+  });
+});
+
+describe("stock status", () => {
+  const status = (stock, minimum_stock, extra = {}) => getStockStatus({ stock, minimum_stock, ...extra });
+
+  it("warns without a minimum only when the stock is gone", () => {
+    assert.deepEqual([status(1, 0), status(0.5, 0), status(0, 0), status(-2000, 0)], ["AMAN", "AMAN", "HARUS ORDER", "HARUS ORDER"]);
+    assert.equal(getStockStatus({ stock: 0, minimum_stock: 0 }, "HARUS MASAK"), "HARUS MASAK");
+  });
+
+  it("keeps the minimum and its warning margin", () => {
+    assert.deepEqual([status(1, 1), status(2, 1), status(2.1, 1), status(12, 10), status(12.1, 10)], ["HARUS ORDER", "HAMPIR HABIS", "AMAN", "HAMPIR HABIS", "AMAN"]);
+    assert.equal(status(0, 5, { is_unlimited: 1 }), "BEBAS STOK");
   });
 });

@@ -88,7 +88,7 @@ Isi `config/database.js` lama sudah dipecah tanpa mengubah urutan statement:
 | `bootstrap/orderCodes.js` | Backfill kode `YYMM-NNNN` |
 | `bootstrap/shoppingSchema.js` | Tabel belanja, bukti nota, dan supplier |
 | `bootstrap/paymentSourcesSchema.js` | Sumber pembayaran dan mutasi saldonya (seed sekali) |
-| `bootstrap/supplySchema.js` | Perlengkapan dan belanja perlengkapan |
+| `bootstrap/supplySchema.js` | Barang "Lainnya" dan belanjanya (tabel `stock_supply_*`) |
 | `bootstrap/notaSchema.js` | Footer nota (ongkir, diskon, PPN), status draft/posted, `cost_total` per baris |
 | `bootstrap/helpers.js` | `runSafeMigration`, `tableExists`, `getColumnNames` |
 

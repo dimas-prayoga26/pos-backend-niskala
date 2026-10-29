@@ -1,4 +1,5 @@
-// Belanja perlengkapan (peralatan, operasional, promosi): the same nota as
+// Belanja "Lainnya" (peralatan, perlengkapan, promosi, lain-lain; formerly
+// called perlengkapan, tables stay stock_supply_*): the same nota as
 // belanja bahan baku (tanggal, toko, sumber pembayaran, bukti nota, footer)
 // from the same "Tambah Bahan Belanjaan" form, but the items are
 // stock_supply_items. It runs through the same nota engine (shopping.nota):
@@ -8,7 +9,8 @@ const createError = require("http-errors");
 const { pool } = require("../../infrastructure/database/pool");
 const { REFERENCE_TYPES } = require("../paymentSources/paymentSource.ledger");
 const { RECEIPT_TARGETS } = require("./shopping.attachments");
-const { createNotaEngine } = require("./shopping.nota");
+const { createNotaEngine, dateRange, itemFilter } = require("./shopping.nota");
+const { DEFAULT_SUPPLY_UNIT, SUPPLY_CATEGORIES } = require("../stock/supply.repository");
 const { clean, normalizeSupplyPurchase } = require("./shopping.validation");
 
 const PAGE_SIZE = 10;
@@ -29,7 +31,7 @@ const snapshotItem = row => ({
   stockValueAfter: Number(row.stock_value_after || 0),
 });
 
-// A name is either bahan baku/setengah jadi or perlengkapan, never both.
+// A name is either bahan baku/setengah jadi or barang lainnya, never both.
 const checkNewItem = async (connection, { itemName }) => {
   const name = clean(itemName, 150, "Nama barang");
   const [rawRows] = await connection.query(
@@ -43,7 +45,7 @@ const checkNewItem = async (connection, { itemName }) => {
 
 const SUPPLY_NOTA = {
   kind: "supply",
-  label: "belanja perlengkapan",
+  label: "belanja lainnya",
   purchases: "history_stock_supply_purchases",
   items: "history_stock_supply_purchase_items",
   attachments: RECEIPT_TARGETS.supply.attachments,
@@ -57,10 +59,14 @@ const SUPPLY_NOTA = {
     delete: REFERENCE_TYPES.supplyPurchaseDelete,
   },
   normalize: normalizeSupplyPurchase,
-  ledgerNote: (id, supplierName) => `Belanja perlengkapan #${id} - ${supplierName}`,
-  missingUnitMessage: name => `Lengkapi satuan ${name} di Perlengkapan terlebih dahulu.`,
-  unlinkedMessage: "Item belanja ini tidak terhubung ke perlengkapan.",
-  stockMissingMessage: "Perlengkapan tidak ditemukan.",
+  ledgerNote: (id, supplierName) => `Belanja lainnya #${id} - ${supplierName}`,
+  missingUnitMessage: name => `Satuan ${name} di Stok → Lainnya kosong padahal stoknya tidak 0.`,
+  unlinkedMessage: "Item belanja ini tidak terhubung ke barang lainnya.",
+  stockMissingMessage: "Barang lainnya tidak ditemukan.",
+  // The form asks no unit: a line takes its item's unit, a new item pcs.
+  defaultUnit: DEFAULT_SUPPLY_UNIT,
+  // The Belanja tabs (Peralatan, Perlengkapan, Promosi, Lain-lain).
+  categories: SUPPLY_CATEGORIES,
   checkNewItem,
   // A line keeps the category of its item; a new name brings its own.
   lineCategory: (item, stock) => (stock ? stock.category : item.category),
@@ -83,10 +89,19 @@ const createSupplyShoppingService = (db, { receiptDir } = {}) => {
 
   // Same shape as the bahan baku history (shopping.service list), so the
   // dashboard shows both with the same table: one group per item, its
-  // purchases newest first. Perlengkapan purchases have no activity log.
-  const list = async ({ page = 1, search = "" } = {}) => {
+  // purchases newest first. They have no activity log. category (the Belanja
+  // tabs Peralatan, Perlengkapan, Promosi, Lain-lain) keeps the items of one
+  // kategori: the item's current one, else the one saved on the line.
+  // itemId keeps one barang: its detail opened from a line of the Per Nota history.
+  // from/to keep a period (dateRange).
+  const list = async ({ page = 1, search = "", category = "", itemId = "", from, to } = {}) => {
     page = Math.max(1, Math.floor(Number(page) || 1));
     const keyword = `%${String(search).slice(0, 150)}%`;
+    const supplyItemId = itemFilter(itemId);
+    const period = dateRange({ from, to });
+    if (category && !SUPPLY_CATEGORIES.includes(category)) {
+      throw createError(400, `Kategori harus ${SUPPLY_CATEGORIES.join(", ")}.`);
+    }
     const [rows] = await db.query(
       `SELECT i.*, p.purchase_date, p.suplier_name, p.payment_method, p.note,
               s.stock, s.unit AS current_unit, s.unit_cost, s.stock_value, s.category AS current_category
@@ -94,8 +109,10 @@ const createSupplyShoppingService = (db, { receiptDir } = {}) => {
        JOIN history_stock_supply_purchases p ON p.id = i.purchase_id
        LEFT JOIN stock_supply_items s ON s.id = i.supply_item_id
        WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR i.item_name LIKE ? OR i.category LIKE ?)
+         ${category ? "AND COALESCE(s.category, i.category) = ?" : ""}
+         ${supplyItemId ? "AND i.supply_item_id = ?" : ""}${period.sql}
        ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
-      [keyword, keyword, keyword]
+      [keyword, keyword, keyword, ...(category ? [category] : []), ...(supplyItemId ? [supplyItemId] : []), ...period.params]
     );
     const attachmentsByPurchase = new Map();
     const purchaseIds = [...new Set(rows.map(row => row.purchase_id))];
@@ -160,6 +177,7 @@ const createSupplyShoppingService = (db, { receiptDir } = {}) => {
     updateDraft: nota.updateDraft,
     removeDraft: nota.removeDraft,
     listDrafts: nota.listDrafts,
+    listNotas: nota.listPosted,
     updateItem: nota.updateItem,
     deleteItem: nota.deleteItem,
     list,

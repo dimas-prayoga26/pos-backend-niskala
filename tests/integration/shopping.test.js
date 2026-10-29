@@ -41,7 +41,7 @@ let testPool, created = false, receiptDir;
   // Minimal menu tables: purchases refresh recipe costs and menu HPP.
   await testPool.query("CREATE TABLE menu_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL) ENGINE=InnoDB");
   await testPool.query("CREATE TABLE menu_item_prices (menu_item_id INT UNSIGNED PRIMARY KEY, regular_price DECIMAL(12,2) NOT NULL, hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0, gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0) ENGINE=InnoDB");
-  await testPool.query("CREATE TABLE recipes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, menu_item_id INT UNSIGNED NOT NULL, stock_item_id INT UNSIGNED NOT NULL, quantity DOUBLE NOT NULL, cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
+  await testPool.query("CREATE TABLE menu_item_recipes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, menu_item_id INT UNSIGNED NOT NULL, stock_item_id INT UNSIGNED NOT NULL, quantity DOUBLE NOT NULL, cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
   await testPool.query("INSERT INTO users (id, name) VALUES (1, 'Admin Uji')");
   await ensureShoppingSchema(testPool);
   await ensureShoppingSchema(testPool);
@@ -59,7 +59,7 @@ let testPool, created = false, receiptDir;
   const first = {id:seed.insertId};
   await testPool.query("INSERT INTO menu_items (id, name) VALUES (1, 'Kopi Resep')");
   await testPool.query("INSERT INTO menu_item_prices (menu_item_id, regular_price) VALUES (1, 20000)");
-  await testPool.query("INSERT INTO recipes (menu_item_id, stock_item_id, quantity) VALUES (1, ?, 10)", [first.id]);
+  await testPool.query("INSERT INTO menu_item_recipes (menu_item_id, stock_item_id, quantity) VALUES (1, ?, 10)", [first.id]);
   await ensureShoppingSchema(testPool);
   assert.deepEqual(await shopping.suppliers(), [], "schema must not create suppliers");
   const payload = {
@@ -75,7 +75,7 @@ let testPool, created = false, receiptDir;
   assert.equal(Number(stocks.find(stock=>stock.id===first.id).stock),1450);
   assert.equal(Number(stocks.find(stock=>stock.id===first.id).unit_cost),103);
   assert.equal(Number(stocks.find(stock=>stock.id===first.id).stock_value),150000);
-  const [[recipe]] = await testPool.query("SELECT cost FROM recipes WHERE menu_item_id = 1");
+  const [[recipe]] = await testPool.query("SELECT cost FROM menu_item_recipes WHERE menu_item_id = 1");
   assert.equal(recipe.cost, 1030, "purchase refreshes recipe cost (10 gr x 103)");
   const [[menuPrice]] = await testPool.query("SELECT hpp_cost, gross_profit FROM menu_item_prices WHERE menu_item_id = 1");
   assert.deepEqual([Number(menuPrice.hpp_cost), Number(menuPrice.gross_profit)], [1030, 18970]);
@@ -218,26 +218,26 @@ let testPool, created = false, receiptDir;
   const supply = createSupplyShoppingService(testPool);
   const rawBefore = JSON.stringify((await testPool.query("SELECT * FROM stock_raw_items ORDER BY id"))[0]);
   const supplyPayload = {requestId:crypto.randomUUID(),date:"2026-10-29",suplierName:"Toko Plastik",paymentSourceId:kasir.id,note:"perlengkapan",
-    items:[{itemName:"Gas LPG",category:"Operasional",quantity:2,unit:"pcs",unitPrice:22000},{itemName:"Banner Promo",category:"Promosi",quantity:1,unit:"pcs",unitPrice:150000}]};
+    items:[{itemName:"Gas LPG",category:"Perlengkapan",quantity:2,unit:"pcs",unitPrice:22000},{itemName:"Banner Promo",category:"Promosi",quantity:1,unit:"pcs",unitPrice:150000}]};
   const supplyResults = await Promise.all([supply.save(supplyPayload,1),supply.save(supplyPayload,1)]);
   const supplyPurchase = supplyResults.find(result=>!result.duplicate);
   assert.equal(supplyResults.filter(result=>result.duplicate).length,1);
   assert.deepEqual([supplyPurchase.total,supplyPurchase.balance],[194000,306000]);
   assert.equal(JSON.stringify((await testPool.query("SELECT * FROM stock_raw_items ORDER BY id"))[0]),rawBefore);
   const supplyRow = async name => (await testPool.query("SELECT category, unit, stock, unit_cost, stock_value FROM stock_supply_items WHERE name=?",[name]))[0][0];
-  assert.deepEqual(await supplyRow("Gas LPG"),{category:"Operasional",unit:"pcs",stock:"2.00",unit_cost:22000,stock_value:"44000.00"});
+  assert.deepEqual(await supplyRow("Gas LPG"),{category:"Perlengkapan",unit:"pcs",stock:"2.00",unit_cost:22000,stock_value:"44000.00"});
   assert.equal((await supplyRow("Banner Promo")).category,"Promosi");
   const [[supplyMutation]] = await testPool.query("SELECT amount_out, note FROM history_payment_source_mutations WHERE reference_type='supply_purchase' AND reference_id=?",[supplyPurchase.id]);
-  assert.deepEqual([Number(supplyMutation.amount_out),supplyMutation.note],[194000,`Belanja perlengkapan #${supplyPurchase.id} - Toko Plastik`]);
+  assert.deepEqual([Number(supplyMutation.amount_out),supplyMutation.note],[194000,`Belanja lainnya #${supplyPurchase.id} - Toko Plastik`]);
   const [[gas]] = await testPool.query("SELECT id FROM stock_supply_items WHERE name='Gas LPG'");
   await supply.save({...supplyPayload,requestId:crypto.randomUUID(),suplierName:"Toko Plastik",items:[{supplyItemId:gas.id,quantity:1,unit:"pcs",unitPrice:24000}]},1);
-  assert.deepEqual(await supplyRow("Gas LPG"),{category:"Operasional",unit:"pcs",stock:"3.00",unit_cost:22667,stock_value:"68000.00"});
+  assert.deepEqual(await supplyRow("Gas LPG"),{category:"Perlengkapan",unit:"pcs",stock:"3.00",unit_cost:22667,stock_value:"68000.00"});
   // Item edits and deletes move stock and post the difference to the same source.
   const [supplyItems] = await testPool.query("SELECT id, item_name FROM history_stock_supply_purchase_items WHERE purchase_id=? ORDER BY id",[supplyPurchase.id]);
   const gasLine = supplyItems.find(row=>row.item_name==="Gas LPG");
   const bannerLine = supplyItems.find(row=>row.item_name==="Banner Promo");
   await supply.updateItem(gasLine.id,{quantity:2,unit:"pcs",unitPrice:23000},1);
-  assert.deepEqual(await supplyRow("Gas LPG"),{category:"Operasional",unit:"pcs",stock:"3.00",unit_cost:23333,stock_value:"70000.00"});
+  assert.deepEqual(await supplyRow("Gas LPG"),{category:"Perlengkapan",unit:"pcs",stock:"3.00",unit_cost:23333,stock_value:"70000.00"});
   await supply.deleteItem(bannerLine.id,1);
   assert.deepEqual([Number((await supplyRow("Banner Promo")).stock),Number((await supplyRow("Banner Promo")).stock_value)],[0,0]);
   assert.equal((await sources.findById(kasir.id)).balance,430000);
@@ -245,18 +245,18 @@ let testPool, created = false, receiptDir;
   const kasirLedger = (await sources.listMutations(kasir.id)).mutations.slice(0,4).map(row=>[row.referenceType,row.amountIn,row.amountOut]);
   assert.deepEqual(kasirLedger,[["supply_purchase_delete",150000,0],["supply_purchase_edit",0,2000],["supply_purchase",0,24000],["supply_purchase",0,194000]]);
   // A name is bahan baku or perlengkapan, never both; new perlengkapan need a category.
-  await assert.rejects(supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{itemName:"Cup Uji",category:"Operasional",quantity:1,unit:"pcs",unitPrice:1}]},1),error=>error.status===400&&/sebagai bahan baku/.test(error.message));
-  await assert.rejects(shopping.save({...payload,requestId:crypto.randomUUID(),items:[{itemName:"Gas LPG",quantity:1,unit:"pcs",unitPrice:1}]},1),error=>error.status===400&&/Perlengkapan/.test(error.message));
+  await assert.rejects(supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{itemName:"Cup Uji",category:"Perlengkapan",quantity:1,unit:"pcs",unitPrice:1}]},1),error=>error.status===400&&/sebagai bahan baku/.test(error.message));
+  await assert.rejects(shopping.save({...payload,requestId:crypto.randomUUID(),items:[{itemName:"Gas LPG",quantity:1,unit:"pcs",unitPrice:1}]},1),error=>error.status===400&&/Lainnya/.test(error.message));
   for (const category of [undefined,"Bahan"]) {
     await assert.rejects(supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{itemName:"Sapu",category,quantity:1,unit:"pcs",unitPrice:1}]},1),error=>error.status===400);
   }
   assert.equal((await testPool.query("SELECT id FROM stock_supply_items WHERE name='Sapu'"))[0].length,0);
   const supplyHistory = await supply.list({search:"Gas"});
   assert.equal(supplyHistory.groupTotal,1);
-  assert.deepEqual([supplyHistory.itemGroups[0].itemName,supplyHistory.itemGroups[0].category,supplyHistory.itemGroups[0].stockItemId,supplyHistory.itemGroups[0].histories.length],["Gas LPG","Operasional",gas.id,2]);
+  assert.deepEqual([supplyHistory.itemGroups[0].itemName,supplyHistory.itemGroups[0].category,supplyHistory.itemGroups[0].stockItemId,supplyHistory.itemGroups[0].histories.length],["Gas LPG","Perlengkapan",gas.id,2]);
   assert.equal(supplyHistory.itemGroups[0].histories[0].paymentMethod,"Kasir (Tunai)");
   // Search also matches the category; the deleted banner line left no history.
-  assert.deepEqual((await supply.list({search:"Operasional"})).itemGroups.map(group=>group.itemName),["Gas LPG"]);
+  assert.deepEqual((await supply.list({search:"Perlengkapan"})).itemGroups.map(group=>group.itemName),["Gas LPG"]);
   assert.equal((await supply.list({search:"Promosi"})).groupTotal,0);
   const supplyReceipts = createAttachmentService(testPool,receiptDir,RECEIPT_TARGETS.supply);
   const [supplyReceipt] = await supplyReceipts.add(supplyPurchase.id,[{buffer:jpeg,originalname:"nota-gas.jpg"}],1);
@@ -307,6 +307,7 @@ let testPool, created = false, receiptDir;
   assert.equal(await balanceOf(kasir.id),kasirBeforeDraft);
   assert.equal((await testPool.query("SELECT id FROM stock_raw_items WHERE name='Gula Draft'"))[0].length,0,"new names wait for posting");
   assert.equal((await shopping.list({search:"Gula Draft"})).itemGroups.length,0,"drafts stay out of the history");
+  assert.equal((await shopping.listNotas({search:"Gula Draft"})).total,0,"drafts stay out of the Per Nota history");
   assert.equal((await shopping.save(draftPayload,1)).duplicate,true);
   const [listedDraft] = (await shopping.listDrafts()).filter(row=>row.id===draft.id);
   assert.deepEqual([listedDraft.kind,listedDraft.shippingCost,listedDraft.total,listedDraft.createdBy,listedDraft.paymentSourceId],["raw",5000,75000,"Admin Uji",kasir.id]);
@@ -322,6 +323,50 @@ let testPool, created = false, receiptDir;
   assert.deepEqual(gulaDraft,{unit:"kg",stock:"2.00",stock_value:"20000.00"});
   const [[approvedHeader]] = await testPool.query("SELECT status, posted_by, posted_at IS NOT NULL AS posted FROM history_stock_raw_purchases WHERE id=?",[draft.id]);
   assert.deepEqual([approvedHeader.status,approvedHeader.posted_by,Number(approvedHeader.posted)],["posted",1,1]);
+  // Per Nota: the whole nota on one row, found by any of its barang or its toko.
+  const notaPage = await shopping.listNotas({search:"Gula Draft"});
+  assert.equal(notaPage.total,1);
+  const [listedNota] = notaPage.notas;
+  assert.deepEqual([listedNota.id,listedNota.kind,listedNota.supplierName,listedNota.subtotal,listedNota.total,listedNota.createdBy,listedNota.postedBy,Boolean(listedNota.postedAt)],
+    [draft.id,"raw",draftPayload.suplierName,70000,70000,"Admin Uji","Admin Uji",true]);
+  assert.deepEqual(listedNota.items.map(item=>[item.itemName,item.quantity,item.unit,item.total,item.costTotal,item.stockQuantity,item.stockUnit]),
+    [["Teh Footer",500,"gr",50000,50000,500,"gr"],["Gula Draft",2,"kg",20000,20000,2,"kg"]]);
+  // COGS Setelah of each line: the moving average and stock value right after posting.
+  const [savedLines] = await testPool.query("SELECT item_name, stock_unit_cost, stock_value_after FROM history_stock_raw_purchase_items WHERE purchase_id=? ORDER BY id",[draft.id]);
+  assert.deepEqual(listedNota.items.map(item=>[item.itemName,item.stockAverageCost,item.stockValueAfter]),
+    savedLines.map(line=>[line.item_name,Number(line.stock_unit_cost),Number(line.stock_value_after)]));
+  assert.deepEqual(listedNota.items.find(item=>item.itemName==="Gula Draft").stockAverageCost,10000,"2 kg for Rp 20.000");
+  assert.deepEqual((await shopping.listNotas({search:"Teh Footer"})).notas.map(nota=>nota.id).includes(draft.id),true);
+  const firstPage = await shopping.listNotas({});
+  assert.ok(firstPage.notas.length<=10 && firstPage.total>=firstPage.notas.length,"10 nota per page");
+  // TOTAL PENGELUARAN: the Grand Total of every posted nota, not only this page.
+  const [[spent]] = await testPool.query("SELECT COUNT(*) AS notas, SUM(total) AS spending FROM history_stock_raw_purchases WHERE status='posted'");
+  assert.deepEqual([firstPage.total,firstPage.totalSpending],[Number(spent.notas),Number(spent.spending)]);
+  assert.ok(firstPage.total>10,"more nota than one page, so the total covers the other pages too");
+  assert.equal(notaPage.totalSpending,70000,"follows the search");
+  assert.ok(firstPage.notas.every((nota,index,all)=>index===0||String(all[index-1].date)>=String(nota.date)),"newest first");
+  await assert.rejects(shopping.listNotas({category:"Promosi"}),error=>error.status===400,"bahan baku have no kategori tabs");
+  // The period filter (from/to, both days included) keeps the nota, their TOTAL PENGELUARAN and the Per Bahan rows.
+  const [[inSeptember]] = await testPool.query("SELECT COUNT(*) AS notas, COALESCE(SUM(total),0) AS spending FROM history_stock_raw_purchases WHERE status='posted' AND purchase_date BETWEEN '2026-09-01' AND '2026-09-30'");
+  const september = await shopping.listNotas({from:"2026-09-01",to:"2026-09-30",pageSize:1000});
+  assert.deepEqual([september.total,september.totalSpending,september.notas.length],[Number(inSeptember.notas),Number(inSeptember.spending),Number(inSeptember.notas)]);
+  assert.ok(Number(inSeptember.notas)>0 && september.notas.every(nota=>nota.date>="2026-09-01"&&nota.date<="2026-09-30"));
+  assert.deepEqual([(await shopping.listNotas({from:"2099-01-01"})).total,(await shopping.listNotas({from:"2099-01-01"})).totalSpending],[0,0]);
+  assert.equal((await shopping.listNotas({to:"2026-09-30"})).total,(await shopping.listNotas({to:"2026-09-30",from:""})).total);
+  assert.equal((await shopping.listNotas({pageSize:1})).notas.length,1);
+  for (const bad of [{from:"2026-02-30"},{from:"2026-10-02",to:"2026-10-01"},{pageSize:0},{pageSize:1001}]) {
+    await assert.rejects(shopping.listNotas(bad),error=>error.status===400,JSON.stringify(bad));
+  }
+  assert.deepEqual((await shopping.list({from:"2099-01-01"})).itemGroups,[]);
+  const septemberGroups = (await shopping.list({from:"2026-09-01",to:"2026-09-30"})).itemGroups;
+  assert.ok(septemberGroups.length>0 && septemberGroups.every(group=>group.histories.every(item=>item.purchaseDate>="2026-09-01"&&item.purchaseDate<="2026-09-30")));
+  // A line of the nota opens its barang detail (COGS, riwayat, log): ?itemId keeps that one barang.
+  const tehDetail = await shopping.list({itemId:tehSeed.insertId});
+  assert.deepEqual(tehDetail.itemGroups.map(group=>[group.stockItemId,group.itemName]),[[tehSeed.insertId,"Teh Footer"]]);
+  assert.ok(tehDetail.itemGroups[0].histories.length>=1 && tehDetail.itemGroups[0].histories.every(item=>item.itemName==="Teh Footer"));
+  assert.ok(tehDetail.itemGroups[0].histories.some(item=>item.purchaseId===draft.id),"the nota's line is in the barang riwayat");
+  assert.equal(tehDetail.groupTotal,1);
+  await assert.rejects(shopping.list({itemId:"abc"}),error=>error.status===400);
   assert.equal((await shopping.list({search:"Gula Draft"})).itemGroups.length,1);
   await assert.rejects(shopping.updateDraft(draft.id,{...draftPayload,status:"draft"},1),error=>error.status===409);
   await assert.rejects(shopping.removeDraft(draft.id),error=>error.status===409);
@@ -335,29 +380,70 @@ let testPool, created = false, receiptDir;
   await assert.rejects(fs.access(draftPhotoPath));
   await assert.rejects(receipts.add(footer.id,[{buffer:jpeg,originalname:"x.jpg"}],1,{onlyDraft:true}),error=>error.status===403);
   // Perlengkapan drafts work the same; a new item gets its category when posted.
-  const supplyDraft = await supply.save({...supplyPayload,requestId:crypto.randomUUID(),status:"draft",items:[{itemName:"Sapu Draft",category:"Operasional",quantity:2,unit:"pcs",unitPrice:15000}]},1);
+  const supplyDraft = await supply.save({...supplyPayload,requestId:crypto.randomUUID(),status:"draft",items:[{itemName:"Sapu Draft",category:"Perlengkapan",quantity:2,unit:"pcs",unitPrice:15000}]},1);
   assert.equal((await testPool.query("SELECT id FROM stock_supply_items WHERE name='Sapu Draft'"))[0].length,0);
-  assert.equal((await supply.listDrafts()).find(row=>row.id===supplyDraft.id).items[0].category,"Operasional");
-  await supply.updateDraft(supplyDraft.id,{...supplyPayload,status:"posted",items:[{itemName:"Sapu Draft",category:"Operasional",quantity:2,unit:"pcs",unitPrice:15000}]},1);
-  assert.deepEqual(await supplyRow("Sapu Draft"),{category:"Operasional",unit:"pcs",stock:"2.00",unit_cost:15000,stock_value:"30000.00"});
+  assert.equal((await supply.listDrafts()).find(row=>row.id===supplyDraft.id).items[0].category,"Perlengkapan");
+  await supply.updateDraft(supplyDraft.id,{...supplyPayload,status:"posted",items:[{itemName:"Sapu Draft",category:"Perlengkapan",quantity:2,unit:"pcs",unitPrice:15000}]},1);
+  assert.deepEqual(await supplyRow("Sapu Draft"),{category:"Perlengkapan",unit:"pcs",stock:"2.00",unit_cost:15000,stock_value:"30000.00"});
   // Posting a nota: saldo keluar and the moving average cost in one transaction,
   // and the menu HPP uses the new cost right away (spec: Gula 2.000 g at Rp 15 + 1.000 g for Rp 18.000 = Rp 16/g).
   const [gulaSim] = await testPool.query("INSERT INTO stock_raw_items (name,category,unit,stock,unit_cost,stock_value) VALUES ('Gula Simulasi','Umum','gr',2000,15,30000)");
   await testPool.query("INSERT INTO menu_items (id, name) VALUES (2, 'Es Teh Manis')");
   await testPool.query("INSERT INTO menu_item_prices (menu_item_id, regular_price) VALUES (2, 8000)");
-  await testPool.query("INSERT INTO recipes (menu_item_id, stock_item_id, quantity) VALUES (2, ?, 10)", [gulaSim.insertId]);
+  await testPool.query("INSERT INTO menu_item_recipes (menu_item_id, stock_item_id, quantity) VALUES (2, ?, 10)", [gulaSim.insertId]);
   const kasirBeforeSim = await balanceOf(kasir.id);
   const sim = await shopping.save({...payload,requestId:crypto.randomUUID(),paymentSourceId:kasir.id,items:[{stockItemId:gulaSim.insertId,quantity:1000,unit:"gr",unitPrice:18}]},1);
   assert.deepEqual(await stockRow(gulaSim.insertId),{stock:"3000.00",unit_cost:16,stock_value:"48000.00"});
   assert.equal(sim.balance,kasirBeforeSim-18000);
-  const [[simRecipe]] = await testPool.query("SELECT cost FROM recipes WHERE menu_item_id = 2");
+  const [[simRecipe]] = await testPool.query("SELECT cost FROM menu_item_recipes WHERE menu_item_id = 2");
   const [[simMenu]] = await testPool.query("SELECT hpp_cost FROM menu_item_prices WHERE menu_item_id = 2");
   assert.deepEqual([simRecipe.cost,Number(simMenu.hpp_cost)],[160,160],"10 g gula at Rp 16 for the next sale");
   // Stock sold below zero is covered first: FRESHMILK -2.000 ml at Rp 20 + 3.000 ml for Rp 59.100.
   const [milkSim] = await testPool.query("INSERT INTO stock_raw_items (name,category,unit,stock,unit_cost,stock_value) VALUES ('Fresh Milk Simulasi','Umum','ml',-2000,20,0)");
   await shopping.save({...payload,requestId:crypto.randomUUID(),paymentSourceId:kasir.id,items:[{stockItemId:milkSim.insertId,quantity:3000,unit:"ml",unitPrice:19.7}]},1);
   assert.deepEqual(await stockRow(milkSim.insertId),{stock:"1000.00",unit_cost:19,stock_value:"19100.00"});
-  console.log("PASS: purchase transactions and rollback; supplier settings create, rename, duplicate/invalid names, missing ID, unchanged name and purchase history preservation; payment source saldo masuk/keluar; bukti nota uploads; belanja perlengkapan; ringkasan nota (ongkir, diskon, PPN) and drafts; moving average cost on posting.");
+  // Barang Lainnya need no unit: a new one is counted in pcs, an existing one keeps its own unit.
+  await supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{itemName:"Lakban Uji",category:"Perlengkapan",quantity:3,unitPrice:5000}]},1);
+  assert.deepEqual(await supplyRow("Lakban Uji"),{category:"Perlengkapan",unit:"pcs",stock:"3.00",unit_cost:5000,stock_value:"15000.00"});
+  const [tabung] = await testPool.query("INSERT INTO stock_supply_items (name,category,unit,stock,unit_cost,stock_value) VALUES ('Gas Tabung Uji','Perlengkapan','tabung',2,20000,40000)");
+  const tabungPurchase = await supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{supplyItemId:tabung.insertId,quantity:1,unitPrice:23000}]},1);
+  assert.deepEqual(await supplyRow("Gas Tabung Uji"),{category:"Perlengkapan",unit:"tabung",stock:"3.00",unit_cost:21000,stock_value:"63000.00"});
+  const [[tabungLine]] = await testPool.query("SELECT id, unit, stock_unit FROM history_stock_supply_purchase_items WHERE purchase_id=?",[tabungPurchase.id]);
+  assert.deepEqual([tabungLine.unit,tabungLine.stock_unit],["tabung","tabung"]);
+  // Editing a line without unit keeps the line's unit.
+  await supply.updateItem(tabungLine.id,{quantity:2,unitPrice:23000},1);
+  assert.deepEqual(await supplyRow("Gas Tabung Uji"),{category:"Perlengkapan",unit:"tabung",stock:"4.00",unit_cost:21500,stock_value:"86000.00"});
+  for (const category of ["Peralatan","Perlengkapan","Promosi","Lain-lain"]) {
+    await supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{itemName:`Kategori ${category}`,category,quantity:1,unitPrice:1000}]},1);
+  }
+  await assert.rejects(supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{itemName:"Kategori Lama",category:"Operasional",quantity:1,unitPrice:1}]},1),error=>error.status===400);
+  // The Belanja tabs list one kategori each, by the item's current kategori.
+  const tabNames = async category => (await supply.list({category,search:"Kategori"})).itemGroups.map(group=>[group.itemName,group.category]);
+  assert.deepEqual(await tabNames("Promosi"),[["Kategori Promosi","Promosi"]]);
+  assert.deepEqual(await tabNames("Lain-lain"),[["Kategori Lain-lain","Lain-lain"]]);
+  await testPool.query("UPDATE stock_supply_items SET category='Peralatan' WHERE name='Kategori Perlengkapan'");
+  assert.deepEqual(await tabNames("Peralatan"),[["Kategori Peralatan","Peralatan"],["Kategori Perlengkapan","Peralatan"]]);
+  assert.deepEqual(await tabNames("Perlengkapan"),[]);
+  // Per Nota tabs: a nota shows under each kategori it holds, with all its lines.
+  const mixed = await supply.save({...supplyPayload,requestId:crypto.randomUUID(),suplierName:"Toko Campur Uji",
+    items:[{itemName:"Spanduk Campur",category:"Promosi",quantity:1,unitPrice:50000},{itemName:"Pisau Campur",category:"Peralatan",quantity:2,unitPrice:15000}]},1);
+  const notaIds = async category => (await supply.listNotas({category,search:"Campur"})).notas.map(nota=>nota.id);
+  assert.deepEqual([await notaIds("Promosi"),await notaIds("Peralatan"),await notaIds("Lain-lain")],[[mixed.id],[mixed.id],[]]);
+  assert.deepEqual([(await supply.listNotas({category:"Promosi",search:"Campur"})).totalSpending,(await supply.listNotas({category:"Lain-lain",search:"Campur"})).totalSpending],[80000,0]);
+  const [mixedNota] = (await supply.listNotas({category:"Promosi",search:"Toko Campur"})).notas;
+  assert.deepEqual(mixedNota.items.map(item=>[item.itemName,item.category,item.quantity,item.total]),[["Spanduk Campur","Promosi",1,50000],["Pisau Campur","Peralatan",2,30000]]);
+  assert.equal(mixedNota.items[0].supplyItemId>0,true);
+  const spandukDetail = await supply.list({itemId:mixedNota.items[0].supplyItemId});
+  assert.deepEqual(spandukDetail.itemGroups.map(group=>[group.itemName,group.category,group.histories.length]),[["Spanduk Campur","Promosi",1]]);
+  await assert.rejects(supply.list({itemId:"0"}),error=>error.status===400);
+  // Barang Lainnya by period too (the Peralatan tab simply sends none).
+  assert.equal((await supply.listNotas({category:"Promosi",search:"Campur",from:"2026-10-29",to:"2026-10-29"})).total,1);
+  assert.equal((await supply.listNotas({category:"Promosi",search:"Campur",from:"2026-10-30"})).total,0);
+  assert.equal((await supply.list({search:"Campur",to:"2026-10-28"})).itemGroups.length,0);
+  await assert.rejects(supply.listNotas({category:"Operasional"}),error=>error.status===400);
+  assert.ok((await supply.list({search:"Kategori"})).itemGroups.length>=4,"no category lists them all");
+  await assert.rejects(supply.list({category:"Operasional"}),error=>error.status===400);
+  console.log("PASS: purchase transactions and rollback; supplier settings create, rename, duplicate/invalid names, missing ID, unchanged name and purchase history preservation; payment source saldo masuk/keluar; bukti nota uploads; belanja perlengkapan; ringkasan nota (ongkir, diskon, PPN) and drafts; moving average cost on posting; barang Lainnya without unit and per-kategori history.");
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{
   if(receiptDir)await fs.rm(receiptDir,{recursive:true,force:true});
   if(testPool)await testPool.end();

@@ -175,7 +175,7 @@ describe("regressions", () => {
       });
     const recipeQuantity = async () => {
       const [[row]] = await db.query(
-        "SELECT quantity FROM recipes WHERE stock_item_id = ?",
+        "SELECT quantity FROM menu_item_recipes WHERE stock_item_id = ?",
         [stockItemId]
       );
       return Number(row.quantity);
@@ -211,7 +211,7 @@ describe("regressions", () => {
       body: { averageCost: 205 },
     });
 
-    const [[recipe]] = await db.query("SELECT cost FROM recipes WHERE stock_item_id = ?", [stockItemId]);
+    const [[recipe]] = await db.query("SELECT cost FROM menu_item_recipes WHERE stock_item_id = ?", [stockItemId]);
     assert.equal(recipe.cost, 1640);
     const [[price]] = await db.query(
       "SELECT hpp_cost, gross_profit FROM menu_item_prices WHERE menu_item_id = ?",
@@ -282,7 +282,7 @@ describe("regressions", () => {
       as: "admin",
       body: { averageCost: 25 },
     });
-    const [[recipe]] = await db.query("SELECT cost FROM recipes WHERE menu_item_id = ?", [menuItemId]);
+    const [[recipe]] = await db.query("SELECT cost FROM menu_item_recipes WHERE menu_item_id = ?", [menuItemId]);
     assert.equal(recipe.cost, 2500);
     assert.deepEqual(await soldCosts(), atSale);
   });
@@ -419,7 +419,7 @@ describe("regressions", () => {
     );
     // recipes keeps only bahan baku; semi lines go to stock_semi_item_menus.
     const [[lineCounts]] = await db.query(
-      `SELECT (SELECT COUNT(*) FROM recipes WHERE menu_item_id = ?) AS raw_lines,
+      `SELECT (SELECT COUNT(*) FROM menu_item_recipes WHERE menu_item_id = ?) AS raw_lines,
               (SELECT COUNT(*) FROM stock_semi_item_menus WHERE menu_item_id = ?) AS semi_lines`,
       [menuItemId, menuItemId]
     );
@@ -788,7 +788,7 @@ describe("regressions", () => {
     );
     for (const body of [
       { name: "Blender Uji", category: "Peralatan", unit: "unit" },
-      { name: "Sirup Uji", category: "Operasional", unit: "ml" },
+      { name: "Sirup Uji", category: "Perlengkapan", unit: "ml" },
     ]) {
       assert.equal((await request("POST", "/api/stock-item/supply", { as: "admin", body })).status, 409);
     }
@@ -900,6 +900,14 @@ describe("regressions", () => {
     const kopi = (await request("GET", "/api/stock-item", { as: "admin" })).body.data.find((item) => item.name === "Kopi Draft");
     assert.deepEqual([kopi.unit, kopi.stock, kopi.stockValue], ["kg", 1, 115450]);
     assert.deepEqual((await request("GET", "/api/shopping/purchases/drafts", { as: "admin" })).body.data, []);
+    // The posted nota now shows in the Per Nota history, for kasir too.
+    const notas = await request("GET", "/api/shopping/purchases/notas?search=Kopi%20Draft", { as: "cashier" });
+    assert.equal(notas.status, 200);
+    assert.deepEqual(
+      notas.body.data.notas.map((row) => [row.id, row.total, row.items.length]),
+      [[draft.body.data.id, 115450, 1]]
+    );
+    assert.equal((await request("GET", "/api/shopping/supply-purchases/notas?category=Operasional", { as: "admin" })).status, 400);
     assert.equal((await request("DELETE", `/api/shopping/purchases/${draft.body.data.id}`, { as: "admin" })).status, 409);
     // Once posted, only admins change its photos.
     assert.equal((await request("DELETE", draftPhoto.body.data[0].url, { as: "cashier" })).status, 403);
@@ -908,7 +916,7 @@ describe("regressions", () => {
     // Kasir may throw away their own draft.
     const second = await request("POST", "/api/shopping/supply-purchases", {
       as: "cashier",
-      body: { ...nota, requestId: "draft-nota-0000000003", status: "draft", items: [{ itemName: "Lap Draft", category: "Operasional", quantity: 3, unit: "pcs", unitPrice: 5000 }] },
+      body: { ...nota, requestId: "draft-nota-0000000003", status: "draft", items: [{ itemName: "Lap Draft", category: "Perlengkapan", quantity: 3, unit: "pcs", unitPrice: 5000 }] },
     });
     assert.equal(second.status, 201);
     assert.equal((await request("DELETE", `/api/shopping/supply-purchases/${second.body.data.id}`, { as: "cashier" })).status, 200);

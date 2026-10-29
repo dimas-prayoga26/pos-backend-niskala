@@ -6,11 +6,11 @@ Setiap modul di `src/modules/<nama>/` memiliki tabelnya sendiri. Modul lain bole
 
 ```text
 orders ──► stock (stock.movements: potong / kembalikan stok dari resep)
-stock, shopping ──► menu (menu.costs: hitung ulang recipes.cost dan HPP menu saat unit_cost berubah)
-stock, orders ──► menu (menu.recipeLines: baris resep menu dari recipes + stock_semi_item_menus)
+stock, shopping ──► menu (menu.costs: hitung ulang menu_item_recipes.cost dan HPP menu saat unit_cost berubah)
+stock, orders ──► menu (menu.recipeLines: baris resep menu dari menu_item_recipes + stock_semi_item_menus)
 recaps ──► stock (semi.repository.closeDay: sisa bahan setengah jadi harian dibuang saat rekap harian disimpan)
 shopping ──► paymentSources (paymentSource.ledger: saldo keluar belanja dan selisih saat item diubah/dihapus)
-shopping ──► stock (supply.repository.SUPPLY_CATEGORIES: kategori perlengkapan)
+shopping ──► stock (supply.repository.SUPPLY_CATEGORIES: kategori barang Lainnya)
 shared/middleware/authenticate ──► users (user.service: verifikasi token, ambil user)
 infrastructure/bootstrap ──► menu (menu.options: baris harga untuk seed)
 ```
@@ -23,12 +23,12 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 |---|---|---|---|---|
 | users | `/api/user` | `users` | – | – |
 | categories | `/api/category` | `categories` | – | `menu:changed` |
-| menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `recipes` (pivot menu ↔ bahan baku), VIEW `recipe_details` (resep + nama menu/bahan + average cost + cost, baca-saja); menulis juga `stock_semi_item_menus` (baris bahan setengah jadi di resep menu) | `categories`, `stock_raw_items`, `stock_semi_items` (nama bahan) | `menu:changed` |
-| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items`, `stock_semi_item_menus`, `history_stock_semi_wastes` (bahan setengah jadi, `/api/stock-item/semi`); `stock_supply_items` (perlengkapan, `/api/stock-item/supply`) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
+| menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `menu_item_recipes` (pivot menu ↔ bahan baku), VIEW `recipe_details` (resep + nama menu/bahan + average cost + cost, baca-saja); menulis juga `stock_semi_item_menus` (baris bahan setengah jadi di resep menu) | `categories`, `stock_raw_items`, `stock_semi_items` (nama bahan) | `menu:changed` |
+| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items`, `stock_semi_item_menus`, `history_stock_semi_wastes` (bahan setengah jadi, `/api/stock-item/semi`); `stock_supply_items` (perlengkapan, `/api/stock-item/supply`) | `menu_item_recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
 | shopping | `/api/shopping` | `suplier`, `history_stock_raw_purchases`, `history_stock_raw_purchase_items`, `history_stock_raw_purchase_item_logs`, `history_stock_raw_purchase_attachments` (bukti nota; file di `storage/purchase-receipts`); `history_stock_supply_purchases`, `history_stock_supply_purchase_items`, `history_stock_supply_purchase_attachments` (belanja perlengkapan, `/api/shopping/supply-purchases`); menulis juga `stock_supply_items` | `meta_data_payment_source` (sumber aktif) | `shopping:changed`, `stock:changed` |
 | paymentSources | `/api/payment-source` | `meta_data_payment_source` (saldo), `history_payment_source_mutations` (saldo masuk/keluar) | `users` (nama pencatat) | `shopping:changed` |
 | platforms | `/api/order-platform` | `meta_data_platform` | – | `platforms:changed` |
-| orders | `/api/order` | `orders`, `order_items`, `order_item_costs` (rincian HPP per bahan, dibekukan saat terjual), `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_prices`, `recipes`, `stock_raw_items`, `stock_semi_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
+| orders | `/api/order` | `orders`, `order_items`, `order_item_costs` (rincian HPP per bahan, dibekukan saat terjual), `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_prices`, `menu_item_recipes`, `stock_raw_items`, `stock_semi_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
 | recaps | `/api/recap` | `meta_data_format_recap`, `daily_recaps`, `weekly_recaps`, `monthly_recaps` | `users`, `menu_items` (lookup nama) | `recaps:changed` |
 
 ## Detail per modul
@@ -49,7 +49,7 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
   - `menu.service`: orkestrasi;
   - `menu.repository`: SQL.
 - **Aturan:**
-  - Resep menu tersimpan di dua tabel dengan satu urutan `sort_order`: bahan baku di `recipes`, bahan setengah jadi di `stock_semi_item_menus`. API tetap satu daftar `ingredients` (`stockItemId` atau `semiItemId`).
+  - Resep menu tersimpan di dua tabel dengan satu urutan `sort_order`: bahan baku di `menu_item_recipes`, bahan setengah jadi di `stock_semi_item_menus`. API tetap satu daftar `ingredients` (`stockItemId` atau `semiItemId`).
   - `recipes.cost` = quantity × `stock_raw_items.unit_cost` dan `stock_semi_item_menus.cost` = quantity × `stock_semi_items.unit_cost` (rupiah bulat); `menu_item_prices.hpp_cost` = jumlah cost kedua tabel dan `gross_profit` = harga − HPP. Dihitung ulang oleh `menu.costs` saat resep disimpan, saat belanja/COGS mengubah unit_cost, dan setiap boot. Menu yang resepnya belum punya harga beli memakai HPP manual.
   - Setiap menu punya satu harga (tanpa ukuran dan tanpa varian Hot/Cold). Harga, harga online, HPP, dan gross profit ada di `menu_item_prices`, satu baris per menu.
   - `order_items.variant` hanya berisi label lama (mis. "Reguler / Cold") untuk order sebelum ukuran/varian dihapus.
@@ -57,8 +57,8 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 
 ### stock
 - **Isi:** CRUD bahan baku `stock_raw_items` (`stock.repository`, `stock.controller`), bahan setengah jadi `stock_semi_items` (`semi.repository`, `semi.controller`) dan `stock.movements`.
-- **`stock.movements`:** satu-satunya kode yang memotong atau mengembalikan stok berdasarkan resep. Ia menerima *recipe lines* `{ menuItemId, quantity }` dan berjalan di koneksi transaksi pemanggil. Baris `recipes` memotong `stock_raw_items`, baris `stock_semi_item_menus` memotong `stock_semi_items`. Takaran resep selalu dalam satuan bahannya, jadi tidak ada konversi satuan; mengganti satuan bahan baku antar satuan yang bisa dikonversi (mis. gr → kg) ikut menyesuaikan takaran resep menu dan komposisi bahan setengah jadi.
-- **Status stok:** `HARUS ORDER` (stok ≤ minimum; `HARUS MASAK` untuk bahan setengah jadi), `HAMPIR HABIS` (stok ≤ minimum + maks(1, 20%)), `AMAN`, atau `BEBAS STOK` untuk item unlimited.
+- **`stock.movements`:** satu-satunya kode yang memotong atau mengembalikan stok berdasarkan resep. Ia menerima *recipe lines* `{ menuItemId, quantity }` dan berjalan di koneksi transaksi pemanggil. Baris `menu_item_recipes` memotong `stock_raw_items`, baris `stock_semi_item_menus` memotong `stock_semi_items`. Takaran resep selalu dalam satuan bahannya, jadi tidak ada konversi satuan; mengganti satuan bahan baku antar satuan yang bisa dikonversi (mis. gr → kg) ikut menyesuaikan takaran resep menu dan komposisi bahan setengah jadi.
+- **Status stok:** `HARUS ORDER` (stok ≤ minimum; `HARUS MASAK` untuk bahan setengah jadi), `HAMPIR HABIS` (stok ≤ minimum + maks(1, 20%)), `AMAN`, atau `BEBAS STOK` untuk item unlimited. Tanpa minimum (0) hanya stok ≤ 0 yang `HARUS ORDER`; stok berapa pun di atasnya `AMAN`. Badge menu Stok menghitung bahan baku `HARUS ORDER` + `HAMPIR HABIS`; item Bebas Stok tidak punya Nilai (biaya, bukan aset).
 - **Nama** bahan baku dan bahan setengah jadi tidak boleh sama, agar pilihan resep menu tidak ganda.
 - **Bahan setengah jadi** (`/api/stock-item/semi`; mis. Nasi dari Beras):
   - Komposisinya untuk 1 resep ada di `stock_semi_item_recipes` dan hanya berisi bahan baku.
@@ -73,7 +73,7 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
     - Rekap Harian (alasan Sisa akhir hari).
   - Bahan dengan `reset_daily` (mis. Nasi) dimulai dari 0 setiap hari. Saat rekap harian disimpan (`recap.service`, satu transaksi), sisanya dibuang. Porsi dari masak setelah tanggal rekap tetap disimpan, sehingga rekap yang disimpan besok pagi tidak ikut membuang nasi baru.
   - Admin bisa membatalkan catatan buang terakhir per bahan; porsinya kembali ke stok.
-  - Sebelum 2026-10-28 (develop saja) bahan ini adalah baris `stock_items` dengan `is_prepared`, dan sempat juga ada kolom `recipes.semi_item_id`; migrasi boot memindahkannya ke tabel di atas dan mengembalikan `recipes` ke bentuk aslinya (`semiItemsSchema.js`).
+  - Sebelum 2026-10-28 (develop saja) bahan ini adalah baris `stock_items` dengan `is_prepared`, dan sempat juga ada kolom `recipes.semi_item_id`; migrasi boot memindahkannya ke tabel di atas dan mengembalikan `menu_item_recipes` ke bentuk aslinya (`semiItemsSchema.js`).
 
 ### shopping
 - **Isi:** `shopping.validation` (validasi strict, semua error 400), `shopping.service` (transaksi pembelian, dibuat dengan factory `createShoppingService(db)` agar bisa diuji di database lain), controller, dan route.
@@ -85,8 +85,8 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
   - belanja dengan `paymentSourceId` mencatat saldo keluar lewat `paymentSource.ledger` di transaksi yang sama;
   - bukti nota (`shopping.attachments`, `shopping.upload`): tipe file dicek dari isinya, file privat di `storage/`.
 
-- **Mesin nota** (`shopping.nota`, `shopping.totals`): simpan/draft/posting, ubah/hapus baris dengan pembagian ulang ongkir-diskon-PPN, dan daftar draft, dipakai bersama oleh belanja bahan baku (`shopping.service`) dan perlengkapan (`shopping.supply`). Posting hanya untuk admin; draft boleh kasir.
-- **Belanja perlengkapan** (`shopping.supply`): nota yang sama dari form yang sama, barangnya `stock_supply_items`; tidak pernah menyentuh resep atau HPP. Riwayatnya berbentuk sama dengan riwayat bahan baku agar dashboard memakai tabel yang sama.
+- **Mesin nota** (`shopping.nota`, `shopping.totals`): simpan/draft/posting, ubah/hapus baris dengan pembagian ulang ongkir-diskon-PPN, daftar draft, dan daftar nota terposting (riwayat Per Nota), dipakai bersama oleh belanja bahan baku (`shopping.service`) dan perlengkapan (`shopping.supply`). Posting hanya untuk admin; draft boleh kasir.
+- **Belanja lainnya** (`shopping.supply`, dulu "perlengkapan"; tanpa satuan, kategori Peralatan/Perlengkapan/Promosi/Lain-lain, riwayat per kategori): nota yang sama dari form yang sama, barangnya `stock_supply_items`; tidak pernah menyentuh resep atau HPP. Riwayatnya berbentuk sama dengan riwayat bahan baku agar dashboard memakai tabel yang sama.
 
 ### paymentSources
 - **Isi:** `paymentSource.ledger` (satu-satunya penulis saldo: `postMutation` di koneksi transaksi pemanggil, `findPurchaseSourceId`), `paymentSource.service` (factory `createPaymentSourceService(db)`: daftar, simpan, catat saldo manual, riwayat mutasi), controller, dan route (semua khusus admin).

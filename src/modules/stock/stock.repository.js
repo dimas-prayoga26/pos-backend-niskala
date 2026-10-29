@@ -7,12 +7,15 @@ const {
 } = require("../../shared/utils/units");
 
 // Traffic-light status shown on the stock dashboard. Semi items are cooked
-// rather than ordered, so they pass lowLabel "HARUS MASAK".
+// rather than ordered, so they pass lowLabel "HARUS MASAK". Without a minimum
+// (0) only an empty stock needs action: a stock of 1 (an AC, a tablet, a pack
+// bought once) is fine, not "hampir habis".
 const getStockStatus = (row, lowLabel = "HARUS ORDER") => {
   if (row.is_unlimited) return "BEBAS STOK";
 
   const stock = Number(row.stock || 0);
   const minimumStock = Number(row.minimum_stock || 0);
+  if (minimumStock <= 0) return stock <= 0 ? lowLabel : "AMAN";
   const warningLimit = minimumStock + Math.max(1, minimumStock * 0.2);
 
   if (stock <= minimumStock) return lowLabel;
@@ -134,7 +137,7 @@ const update = async (
     if (fromUnit !== toUnit && areConvertible(fromUnit, toUnit)) {
       const factor = convertBetweenUnits(1, fromUnit, toUnit);
       await connection.query(
-        "UPDATE recipes SET quantity = ROUND(quantity * ?, 4) WHERE stock_item_id = ?",
+        "UPDATE menu_item_recipes SET quantity = ROUND(quantity * ?, 4) WHERE stock_item_id = ?",
         [factor, id]
       );
       await connection.query(
@@ -188,11 +191,11 @@ const remove = async (id) => {
   return result.affectedRows > 0;
 };
 
-// Menus whose recipe uses the stock item; recipes block deleting it (ON DELETE RESTRICT).
+// Menus whose recipe uses the stock item; menu_item_recipes rows block deleting it (ON DELETE RESTRICT).
 const findRecipeMenuNames = async (id) => {
   const [rows] = await pool.query(
     `SELECT DISTINCT mi.name
-     FROM recipes r
+     FROM menu_item_recipes r
      JOIN menu_items mi ON mi.id = r.menu_item_id
      WHERE r.stock_item_id = ?
      ORDER BY mi.name ASC`,
