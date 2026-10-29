@@ -1,20 +1,9 @@
 // Input normalization for purchases. Every helper throws http-errors 400.
 const createError = require("http-errors");
 const { areConvertible, convertBetweenUnits } = require("../../shared/utils/units");
+const { clean, dateKey, number } = require("../../shared/utils/validate");
+const { SUPPLY_CATEGORIES } = require("../stock/supply.repository");
 
-const clean = (value, max, label) => {
-  if (typeof value !== "string") throw createError(400, `${label} wajib diisi.`);
-  const result = value.trim().replace(/\s+/g, " ");
-  if (!result || result.length > max) throw createError(400, `${label} wajib diisi, maksimal ${max} karakter.`);
-  return result;
-};
-const number = (value, min, max, precision, label) => {
-  if (value === "" || value == null || typeof value === "boolean") throw createError(400, `${label} tidak valid.`);
-  const n = Number(value);
-  const rounded = Math.round(n * 10 ** precision) / 10 ** precision;
-  if (!Number.isFinite(n) || n < min || n > max || Math.abs(n - rounded) > 1e-7) throw createError(400, `${label} tidak valid.`);
-  return rounded;
-};
 const unit = value => clean(value, 30, "Satuan").toLowerCase();
 const reference = (id, name, idKey, nameKey, label) => {
   if (id != null && id !== "") {
@@ -35,26 +24,64 @@ const convertQuantity = (qty, from, to) => {
   }
   return number(converted, 0.01, 9999999999.99, 2, "Qty setelah konversi (minimal 0,01 satuan stok)");
 };
-const normalizePurchase = body => {
-  const requestId = clean(body.requestId, 64, "ID permintaan");
-  if (!/^[a-zA-Z0-9-]{16,64}$/.test(requestId)) throw createError(400, "ID permintaan tidak valid.");
-  const date = clean(body.date, 10, "Tanggal");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0,10) !== date) {
-    throw createError(400, "Tanggal tidak valid.");
-  }
+const STATUSES = ["draft", "posted"];
+// Footer: ongkir, Diskon Nota (Rp or %) and PPN (%). Only non-default values
+// are returned, so the payload hash of a nota without them stays as before.
+const normalizeAdjustments = body => {
+  const discountType = body.discountType == null || body.discountType === "" ? "amount" : body.discountType;
+  if (!["amount", "percent"].includes(discountType)) throw createError(400, "Jenis diskon harus Rp atau %.");
+  const optional = (value, max, label) => (value == null || value === "" ? 0 : number(value, 0, max, 2, label));
+  const adjustments = {
+    shippingCost: optional(body.shippingCost, 999999999999.99, "Ongkos kirim"),
+    discountType,
+    discountValue: optional(body.discountValue, discountType === "percent" ? 100 : 999999999999.99, "Diskon nota"),
+    taxPercent: optional(body.taxPercent, 100, "PPN"),
+  };
+  const isDefault = !adjustments.shippingCost && !adjustments.discountValue && !adjustments.taxPercent;
+  return isDefault ? null : adjustments;
+};
+// One nota: the header is shared by belanja bahan baku and perlengkapan;
+// normalizeItem reads a line (stockItemId or supplyItemId). status "draft"
+// keeps the nota without moving stock or saldo until it is posted.
+// requireRequestId is false when an existing draft is changed.
+const normalizeNota = (body, normalizeItem, { requireRequestId = true } = {}) => {
+  const requestId = requireRequestId ? clean(body.requestId, 64, "ID permintaan") : undefined;
+  if (requireRequestId && !/^[a-zA-Z0-9-]{16,64}$/.test(requestId)) throw createError(400, "ID permintaan tidak valid.");
+  const date = dateKey(body.date);
   if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 100) throw createError(400, "Isi 1 sampai 100 barang.");
+  const status = body.status == null || body.status === "" ? "posted" : body.status;
+  if (!STATUSES.includes(status)) throw createError(400, "Status nota harus draft atau posted.");
+  const adjustments = normalizeAdjustments(body);
   return {
-    requestId, date, ...reference(body.suplierId, body.suplierName, "suplierId", "suplierName", "Toko/sumber"),
-    paymentMethod: clean(body.paymentMethod, 80, "Pembayaran"),
+    ...(requireRequestId && { requestId }),
+    date, ...reference(body.suplierId, body.suplierName, "suplierId", "suplierName", "Toko/sumber"),
+    // A payment source (Kasir, Rekening Penjualan, ...) also posts saldo
+    // keluar; a free-text paymentMethod (older clients) only labels the nota.
+    ...(body.paymentSourceId != null && body.paymentSourceId !== ""
+      ? { paymentSourceId: number(body.paymentSourceId, 1, 4294967295, 0, "Sumber pembayaran") }
+      : { paymentMethod: clean(body.paymentMethod, 80, "Sumber pembayaran") }),
     note: body.note ? clean(body.note, 500, "Catatan") : "",
-    items: body.items.map(item => ({
-      ...reference(item?.stockItemId, item?.itemName, "stockItemId", "itemName", "Barang"),
-      quantity: number(item?.quantity, 0.001, 999999999, 3, "Qty"),
-      unit: unit(item?.unit),
-      unitPrice: number(item?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
-    })),
+    items: body.items.map(normalizeItem),
+    ...(adjustments && { adjustments }),
+    ...(status === "draft" && { status }),
   };
 };
+const normalizeLine = (item, idKey) => ({
+  ...reference(item?.[idKey], item?.itemName, idKey, "itemName", "Barang"),
+  quantity: number(item?.quantity, 0.001, 999999999, 3, "Qty"),
+  unit: unit(item?.unit),
+  unitPrice: number(item?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
+});
+const normalizePurchase = (body, options) => normalizeNota(body, item => normalizeLine(item, "stockItemId"), options);
+// A new perlengkapan (itemName) also needs its category.
+const normalizeSupplyPurchase = (body, options) => normalizeNota(body, item => {
+  const line = normalizeLine(item, "supplyItemId");
+  if (!line.itemName) return line;
+  if (!SUPPLY_CATEGORIES.includes(item?.category)) {
+    throw createError(400, `Pilih kategori ${line.itemName}: ${SUPPLY_CATEGORIES.join(", ")}.`);
+  }
+  return { ...line, category: item.category };
+}, options);
 const normalizeItemPatch = body => ({
   quantity: number(body?.quantity, 0.001, 999999999, 3, "Qty"),
   unit: unit(body?.unit),
@@ -66,5 +93,6 @@ module.exports = {
   convertQuantity,
   normalizeItemPatch,
   normalizePurchase,
+  normalizeSupplyPurchase,
   number,
 };

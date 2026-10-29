@@ -23,10 +23,24 @@ const {
   updateSemiItem,
   updateSemiStock,
 } = require("./semi.controller");
+const {
+  addSupplyItem,
+  deleteSupplyItem,
+  getSupplyItems,
+  updateSupplyItem,
+  updateSupplyStock,
+} = require("./supply.controller");
 
 const router = express.Router();
 const adminOnly = requireRole("admin", "Only admin can manage stock items!");
 const staffOnly = requireRole(["admin", "cashier"], "Only admin or cashier can update stock!");
+
+// Perlengkapan (stock_supply_items): peralatan, operasional, promosi.
+router.get("/supply", authenticate, getSupplyItems);
+router.post("/supply", authenticate, adminOnly, addSupplyItem);
+router.put("/supply/:id", authenticate, adminOnly, requireNumericId(), updateSupplyItem);
+router.delete("/supply/:id", authenticate, adminOnly, requireNumericId(), deleteSupplyItem);
+router.patch("/supply/:id/stock", authenticate, requireNumericId(), staffOnly, updateSupplyStock);
 
 // Bahan setengah jadi (stock_semi_items) and their cooking ("Catat Masak").
 router.get("/semi", authenticate, getSemiItems);

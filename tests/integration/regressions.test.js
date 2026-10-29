@@ -688,4 +688,230 @@ describe("regressions", () => {
     assert.equal(kept.body.data.resetDaily, false);
     assert.equal(nasi.resetDaily, true);
   });
+
+  it("posts saldo keluar for a purchase and serves its bukti nota only to logged-in users", async () => {
+    // Kasir see the sources to fill in a draft, never their saldo.
+    const cashierList = await request("GET", "/api/payment-source", { as: "cashier" });
+    assert.equal(cashierList.status, 200);
+    assert.deepEqual(cashierList.body.data.map((source) => source.balance), [null, null, null]);
+    assert.equal((await request("GET", "/api/payment-source/1/mutations", { as: "cashier" })).status, 403);
+    const sources = await request("GET", "/api/payment-source", { as: "admin" });
+    assert.deepEqual(sources.body.data.map((source) => source.name), ["Kasir (Tunai)", "Rekening Penjualan", "Niskala"]);
+    const kasir = sources.body.data[0];
+    const topUp = await request("POST", `/api/payment-source/${kasir.id}/mutations`, {
+      as: "admin",
+      body: { type: "in", amount: 100000, date: "2026-10-01", note: "Modal awal" },
+    });
+    assert.equal(topUp.status, 201);
+    assert.equal(topUp.body.data.balance, 100000);
+
+    const purchase = await request("POST", "/api/shopping/purchases", {
+      as: "admin",
+      body: {
+        requestId: "payment-source-purchase-0001",
+        date: "2026-10-02",
+        suplierName: "Toko Saldo",
+        paymentSourceId: kasir.id,
+        items: [{ itemName: "Gula Saldo", quantity: 1000, unit: "gr", unitPrice: 15 }],
+      },
+    });
+    assert.equal(purchase.status, 201);
+    assert.equal(purchase.body.data.balance, 85000);
+    const mutations = await request("GET", `/api/payment-source/${kasir.id}/mutations`, { as: "admin" });
+    assert.deepEqual(
+      mutations.body.data.mutations.map((row) => [row.date, row.amountIn, row.amountOut, row.balanceAfter, row.userName]),
+      [["2026-10-02", 0, 15000, 85000, "admin"], ["2026-10-01", 100000, 0, 100000, "admin"]]
+    );
+
+    const purchaseId = purchase.body.data.id;
+    const asCashier = new FormData();
+    asCashier.append("files", new Blob([TINY_PNG], { type: "image/png" }), "nota.png");
+    assert.equal((await request("POST", `/api/shopping/purchases/${purchaseId}/attachments`, { as: "cashier", body: asCashier })).status, 403);
+    const fake = new FormData();
+    fake.append("files", new Blob(["not an image at all"], { type: "image/jpeg" }), "nota.jpg");
+    const rejected = await request("POST", `/api/shopping/purchases/${purchaseId}/attachments`, { as: "admin", body: fake });
+    assert.equal(rejected.status, 400);
+    const tooMany = new FormData();
+    for (let index = 0; index < 6; index += 1) {
+      tooMany.append("files", new Blob([TINY_PNG], { type: "image/png" }), `nota-${index}.png`);
+    }
+    assert.equal((await request("POST", `/api/shopping/purchases/${purchaseId}/attachments`, { as: "admin", body: tooMany })).status, 400);
+
+    const form = new FormData();
+    form.append("files", new Blob([TINY_PNG], { type: "image/png" }), "nota.png");
+    const uploaded = await request("POST", `/api/shopping/purchases/${purchaseId}/attachments`, { as: "admin", body: form });
+    assert.equal(uploaded.status, 201);
+    const [attachment] = uploaded.body.data;
+    assert.equal(attachment.name, "nota.png");
+
+    const anonymous = await fetch(`${server.baseUrl}${attachment.url}`);
+    assert.equal(anonymous.status, 401);
+    const photo = await fetch(`${server.baseUrl}${attachment.url}`, { headers: { Cookie: cookies.cashier } });
+    assert.equal(photo.status, 200);
+    assert.equal(photo.headers.get("content-type"), "image/png");
+    assert.equal(photo.headers.get("x-content-type-options"), "nosniff");
+    assert.deepEqual(Buffer.from(await photo.arrayBuffer()), TINY_PNG);
+    // Receipts are never reachable through the public /uploads folder.
+    assert.equal((await fetch(`${server.baseUrl}/uploads/../storage/purchase-receipts`)).status, 404);
+
+    const list = await request("GET", "/api/shopping/purchases?search=Gula%20Saldo", { as: "cashier" });
+    assert.deepEqual(list.body.data.itemGroups[0].histories[0].attachments.map((row) => row.id), [attachment.id]);
+    assert.equal(list.body.data.itemGroups[0].histories[0].paymentMethod, "Kasir (Tunai)");
+
+    assert.equal((await request("DELETE", `/api/shopping/purchase-attachments/${attachment.id}`, { as: "cashier" })).status, 403);
+    const removed = await request("DELETE", `/api/shopping/purchase-attachments/${attachment.id}`, { as: "admin" });
+    assert.equal(removed.status, 200);
+    assert.equal((await request("GET", attachment.url, { as: "admin" })).status, 404);
+  });
+
+  it("rejects a second bahan baku with the same name with 409 instead of 500", async () => {
+    const body = { name: "Sirup Uji", category: "Sirup", unit: "ml", stock: 0, minimumStock: 100 };
+    const created = await request("POST", "/api/stock-item", { as: "admin", body });
+    assert.equal(created.status, 201);
+    assert.equal(created.body.data.name, "Sirup Uji");
+
+    const duplicate = await request("POST", "/api/stock-item", { as: "admin", body: { ...body, name: "sirup uji" } });
+    assert.equal(duplicate.status, 409);
+    assert.equal(duplicate.body.message, "Bahan sirup uji sudah ada di Stok → Bahan Baku.");
+    assert.equal((await request("POST", "/api/stock-item", { as: "cashier", body: { ...body, name: "Kasir Uji" } })).status, 403);
+  });
+
+  it("keeps perlengkapan apart from bahan baku and buys them on the same nota form", async () => {
+    const created = await request("POST", "/api/stock-item/supply", {
+      as: "admin",
+      body: { name: "Blender Uji", category: "Peralatan", unit: "unit", minimumStock: 1 },
+    });
+    assert.equal(created.status, 201);
+    assert.deepEqual(
+      [created.body.data.category, created.body.data.stock, created.body.data.status],
+      ["Peralatan", 0, "HARUS ORDER"]
+    );
+    for (const body of [
+      { name: "Blender Uji", category: "Peralatan", unit: "unit" },
+      { name: "Sirup Uji", category: "Operasional", unit: "ml" },
+    ]) {
+      assert.equal((await request("POST", "/api/stock-item/supply", { as: "admin", body })).status, 409);
+    }
+    assert.equal((await request("POST", "/api/stock-item/supply", { as: "admin", body: { name: "X", category: "Bahan", unit: "pcs" } })).status, 400);
+    assert.equal((await request("POST", "/api/stock-item/supply", { as: "cashier", body: { name: "Y", category: "Promosi", unit: "pcs" } })).status, 403);
+    assert.equal((await request("POST", "/api/stock-item", { as: "admin", body: { name: "Blender Uji", category: "Alat", unit: "unit" } })).status, 409);
+
+    const purchase = await request("POST", "/api/shopping/supply-purchases", {
+      as: "admin",
+      body: {
+        requestId: "supply-purchase-0000001",
+        date: "2026-10-29",
+        suplierName: "Toko Alat",
+        paymentMethod: "Cash",
+        items: [
+          { supplyItemId: created.body.data.id, quantity: 2, unit: "unit", unitPrice: 350000 },
+          { itemName: "Brosur Uji", category: "Promosi", quantity: 500, unit: "lembar", unitPrice: 300 },
+        ],
+      },
+    });
+    assert.equal(purchase.status, 201);
+    assert.equal(purchase.body.data.total, 850000);
+    assert.equal((await request("POST", "/api/shopping/supply-purchases", { as: "cashier", body: {} })).status, 403);
+
+    const supplies = await request("GET", "/api/stock-item/supply", { as: "cashier" });
+    const byName = Object.fromEntries(supplies.body.data.map((item) => [item.name, item]));
+    assert.deepEqual(
+      [byName["Blender Uji"].stock, byName["Blender Uji"].stockValue, byName["Blender Uji"].status],
+      [2, 700000, "HAMPIR HABIS"]
+    );
+    assert.deepEqual([byName["Brosur Uji"].category, byName["Brosur Uji"].unit, byName["Brosur Uji"].averageCost], ["Promosi", "lembar", 300]);
+    const rawNames = (await request("GET", "/api/stock-item", { as: "admin" })).body.data.map((item) => item.name);
+    assert.equal(rawNames.includes("Blender Uji"), false);
+
+    const adjusted = await request("PATCH", `/api/stock-item/supply/${byName["Brosur Uji"].id}/stock`, { as: "cashier", body: { stock: 200 } });
+    assert.deepEqual([adjusted.body.data.stock, adjusted.body.data.stockValue], [200, 60000]);
+
+    const history = await request("GET", "/api/shopping/supply-purchases?search=Brosur", { as: "cashier" });
+    assert.deepEqual(
+      [history.body.data.itemGroups[0].itemName, history.body.data.itemGroups[0].category, history.body.data.itemGroups[0].histories[0].paymentMethod],
+      ["Brosur Uji", "Promosi", "Cash"]
+    );
+
+    const form = new FormData();
+    form.append("files", new Blob([TINY_PNG], { type: "image/png" }), "nota-alat.png");
+    const uploaded = await request("POST", `/api/shopping/supply-purchases/${purchase.body.data.id}/attachments`, { as: "admin", body: form });
+    assert.equal(uploaded.status, 201);
+    const [receipt] = uploaded.body.data;
+    assert.match(receipt.url, /^\/api\/shopping\/supply-purchase-attachments\/\d+$/);
+    assert.equal((await fetch(`${server.baseUrl}${receipt.url}`)).status, 401);
+    const photo = await fetch(`${server.baseUrl}${receipt.url}`, { headers: { Cookie: cookies.cashier } });
+    assert.deepEqual([photo.status, photo.headers.get("content-type")], [200, "image/png"]);
+    assert.equal((await request("DELETE", receipt.url, { as: "admin" })).status, 200);
+
+    const updated = await request("PUT", `/api/stock-item/supply/${byName["Blender Uji"].id}`, {
+      as: "admin",
+      body: { name: "Blender Bar", category: "Peralatan", unit: "unit", minimumStock: 1 },
+    });
+    assert.deepEqual([updated.body.data.name, updated.body.data.stock], ["Blender Bar", 2]);
+    assert.equal((await request("DELETE", `/api/stock-item/supply/${byName["Brosur Uji"].id}`, { as: "admin" })).status, 200);
+    const afterDelete = await request("GET", "/api/shopping/supply-purchases?search=Brosur", { as: "admin" });
+    assert.deepEqual([afterDelete.body.data.itemGroups[0].stockItemId, afterDelete.body.data.itemGroups[0].itemName], [null, "Brosur Uji"]);
+  });
+
+  it("lets kasir save a draft nota with its footer and only admins post it", async () => {
+    const nota = {
+      date: "2026-10-30",
+      suplierName: "Toko Draft",
+      paymentSourceId: 1,
+      shippingCost: 10000,
+      discountType: "amount",
+      discountValue: 5000,
+      taxPercent: 11,
+      items: [{ itemName: "Kopi Draft", quantity: 1, unit: "kg", unitPrice: 100000 }],
+    };
+    // 100000 - 5000 + 10450 (PPN 11% of 95000) + 10000
+    assert.equal((await request("POST", "/api/shopping/purchases", { as: "cashier", body: { ...nota, requestId: "draft-nota-0000000001" } })).status, 403);
+    const draft = await request("POST", "/api/shopping/purchases", {
+      as: "cashier",
+      body: { ...nota, requestId: "draft-nota-0000000002", status: "draft" },
+    });
+    assert.equal(draft.status, 201);
+    assert.deepEqual([draft.body.data.status, draft.body.data.total], ["draft", 115450]);
+    const drafts = await request("GET", "/api/shopping/purchases/drafts", { as: "cashier" });
+    assert.deepEqual(
+      drafts.body.data.map((row) => [row.id, row.createdBy, row.taxAmount, row.items[0].itemName]),
+      [[draft.body.data.id, "cashier", 10450, "Kopi Draft"]]
+    );
+    const stockNames = (await request("GET", "/api/stock-item", { as: "admin" })).body.data.map((item) => item.name);
+    assert.equal(stockNames.includes("Kopi Draft"), false);
+
+    const photo = new FormData();
+    photo.append("files", new Blob([TINY_PNG], { type: "image/png" }), "nota-draft.png");
+    const draftPhoto = await request("POST", `/api/shopping/purchases/${draft.body.data.id}/attachments`, { as: "cashier", body: photo });
+    assert.equal(draftPhoto.status, 201);
+
+    const asCashier = await request("PUT", `/api/shopping/purchases/${draft.body.data.id}`, {
+      as: "cashier",
+      body: { ...nota, status: "posted" },
+    });
+    assert.equal(asCashier.status, 403);
+    const balanceBefore = (await request("GET", "/api/payment-source", { as: "admin" })).body.data[0].balance;
+    const posted = await request("PUT", `/api/shopping/purchases/${draft.body.data.id}`, {
+      as: "admin",
+      body: { ...nota, status: "posted" },
+    });
+    assert.equal(posted.status, 200);
+    assert.deepEqual([posted.body.data.status, posted.body.data.balance], ["posted", balanceBefore - 115450]);
+    const kopi = (await request("GET", "/api/stock-item", { as: "admin" })).body.data.find((item) => item.name === "Kopi Draft");
+    assert.deepEqual([kopi.unit, kopi.stock, kopi.stockValue], ["kg", 1, 115450]);
+    assert.deepEqual((await request("GET", "/api/shopping/purchases/drafts", { as: "admin" })).body.data, []);
+    assert.equal((await request("DELETE", `/api/shopping/purchases/${draft.body.data.id}`, { as: "admin" })).status, 409);
+    // Once posted, only admins change its photos.
+    assert.equal((await request("DELETE", draftPhoto.body.data[0].url, { as: "cashier" })).status, 403);
+    assert.equal((await request("DELETE", draftPhoto.body.data[0].url, { as: "admin" })).status, 200);
+
+    // Kasir may throw away their own draft.
+    const second = await request("POST", "/api/shopping/supply-purchases", {
+      as: "cashier",
+      body: { ...nota, requestId: "draft-nota-0000000003", status: "draft", items: [{ itemName: "Lap Draft", category: "Operasional", quantity: 3, unit: "pcs", unitPrice: 5000 }] },
+    });
+    assert.equal(second.status, 201);
+    assert.equal((await request("DELETE", `/api/shopping/supply-purchases/${second.body.data.id}`, { as: "cashier" })).status, 200);
+    assert.deepEqual((await request("GET", "/api/shopping/supply-purchases/drafts", { as: "cashier" })).body.data, []);
+  });
 });

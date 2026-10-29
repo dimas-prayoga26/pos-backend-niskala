@@ -1,9 +1,18 @@
 const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
+const { isDuplicateEntryError } = require("../../shared/utils/dbErrors");
 const StockItem = require("./stock.repository");
+const { isSupplyItemName } = require("./supply.repository");
 
 const toNonNegativeNumber = (value) => Math.max(Number(value) || 0, 0);
+
+const rethrowDuplicateName = (name) => (error) => {
+  if (isDuplicateEntryError(error)) {
+    throw createHttpError(409, `Bahan ${name} sudah ada di Stok → Bahan Baku.`);
+  }
+  throw error;
+};
 
 const normalizeStockPayload = (body) => ({
   name: String(body.name || "").trim(),
@@ -24,6 +33,10 @@ const validateStockPayload = async ({ name, category, unit }) => {
     return createHttpError(409, `${name} sudah dipakai di bahan setengah jadi. Pilih nama lain.`);
   }
 
+  if (await isSupplyItemName(name)) {
+    return createHttpError(409, `${name} sudah ada di Perlengkapan. Pilih nama lain.`);
+  }
+
   return null;
 };
 
@@ -42,7 +55,7 @@ const addStockItem = asyncHandler(async (req, res, next) => {
 
   if (validationError) return next(validationError);
 
-  const stockItem = await StockItem.create(payload);
+  const stockItem = await StockItem.create(payload).catch(rethrowDuplicateName(payload.name));
 
   emitStockChanged("stock-item-created", stockItem.id);
   res.status(201).json({
@@ -58,7 +71,7 @@ const updateStockItem = asyncHandler(async (req, res, next) => {
 
   if (validationError) return next(validationError);
 
-  const stockItem = await StockItem.update(req.params.id, payload);
+  const stockItem = await StockItem.update(req.params.id, payload).catch(rethrowDuplicateName(payload.name));
 
   if (!stockItem) {
     return next(createHttpError(404, "Stock item not found!"));

@@ -114,11 +114,23 @@ CREATE TABLE IF NOT EXISTS history_stock_raw_purchases (
   suplier_id INT UNSIGNED NOT NULL,
   suplier_name VARCHAR(150) NOT NULL,
   payment_method VARCHAR(80) NOT NULL,
+  payment_source_id INT UNSIGNED NULL,
   note VARCHAR(500) NOT NULL DEFAULT '',
+  subtotal DECIMAL(14,2) NOT NULL DEFAULT 0,
+  shipping_cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+  discount_type VARCHAR(10) NOT NULL DEFAULT 'amount',
+  discount_value DECIMAL(14,2) NOT NULL DEFAULT 0,
+  discount_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  tax_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+  tax_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
   total DECIMAL(14,2) NOT NULL,
+  status VARCHAR(10) NOT NULL DEFAULT 'posted',
   created_by INT UNSIGNED NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  posted_at TIMESTAMP NULL,
+  posted_by INT UNSIGNED NULL,
   INDEX idx_stock_purchases_date (purchase_date, id),
+  INDEX idx_raw_purchases_status (status, purchase_date, id),
   CONSTRAINT fk_stock_purchases_suplier
     FOREIGN KEY (suplier_id) REFERENCES suplier(id)
     ON DELETE RESTRICT,
@@ -136,6 +148,7 @@ CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_items (
   unit VARCHAR(30) NOT NULL,
   unit_price DECIMAL(14,2) NOT NULL,
   total DECIMAL(14,2) NOT NULL,
+  cost_total DECIMAL(14,2) NOT NULL DEFAULT 0,
   stock_quantity DECIMAL(12,2) NOT NULL,
   stock_unit VARCHAR(30) NOT NULL,
   stock_unit_cost INT NOT NULL DEFAULT 0,
@@ -173,6 +186,191 @@ CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_item_logs (
     ON DELETE SET NULL,
   CONSTRAINT fk_stock_purchase_item_logs_user
     FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
+-- Bukti nota: photos of a purchase's paper receipt. The files are in
+-- storage/purchase-receipts (not public) under file_name; the API serves them
+-- to logged-in users only.
+CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_attachments (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  purchase_id INT UNSIGNED NOT NULL,
+  file_name VARCHAR(100) NOT NULL UNIQUE,
+  original_name VARCHAR(255) NOT NULL DEFAULT '',
+  mime_type VARCHAR(50) NOT NULL,
+  size_bytes INT UNSIGNED NOT NULL,
+  uploaded_by INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_purchase_attachments_purchase (purchase_id, id),
+  CONSTRAINT fk_purchase_attachments_purchase
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_raw_purchases(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_purchase_attachments_uploaded_by
+    FOREIGN KEY (uploaded_by) REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
+-- Sumber pembayaran (Kasir (Tunai), Rekening Penjualan, Niskala, ...) and
+-- their current saldo. Seeded once; sources are deactivated, never deleted.
+CREATE TABLE IF NOT EXISTS meta_data_payment_source (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  balance DECIMAL(14,2) NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO meta_data_payment_source (name, sort_order) VALUES
+  ('Kasir (Tunai)', 1),
+  ('Rekening Penjualan', 2),
+  ('Niskala', 3);
+
+-- Every change of a payment source's saldo: saldo masuk (amount_in), saldo
+-- keluar (amount_out) and the saldo after it (balance_after), in the order
+-- they were recorded. reference_type: purchase (a nota paid from the source,
+-- reference_id = history_stock_raw_purchases.id), purchase_edit /
+-- purchase_delete (the difference when its items change), manual.
+CREATE TABLE IF NOT EXISTS history_payment_source_mutations (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  payment_source_id INT UNSIGNED NOT NULL,
+  mutation_date DATE NOT NULL,
+  amount_in DECIMAL(14,2) NOT NULL DEFAULT 0,
+  amount_out DECIMAL(14,2) NOT NULL DEFAULT 0,
+  balance_after DECIMAL(14,2) NOT NULL,
+  reference_type VARCHAR(30) NOT NULL,
+  reference_id INT UNSIGNED NULL,
+  note VARCHAR(255) NOT NULL DEFAULT '',
+  user_id INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_payment_source_mutations_source (payment_source_id, id),
+  INDEX idx_payment_source_mutations_reference (reference_type, reference_id),
+  CONSTRAINT fk_payment_source_mutations_source
+    FOREIGN KEY (payment_source_id) REFERENCES meta_data_payment_source(id)
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_payment_source_mutations_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
+-- Nota footer and drafts (see SHOPPING.md): status draft|posted, the payment
+-- source posted from, and who posted (approved) it.
+ALTER TABLE history_stock_raw_purchases
+  ADD CONSTRAINT fk_raw_purchases_payment_source
+    FOREIGN KEY (payment_source_id) REFERENCES meta_data_payment_source(id)
+    ON DELETE SET NULL,
+  ADD CONSTRAINT fk_raw_purchases_posted_by
+    FOREIGN KEY (posted_by) REFERENCES users(id)
+    ON DELETE SET NULL;
+
+-- Perlengkapan: bought items that are not bahan baku. category: Peralatan,
+-- Operasional or Promosi. Stocked like stock_raw_items (moving average
+-- unit_cost, stock_value) but never used by recipes, so never part of HPP.
+CREATE TABLE IF NOT EXISTS stock_supply_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL UNIQUE,
+  category VARCHAR(30) NOT NULL,
+  unit VARCHAR(30) NOT NULL DEFAULT '',
+  stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+  minimum_stock DECIMAL(12,2) NOT NULL DEFAULT 0,
+  unit_cost INT NOT NULL DEFAULT 0,
+  stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
+  supplier VARCHAR(150) NULL,
+  is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_stock_supply_items_category (category, name)
+);
+
+-- Belanja perlengkapan: the same nota as history_stock_raw_purchases, made
+-- from the same "Tambah Bahan Belanjaan" form (Jenis Belanja: Perlengkapan).
+-- Paid from a payment source it posts saldo keluar with reference_type
+-- supply_purchase.
+CREATE TABLE IF NOT EXISTS history_stock_supply_purchases (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  request_id VARCHAR(64) NOT NULL UNIQUE,
+  payload_hash CHAR(64) NOT NULL,
+  purchase_date DATE NOT NULL,
+  suplier_id INT UNSIGNED NOT NULL,
+  suplier_name VARCHAR(150) NOT NULL,
+  payment_method VARCHAR(80) NOT NULL,
+  payment_source_id INT UNSIGNED NULL,
+  note VARCHAR(500) NOT NULL DEFAULT '',
+  subtotal DECIMAL(14,2) NOT NULL DEFAULT 0,
+  shipping_cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+  discount_type VARCHAR(10) NOT NULL DEFAULT 'amount',
+  discount_value DECIMAL(14,2) NOT NULL DEFAULT 0,
+  discount_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  tax_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+  tax_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  total DECIMAL(14,2) NOT NULL,
+  status VARCHAR(10) NOT NULL DEFAULT 'posted',
+  created_by INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  posted_at TIMESTAMP NULL,
+  posted_by INT UNSIGNED NULL,
+  INDEX idx_supply_purchases_date (purchase_date, id),
+  INDEX idx_supply_purchases_status (status, purchase_date, id),
+  CONSTRAINT fk_supply_purchases_suplier
+    FOREIGN KEY (suplier_id) REFERENCES suplier(id)
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_supply_purchases_created_by
+    FOREIGN KEY (created_by) REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
+ALTER TABLE history_stock_supply_purchases
+  ADD CONSTRAINT fk_supply_purchases_payment_source
+    FOREIGN KEY (payment_source_id) REFERENCES meta_data_payment_source(id)
+    ON DELETE SET NULL,
+  ADD CONSTRAINT fk_supply_purchases_posted_by
+    FOREIGN KEY (posted_by) REFERENCES users(id)
+    ON DELETE SET NULL;
+
+-- Lines of a belanja perlengkapan; item_name and category are snapshots.
+CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  purchase_id INT UNSIGNED NOT NULL,
+  supply_item_id INT UNSIGNED NULL,
+  item_name VARCHAR(150) NOT NULL,
+  category VARCHAR(30) NOT NULL,
+  quantity DECIMAL(12,3) NOT NULL,
+  unit VARCHAR(30) NOT NULL,
+  unit_price DECIMAL(14,2) NOT NULL,
+  total DECIMAL(14,2) NOT NULL,
+  cost_total DECIMAL(14,2) NOT NULL DEFAULT 0,
+  stock_quantity DECIMAL(12,2) NOT NULL,
+  stock_unit VARCHAR(30) NOT NULL,
+  stock_unit_cost INT NOT NULL DEFAULT 0,
+  stock_value_after DECIMAL(14,2) NOT NULL DEFAULT 0,
+  INDEX idx_supply_purchase_items_item (supply_item_id),
+  CONSTRAINT fk_supply_purchase_items_purchase
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_supply_purchases(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_supply_purchase_items_supply_item
+    FOREIGN KEY (supply_item_id) REFERENCES stock_supply_items(id)
+    ON DELETE SET NULL
+);
+
+-- Bukti nota of a belanja perlengkapan (files in storage/purchase-receipts,
+-- named supply-<purchase>-<random>).
+CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_attachments (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  purchase_id INT UNSIGNED NOT NULL,
+  file_name VARCHAR(100) NOT NULL UNIQUE,
+  original_name VARCHAR(255) NOT NULL DEFAULT '',
+  mime_type VARCHAR(50) NOT NULL,
+  size_bytes INT UNSIGNED NOT NULL,
+  uploaded_by INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_supply_purchase_attachments_purchase (purchase_id, id),
+  CONSTRAINT fk_supply_purchase_attachments_purchase
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_supply_purchases(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_supply_purchase_attachments_uploaded_by
+    FOREIGN KEY (uploaded_by) REFERENCES users(id)
     ON DELETE SET NULL
 );
 

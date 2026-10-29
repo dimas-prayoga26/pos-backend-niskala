@@ -1,33 +1,20 @@
-// Purchases (belanja) receive stock: each save is one transaction that creates
-// missing suppliers/items, raises stock and recomputes the moving average cost.
-// request_id makes retries idempotent; see SHOPPING.md for the business rules.
+// Belanja bahan baku: notas whose items are stock_raw_items. Saving, posting,
+// drafts and line edits run through the nota engine (shopping.nota): posting
+// creates missing items, raises stock, recomputes the moving average cost and
+// the menu HPP, and posts the grand total as saldo keluar. request_id makes
+// retries idempotent; see SHOPPING.md for the business rules.
 const createError = require("http-errors");
-const crypto = require("node:crypto");
 const { pool } = require("../../infrastructure/database/pool");
-const { roundCost, roundCurrency } = require("../../shared/utils/money");
 const { refreshMenuCosts } = require("../menu/menu.costs");
-const {
-  clean,
-  convertQuantity,
-  normalizeItemPatch,
-  normalizePurchase,
-  number,
-} = require("./shopping.validation");
+const { REFERENCE_TYPES } = require("../paymentSources/paymentSource.ledger");
+const { RECEIPT_TARGETS, attachmentUrl } = require("./shopping.attachments");
+const { actor, createNotaEngine } = require("./shopping.nota");
+const { clean, normalizePurchase, number } = require("./shopping.validation");
 
 const parseJson = value => {
   if (!value) return null;
   if (typeof value === "object") return value;
   try { return JSON.parse(value); } catch { return null; }
-};
-const actor = user => {
-  if (typeof user === "number" || typeof user === "string") {
-    return { userId: user || null, userName: "Admin" };
-  }
-
-  return {
-    userId: user?.id || user?._id || null,
-    userName: [user?.name, user?.email].filter(Boolean).join(" - ").slice(0, 150) || "Admin",
-  };
 };
 const snapshotItem = row => ({
   id: row.id,
@@ -43,7 +30,7 @@ const snapshotItem = row => ({
   stockAverageCost: Number(row.stock_unit_cost || 0),
   stockValueAfter: Number(row.stock_value_after || 0),
 });
-const writeItemLog = async (connection, { item, action, oldData, newData, user }) => {
+const writeItemLog = async (connection, { line, action, oldData, newData, user }) => {
   const by = actor(user);
 
   await connection.query(
@@ -51,10 +38,10 @@ const writeItemLog = async (connection, { item, action, oldData, newData, user }
       (purchase_item_id, purchase_id, stock_item_id, item_name, action, old_data, new_data, user_id, user_name)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      item.id,
-      item.purchase_id,
-      item.stock_item_id,
-      item.item_name,
+      line.id,
+      line.purchase_id,
+      line.stock_item_id,
+      line.item_name,
       action,
       oldData == null ? null : JSON.stringify(oldData),
       newData == null ? null : JSON.stringify(newData),
@@ -63,36 +50,54 @@ const writeItemLog = async (connection, { item, action, oldData, newData, user }
     ]
   );
 };
-const updatePurchaseTotal = async (connection, purchaseId) => {
-  const [[totalRow]] = await connection.query(
-    "SELECT COALESCE(SUM(total), 0) AS total FROM history_stock_raw_purchase_items WHERE purchase_id = ?",
-    [purchaseId]
-  );
-  await connection.query("UPDATE history_stock_raw_purchases SET total = ? WHERE id = ?", [
-    roundCurrency(totalRow.total),
-    purchaseId,
-  ]);
-};
-const applyStockDelta = async (connection, stockItemId, deltaQty, deltaValue) => {
-  const [[stock]] = await connection.query(
-    "SELECT * FROM stock_raw_items WHERE id = ? FOR UPDATE",
-    [stockItemId]
-  );
-  if (!stock) throw createError(404, "Barang stok tidak ditemukan.");
 
-  const nextStock = Math.round((Number(stock.stock || 0) + deltaQty) * 100) / 100;
-  const nextValue = roundCurrency(Number(stock.stock_value || 0) + deltaValue);
-  const nextAverageCost = nextStock > 0 ? roundCost(nextValue / nextStock) : 0;
-
-  await connection.query(
-    "UPDATE stock_raw_items SET stock = ?, stock_value = ?, unit_cost = ? WHERE id = ?",
-    [nextStock, nextValue, nextAverageCost, stockItemId]
-  );
-
-  return { stock: nextStock, stockValue: nextValue, averageCost: nextAverageCost };
+// A new name may not be a bahan setengah jadi or perlengkapan.
+const checkNewItem = async (connection, { itemName }) => {
+  const name = clean(itemName, 150, "Nama barang");
+  const [semiRows] = await connection.query("SELECT id FROM stock_semi_items WHERE name = ?", [name]);
+  if (semiRows.length) throw createError(400, `${name} adalah bahan setengah jadi, stoknya dari Catat Masak. Belanjakan bahan bakunya.`);
+  const [supplyRows] = await connection.query("SELECT id FROM stock_supply_items WHERE name = ?", [name]);
+  if (supplyRows.length) throw createError(400, `${name} ada di Perlengkapan. Pilih Jenis Belanja Perlengkapan.`);
+  const [[existing]] = await connection.query("SELECT is_active FROM stock_raw_items WHERE name = ?", [name]);
+  if (existing && !existing.is_active) throw createError(409, "Barang sudah ada tetapi tidak aktif. Aktifkan melalui pengelolaan stok.");
 };
 
-const createShoppingService = db => {
+const RAW_NOTA = {
+  kind: "raw",
+  label: "belanja",
+  purchases: "history_stock_raw_purchases",
+  items: "history_stock_raw_purchase_items",
+  attachments: RECEIPT_TARGETS.raw.attachments,
+  attachmentUrl: RECEIPT_TARGETS.raw.url,
+  stockTable: "stock_raw_items",
+  itemFk: "stock_item_id",
+  itemIdKey: "stockItemId",
+  referenceTypes: {
+    purchase: REFERENCE_TYPES.purchase,
+    edit: REFERENCE_TYPES.purchaseEdit,
+    delete: REFERENCE_TYPES.purchaseDelete,
+  },
+  normalize: normalizePurchase,
+  ledgerNote: (id, supplierName) => `Belanja #${id} - ${supplierName}`,
+  missingUnitMessage: name => `Lengkapi satuan ${name} di Stok → Bahan Baku terlebih dahulu.`,
+  unlinkedMessage: "Item belanja ini tidak terhubung ke stok.",
+  stockMissingMessage: "Barang stok tidak ditemukan.",
+  checkNewItem,
+  // The unit is set by the first posted purchase.
+  createItem: async (connection, line) => {
+    await checkNewItem(connection, { itemName: line.item_name });
+    await connection.query(`INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock)
+      VALUES (?, 'Umum', '', 0, 0) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [line.item_name]);
+    const [[row]] = await connection.query("SELECT id FROM stock_raw_items WHERE name = ?", [line.item_name]);
+    return row.id;
+  },
+  afterStock: (connection, stockItemIds) => refreshMenuCosts(connection, { stockItemIds }),
+  logLine: writeItemLog,
+  snapshotLine: snapshotItem,
+};
+
+const createShoppingService = (db, { receiptDir } = {}) => {
+  const nota = createNotaEngine(db, { ...RAW_NOTA, receiptDir });
   const suppliers = async () => (await db.query("SELECT id, name FROM suplier ORDER BY name"))[0];
   const saveSupplier = async ({ id, name }) => {
     name = clean(name, 150, "Nama suplier");
@@ -111,207 +116,12 @@ const createShoppingService = db => {
       throw error;
     }
   };
-  const createSupplier = async (connection, name) => {
-    name = clean(name, 150, "Toko/sumber");
-    await connection.query("INSERT INTO suplier (name) VALUES (?) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)", [name]);
-    return (await connection.query("SELECT id, name FROM suplier WHERE name = ?", [name]))[0][0];
-  };
-  const createItem = async (connection, name) => {
-    name = clean(name, 150, "Nama barang");
-    const [semiRows] = await connection.query("SELECT id FROM stock_semi_items WHERE name = ?", [name]);
-    if (semiRows.length) throw createError(400, `${name} adalah bahan setengah jadi, stoknya dari Catat Masak. Belanjakan bahan bakunya.`);
-    // Unit is set on first purchase, after qty and unit have been entered.
-    await connection.query(`INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock)
-      VALUES (?, 'Umum', '', 0, 0) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [name]);
-    const row = (await connection.query("SELECT id, name, unit, stock, is_active FROM stock_raw_items WHERE name = ?", [name]))[0][0];
-    if (!row.is_active) throw createError(409, "Barang sudah ada tetapi tidak aktif. Aktifkan melalui pengelolaan stok.");
-    return { id: row.id, name: row.name, unit: row.unit, stock: Number(row.stock) };
-  };
-  const save = async (body, user) => {
-    const userId = typeof user === "object" && user ? user.id || user._id : user;
-    const data = normalizePurchase(body);
-    const hash = crypto.createHash("sha256").update(JSON.stringify({ ...data, userId })).digest("hex");
-    const connection = await db.getConnection();
-    try {
-      await connection.beginTransaction();
-      const supplier = data.suplierName
-        ? await createSupplier(connection, data.suplierName)
-        : (await connection.query("SELECT id, name FROM suplier WHERE id = ?", [data.suplierId]))[0][0];
-      if (!supplier) throw createError(400, "Toko/sumber tidak ditemukan.");
-      const total = data.items.reduce((sum, item) => sum + Math.round(item.quantity * item.unitPrice * 100), 0) / 100;
-      number(total, 0, 999999999999.99, 2, "Total belanja");
-      const [header] = await connection.query(`INSERT INTO history_stock_raw_purchases
-        (request_id, payload_hash, purchase_date, suplier_id, suplier_name, payment_method, note, total, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [data.requestId, hash, data.date, supplier.id, supplier.name, data.paymentMethod, data.note, total, userId]);
-      // Resolve temporary names only inside the purchase transaction.
-      const newItems = new Map();
-      for (const name of [...new Set(data.items.map(item => item.itemName).filter(Boolean))].sort()) {
-        newItems.set(name, await createItem(connection, name));
-      }
-      const items = data.items.map(item => ({ ...item, stockItemId: item.stockItemId || newItems.get(item.itemName).id }));
-      const ids = [...new Set(items.map(item => item.stockItemId))].sort((a,b) => a-b);
-      const [stocks] = await connection.query(`SELECT * FROM stock_raw_items WHERE id IN (${ids.map(()=>"?").join(",")}) ORDER BY id FOR UPDATE`, ids);
-      const byId = new Map(stocks.map(stock => [stock.id, stock]));
-      for (const item of items) {
-        const stock = byId.get(item.stockItemId);
-        if (!stock || !stock.is_active) throw createError(400, "Salah satu barang tidak tersedia. Muat ulang daftar barang.");
-        if (!stock.unit) {
-          if (Number(stock.stock) !== 0) throw createError(400, `Lengkapi satuan ${stock.name} di Stok Barang terlebih dahulu.`);
-          stock.unit = item.unit;
-        }
-        const stockQty = convertQuantity(item.quantity, item.unit, stock.unit);
-        const previousStock = Math.max(Number(stock.stock || 0), 0);
-        const previousAverageCost = Number(stock.unit_cost || 0);
-        const previousValue = Math.max(
-          Number(stock.stock_value || 0),
-          roundCurrency(previousStock * previousAverageCost)
-        );
-        const purchaseValue = roundCurrency(item.quantity * item.unitPrice);
-        stock.stock = Math.round((Number(stock.stock) + stockQty) * 100) / 100;
-        number(stock.stock, -9999999999.99, 9999999999.99, 2, "Jumlah stok akhir");
-        stock.stock_value = roundCurrency(previousValue + purchaseValue);
-        stock.unit_cost = stock.stock > 0 ? roundCost(stock.stock_value / stock.stock) : 0;
-        await connection.query(
-          "UPDATE stock_raw_items SET stock = ?, unit = ?, unit_cost = ?, stock_value = ?, supplier = ? WHERE id = ?",
-          [stock.stock, stock.unit, stock.unit_cost, stock.stock_value, supplier.name, stock.id]
-        );
-        const [insertedItem] = await connection.query(`INSERT INTO history_stock_raw_purchase_items
-          (purchase_id, stock_item_id, item_name, quantity, unit, unit_price, total, stock_quantity, stock_unit, stock_unit_cost, stock_value_after)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [header.insertId, stock.id, stock.name, item.quantity, item.unit, item.unitPrice, purchaseValue, stockQty, stock.unit, stock.unit_cost, stock.stock_value]);
-        const [[createdItem]] = await connection.query(
-          "SELECT * FROM history_stock_raw_purchase_items WHERE id = ?",
-          [insertedItem.insertId]
-        );
-        await writeItemLog(connection, {
-          item: createdItem,
-          action: "create",
-          oldData: null,
-          newData: snapshotItem(createdItem),
-          user,
-        });
-      }
-      await refreshMenuCosts(connection, { stockItemIds: ids });
-      await connection.commit();
-      return { id: header.insertId, total, duplicate: false };
-    } catch (error) {
-      await connection.rollback();
-      if (error.code === "ER_DUP_ENTRY") {
-        const [[existing]] = await connection.query("SELECT id, total, payload_hash FROM history_stock_raw_purchases WHERE request_id = ?", [data.requestId]);
-        if (existing) {
-          if (existing.payload_hash !== hash) throw createError(409, "Permintaan ini sudah disimpan dengan isi berbeda. Muat ulang form untuk belanja baru.");
-          return { id: existing.id, total: Number(existing.total), duplicate: true };
-        }
-      }
-      throw error;
-    } finally { connection.release(); }
-  };
-  const updateItem = async (id, body, user) => {
-    id = number(id, 1, 4294967295, 0, "ID item belanja");
-    const data = normalizeItemPatch(body);
-    const connection = await db.getConnection();
-
-    try {
-      await connection.beginTransaction();
-      const [[item]] = await connection.query(
-        "SELECT * FROM history_stock_raw_purchase_items WHERE id = ? FOR UPDATE",
-        [id]
-      );
-      if (!item) throw createError(404, "Item belanja tidak ditemukan.");
-      if (!item.stock_item_id) throw createError(400, "Item belanja ini tidak terhubung ke stok.");
-
-      const [[stock]] = await connection.query(
-        "SELECT * FROM stock_raw_items WHERE id = ? FOR UPDATE",
-        [item.stock_item_id]
-      );
-      if (!stock) throw createError(404, "Barang stok tidak ditemukan.");
-
-      const oldData = snapshotItem(item);
-      const stockQty = convertQuantity(data.quantity, data.unit, stock.unit || item.stock_unit);
-      const total = roundCurrency(data.quantity * data.unitPrice);
-      const stockState = await applyStockDelta(
-        connection,
-        item.stock_item_id,
-        stockQty - Number(item.stock_quantity || 0),
-        total - Number(item.total || 0)
-      );
-
-      await connection.query(
-        `UPDATE history_stock_raw_purchase_items
-         SET quantity = ?, unit = ?, unit_price = ?, total = ?,
-             stock_quantity = ?, stock_unit = ?, stock_unit_cost = ?, stock_value_after = ?
-         WHERE id = ?`,
-        [
-          data.quantity,
-          data.unit,
-          data.unitPrice,
-          total,
-          stockQty,
-          stock.unit || item.stock_unit,
-          stockState.averageCost,
-          stockState.stockValue,
-          id,
-        ]
-      );
-      await updatePurchaseTotal(connection, item.purchase_id);
-      await refreshMenuCosts(connection, { stockItemIds: [item.stock_item_id] });
-
-      const [[updated]] = await connection.query(
-        "SELECT * FROM history_stock_raw_purchase_items WHERE id = ?",
-        [id]
-      );
-      const newData = snapshotItem(updated);
-      await writeItemLog(connection, { item, action: "edit", oldData, newData, user });
-
-      await connection.commit();
-      return newData;
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
-  };
-  const deleteItem = async (id, user) => {
-    id = number(id, 1, 4294967295, 0, "ID item belanja");
-    const connection = await db.getConnection();
-
-    try {
-      await connection.beginTransaction();
-      const [[item]] = await connection.query(
-        "SELECT * FROM history_stock_raw_purchase_items WHERE id = ? FOR UPDATE",
-        [id]
-      );
-      if (!item) throw createError(404, "Item belanja tidak ditemukan.");
-      if (!item.stock_item_id) throw createError(400, "Item belanja ini tidak terhubung ke stok.");
-
-      const oldData = snapshotItem(item);
-      await applyStockDelta(
-        connection,
-        item.stock_item_id,
-        -Number(item.stock_quantity || 0),
-        -Number(item.total || 0)
-      );
-      await writeItemLog(connection, { item, action: "delete", oldData, newData: null, user });
-      await connection.query("DELETE FROM history_stock_raw_purchase_items WHERE id = ?", [id]);
-      await updatePurchaseTotal(connection, item.purchase_id);
-      await refreshMenuCosts(connection, { stockItemIds: [item.stock_item_id] });
-
-      await connection.commit();
-      return oldData;
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
-  };
   const list = async ({ page = 1, search = "" } = {}) => {
     page = Math.max(1, Math.floor(Number(page) || 1));
     const keyword = `%${String(search).slice(0,150)}%`;
-    const where = `WHERE p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM history_stock_raw_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?)`;
-    const itemWhere = `WHERE p.suplier_name LIKE ? OR i.item_name LIKE ?`;
+    // Drafts are listed separately (listDrafts) until they are posted.
+    const where = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM history_stock_raw_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?))`;
+    const itemWhere = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR i.item_name LIKE ?)`;
     const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM history_stock_raw_purchases p ${where}`, [keyword, keyword]);
     const [rows] = await db.query(`SELECT p.* FROM history_stock_raw_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [keyword, keyword, (page-1)*10]);
     if (rows.length) {
@@ -336,6 +146,28 @@ const createShoppingService = db => {
        ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
       [keyword, keyword]
     );
+    const attachmentsByPurchase = new Map();
+    const purchaseIds = [...new Set([...rows.map(row => row.id), ...itemRows.map(row => row.purchase_id)])];
+    if (purchaseIds.length) {
+      const [attachments] = await db.query(
+        `SELECT id, purchase_id, original_name, created_at
+         FROM history_stock_raw_purchase_attachments
+         WHERE purchase_id IN (${purchaseIds.map(() => "?").join(",")})
+         ORDER BY id`,
+        purchaseIds
+      );
+      attachments.forEach(attachment => {
+        const list = attachmentsByPurchase.get(attachment.purchase_id) || [];
+        list.push({
+          id: attachment.id,
+          url: attachmentUrl(attachment.id),
+          name: attachment.original_name,
+          createdAt: attachment.created_at,
+        });
+        attachmentsByPurchase.set(attachment.purchase_id, list);
+      });
+    }
+    rows.forEach(row => { row.attachments = attachmentsByPurchase.get(row.id) || []; });
     const groupedItems = Array.from(
       itemRows.reduce((groups, row) => {
         const key = row.stock_item_id ? `stock:${row.stock_item_id}` : `name:${row.item_name.toLowerCase()}`;
@@ -367,10 +199,12 @@ const createShoppingService = db => {
           unit: row.unit,
           unitPrice: Number(row.unit_price),
           total: Number(row.total),
+          costTotal: Number(row.cost_total ?? row.total),
           stockQuantity: Number(row.stock_quantity),
           stockUnit: row.stock_unit,
           stockAverageCost: Number(row.stock_unit_cost || 0),
           stockValueAfter: Number(row.stock_value_after || 0),
+          attachments: attachmentsByPurchase.get(row.purchase_id) || [],
         });
 
         return groups;
@@ -418,7 +252,17 @@ const createShoppingService = db => {
 
     return { purchases: rows, total: Number(count.total), itemGroups, groupTotal, page };
   };
-  return { suppliers, saveSupplier, save, updateItem, deleteItem, list };
+  return {
+    suppliers,
+    saveSupplier,
+    save: nota.create,
+    updateDraft: nota.updateDraft,
+    removeDraft: nota.removeDraft,
+    listDrafts: nota.listDrafts,
+    updateItem: nota.updateItem,
+    deleteItem: nota.deleteItem,
+    list,
+  };
 };
 
 module.exports = { ...createShoppingService(pool), createShoppingService };
