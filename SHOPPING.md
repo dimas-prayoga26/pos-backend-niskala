@@ -84,6 +84,10 @@ Dulu bernama "Perlengkapan"; tabelnya tetap `stock_supply_*` dan endpoint-nya te
 - Tab Lainnya menampilkan **Qty**, Nilai, dan Harga per Barang. Barang Lainnya bukan bahan yang di-restock, jadi tidak ada Minimum, status stok (AMAN/HAMPIR HABIS), atau Bebas Stok; semua barang dihitung qty-nya sesuai belanja (termasuk Lain-lain dan Promosi).
 - Tab Lainnya tidak punya tombol tambah: barang dan qty awal masuk lewat belanja (qty awal dicatat sebagai belanja, misalnya dari "Stok Awal Niskala"). Di sana ada **Sesuaikan** (hitung ulang qty, admin/kasir), **Ubah** (nama, kategori, supplier) dan **Hapus** (admin). Pemakaian barang belum dicatat terpisah.
 
+## Import REKAP PENGELUARAN (Google Sheet)
+
+`scripts/import-rekap-pengeluaran.js` membaca sheet REKAP PENGELUARAN (tab BAHAN, PERALATAN, PERLENGKAPAN, LAIN LAIN, PROMOSI) dan memposting setiap nota lewat service belanja ke database di `.env`. Tanpa `--apply` hanya uji coba (tidak menulis). Aman dijalankan ulang: nota yang sudah masuk dilewati. Di production: backup dulu (`scripts/backup-database.sh`), deploy kode dan nyalakan server sekali (migrasi boot), lalu `node scripts/import-rekap-pengeluaran.js` (cek ringkasan) dan `node scripts/import-rekap-pengeluaran.js --apply`.
+
 ## Pengaturan Suplier
 
 Pengaturan memiliki menu Platform, Suplier, dan Sumber Pembayaran. Admin dapat menambah atau mengubah nama suplier melalui tombol Simpan. Nama duplikat ditolak. Mengubah nama master tidak mengganti nama pada riwayat belanja yang sudah tersimpan. Pilihan Select2 di form belanja tetap sementara sampai Simpan Belanjaan diklik.
