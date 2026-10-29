@@ -21,14 +21,15 @@ src/
 ├── shared/
 │   ├── http/asyncHandler.js   Meneruskan error async ke error handler
 │   ├── middleware/            authenticate, authorize (requireRole), validateParams, errorHandler
-│   ├── utils/                 money, units, orderCode, dbErrors, networkAddresses
+│   ├── utils/                 money, units, orderCode, dbErrors, networkAddresses, validate
 │   └── logger.js              Log terstruktur (JSON per baris)
 └── modules/
     ├── users/        /api/user
     ├── categories/   /api/category
     ├── menu/         /api/menu-item
     ├── stock/        /api/stock-item  (+ stock.movements untuk mutasi stok dari order)
-    ├── shopping/     /api/shopping
+    ├── shopping/     /api/shopping    (+ bukti nota)
+    ├── paymentSources/ /api/payment-source (saldo sumber pembayaran)
     ├── platforms/    /api/order-platform
     ├── orders/       /api/order       (+ cetak thermal RawBT)
     └── recaps/       /api/recap
@@ -85,7 +86,10 @@ Isi `config/database.js` lama sudah dipecah tanpa mengubah urutan statement:
 | `bootstrap/menuCatalog.js` | Migrasi data menu lama (opsi, harga, resep), seed menu default untuk database baru |
 | `bootstrap/platforms.js` | Tabel platform dan relasi order–platform |
 | `bootstrap/orderCodes.js` | Backfill kode `YYMM-NNNN` |
-| `bootstrap/shoppingSchema.js` | Tabel belanja dan supplier |
+| `bootstrap/shoppingSchema.js` | Tabel belanja, bukti nota, dan supplier |
+| `bootstrap/paymentSourcesSchema.js` | Sumber pembayaran dan mutasi saldonya (seed sekali) |
+| `bootstrap/supplySchema.js` | Perlengkapan dan belanja perlengkapan |
+| `bootstrap/notaSchema.js` | Footer nota (ongkir, diskon, PPN), status draft/posted, `cost_total` per baris |
 | `bootstrap/helpers.js` | `runSafeMigration`, `tableExists`, `getColumnNames` |
 
 **Keputusan:** mekanisme migrasi saat runtime dipertahankan. Mengganti ke migrasi berversi membutuhkan dump skema production terlebih dahulu, karena `runSafeMigration` mungkin pernah gagal diam-diam di sana. Rekomendasinya ada di `refactoring-report.md`.

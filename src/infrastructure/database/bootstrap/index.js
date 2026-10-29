@@ -24,8 +24,11 @@ const {
   seedStockItems,
 } = require("./seedData");
 const { refreshMenuCosts } = require("../../../modules/menu/menu.costs");
+const { ensureNotaSchema } = require("./notaSchema");
+const { ensurePaymentSourcesSchema } = require("./paymentSourcesSchema");
 const { ensureSemiItemsSchema } = require("./semiItemsSchema");
 const { ensureShoppingSchema } = require("./shoppingSchema");
+const { ensureSupplySchema } = require("./supplySchema");
 
 const connectDB = async () => {
   await serverPool.query(
@@ -644,6 +647,9 @@ const connectDB = async () => {
 const bootstrapDatabase = async () => {
   await connectDB();
   await ensureShoppingSchema(pool);
+  await ensurePaymentSourcesSchema(pool);
+  await ensureSupplySchema(pool);
+  await ensureNotaSchema(pool);
   await ensureSemiItemsSchema(pool);
   // Catches average costs changed outside the app (e.g. in phpMyAdmin).
   await refreshMenuCosts(pool);

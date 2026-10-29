@@ -76,6 +76,21 @@ const ensureShoppingSchema = async (db) => {
     FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
+  // Bukti nota: photos of the paper receipt. Files live in storage/
+  // (PURCHASE_RECEIPT_DIR), outside the public uploads folder.
+  await db.query(`CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_attachments (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    purchase_id INT UNSIGNED NOT NULL,
+    file_name VARCHAR(100) NOT NULL UNIQUE,
+    original_name VARCHAR(255) NOT NULL DEFAULT '',
+    mime_type VARCHAR(50) NOT NULL,
+    size_bytes INT UNSIGNED NOT NULL,
+    uploaded_by INT UNSIGNED NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_purchase_attachments_purchase (purchase_id, id),
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_raw_purchases(id) ON DELETE CASCADE,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+  ) ENGINE=InnoDB`);
   // unit_cost / stock_unit_cost were called average_cost / stock_average_cost;
   // rename before the ADD COLUMNs below so no empty duplicate is created.
   await db.query("ALTER TABLE stock_raw_items RENAME COLUMN average_cost TO unit_cost").catch(() => {});

@@ -9,6 +9,8 @@ orders ──► stock (stock.movements: potong / kembalikan stok dari resep)
 stock, shopping ──► menu (menu.costs: hitung ulang recipes.cost dan HPP menu saat unit_cost berubah)
 stock, orders ──► menu (menu.recipeLines: baris resep menu dari recipes + stock_semi_item_menus)
 recaps ──► stock (semi.repository.closeDay: sisa bahan setengah jadi harian dibuang saat rekap harian disimpan)
+shopping ──► paymentSources (paymentSource.ledger: saldo keluar belanja dan selisih saat item diubah/dihapus)
+shopping ──► stock (supply.repository.SUPPLY_CATEGORIES: kategori perlengkapan)
 shared/middleware/authenticate ──► users (user.service: verifikasi token, ambil user)
 infrastructure/bootstrap ──► menu (menu.options: baris harga untuk seed)
 ```
@@ -22,8 +24,9 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 | users | `/api/user` | `users` | – | – |
 | categories | `/api/category` | `categories` | – | `menu:changed` |
 | menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `recipes` (pivot menu ↔ bahan baku), VIEW `recipe_details` (resep + nama menu/bahan + average cost + cost, baca-saja); menulis juga `stock_semi_item_menus` (baris bahan setengah jadi di resep menu) | `categories`, `stock_raw_items`, `stock_semi_items` (nama bahan) | `menu:changed` |
-| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items`, `stock_semi_item_menus`, `history_stock_semi_wastes` (bahan setengah jadi, `/api/stock-item/semi`) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
-| shopping | `/api/shopping` | `suplier`, `history_stock_raw_purchases`, `history_stock_raw_purchase_items`, `history_stock_raw_purchase_item_logs` | – | `shopping:changed`, `stock:changed` |
+| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items`, `stock_semi_item_menus`, `history_stock_semi_wastes` (bahan setengah jadi, `/api/stock-item/semi`); `stock_supply_items` (perlengkapan, `/api/stock-item/supply`) | `recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
+| shopping | `/api/shopping` | `suplier`, `history_stock_raw_purchases`, `history_stock_raw_purchase_items`, `history_stock_raw_purchase_item_logs`, `history_stock_raw_purchase_attachments` (bukti nota; file di `storage/purchase-receipts`); `history_stock_supply_purchases`, `history_stock_supply_purchase_items`, `history_stock_supply_purchase_attachments` (belanja perlengkapan, `/api/shopping/supply-purchases`); menulis juga `stock_supply_items` | `meta_data_payment_source` (sumber aktif) | `shopping:changed`, `stock:changed` |
+| paymentSources | `/api/payment-source` | `meta_data_payment_source` (saldo), `history_payment_source_mutations` (saldo masuk/keluar) | `users` (nama pencatat) | `shopping:changed` |
 | platforms | `/api/order-platform` | `meta_data_platform` | – | `platforms:changed` |
 | orders | `/api/order` | `orders`, `order_items`, `order_item_costs` (rincian HPP per bahan, dibekukan saat terjual), `order_platforms`, `order_catering_details` | `menu_items`, `menu_item_prices`, `recipes`, `stock_raw_items`, `stock_semi_items` (snapshot HPP), `meta_data_platform` (snapshot fee), `daily_recaps` (kunci closing) | `orders:changed`, `stock:changed` |
 | recaps | `/api/recap` | `meta_data_format_recap`, `daily_recaps`, `weekly_recaps`, `monthly_recaps` | `users`, `menu_items` (lookup nama) | `recaps:changed` |
@@ -78,7 +81,16 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
   - satu pembelian = satu transaksi;
   - `request_id` mencegah stok tergandakan saat request diulang;
   - average cost dihitung ulang setiap pembelian;
-  - semua endpoint tulis khusus admin.
+  - semua endpoint tulis khusus admin;
+  - belanja dengan `paymentSourceId` mencatat saldo keluar lewat `paymentSource.ledger` di transaksi yang sama;
+  - bukti nota (`shopping.attachments`, `shopping.upload`): tipe file dicek dari isinya, file privat di `storage/`.
+
+- **Mesin nota** (`shopping.nota`, `shopping.totals`): simpan/draft/posting, ubah/hapus baris dengan pembagian ulang ongkir-diskon-PPN, dan daftar draft, dipakai bersama oleh belanja bahan baku (`shopping.service`) dan perlengkapan (`shopping.supply`). Posting hanya untuk admin; draft boleh kasir.
+- **Belanja perlengkapan** (`shopping.supply`): nota yang sama dari form yang sama, barangnya `stock_supply_items`; tidak pernah menyentuh resep atau HPP. Riwayatnya berbentuk sama dengan riwayat bahan baku agar dashboard memakai tabel yang sama.
+
+### paymentSources
+- **Isi:** `paymentSource.ledger` (satu-satunya penulis saldo: `postMutation` di koneksi transaksi pemanggil, `findPurchaseSourceId`), `paymentSource.service` (factory `createPaymentSourceService(db)`: daftar, simpan, catat saldo manual, riwayat mutasi), controller, dan route (semua khusus admin).
+- **Aturan:** sumber hanya dinonaktifkan, tidak dihapus. Saldo boleh minus. Mutasi tidak pernah diubah; koreksi dicatat sebagai mutasi baru. Lihat `SHOPPING.md`.
 
 ### platforms
 - **Aturan:** platform tidak pernah dihapus, hanya dinonaktifkan, karena order lama tetap merujuknya. Fee yang tersimpan berfungsi sebagai nilai default; fee yang dikirim order mengalahkannya (snapshot di `order_platforms`).

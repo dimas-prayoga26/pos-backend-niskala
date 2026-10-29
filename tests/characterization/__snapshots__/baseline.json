@@ -1986,7 +1986,7 @@
   {
    "step": "stock add duplicate name",
    "request": "POST /api/stock-item",
-   "status": 500,
+   "status": 409,
    "headers": {
     "content-type": "application/json; charset=utf-8",
     "cache-control": null,
@@ -1994,8 +1994,8 @@
     "set-cookie": null
    },
    "body": {
-    "status": 500,
-    "message": "Duplicate entry 'Biji Uji' for key 'stock_raw_items.name'",
+    "status": 409,
+    "message": "Bahan Biji Uji sudah ada di Stok → Bahan Baku.",
     "errorStack": ""
    },
    "events": []
@@ -9126,7 +9126,7 @@
    },
    "body": {
     "status": 403,
-    "message": "Hanya admin yang bisa mengelola belanja dan suplier.",
+    "message": "Hanya admin yang bisa memposting belanja. Simpan sebagai draft.",
     "errorStack": ""
    },
    "events": []
@@ -9180,7 +9180,8 @@
     "data": {
      "id": 2,
      "total": 320000,
-     "duplicate": false
+     "duplicate": false,
+     "status": "posted"
     }
    },
    "events": [
@@ -9215,7 +9216,8 @@
     "data": {
      "id": 2,
      "total": 320000,
-     "duplicate": true
+     "duplicate": true,
+     "status": "posted"
     }
    },
    "events": []
@@ -9252,7 +9254,8 @@
     "data": {
      "id": 5,
      "total": 10000,
-     "duplicate": false
+     "duplicate": false,
+     "status": "posted"
     }
    },
    "events": [
@@ -9292,10 +9295,21 @@
        "suplier_id": 1,
        "suplier_name": "Toko Uji Baru",
        "payment_method": "Cash",
+       "payment_source_id": null,
        "note": "belanja rutin",
+       "subtotal": "10000.00",
+       "shipping_cost": "0.00",
+       "discount_type": "amount",
+       "discount_value": "0.00",
+       "discount_amount": "0.00",
+       "tax_percent": "0.00",
+       "tax_amount": "0.00",
        "total": "10000.00",
+       "status": "posted",
        "created_by": 1,
        "created_at": "<ts>",
+       "posted_at": "<now>",
+       "posted_by": 1,
        "items": [
         {
          "id": 4,
@@ -9306,12 +9320,14 @@
          "unit": "gr",
          "unit_price": "20.00",
          "total": "10000.00",
+         "cost_total": "10000.00",
          "stock_quantity": "0.50",
          "stock_unit": "kg",
          "stock_unit_cost": 16000,
          "stock_value_after": "40000.00"
         }
-       ]
+       ],
+       "attachments": []
       },
       {
        "id": 2,
@@ -9319,10 +9335,21 @@
        "suplier_id": 4,
        "suplier_name": "Pasar Uji",
        "payment_method": "Cash",
+       "payment_source_id": null,
        "note": "belanja rutin",
+       "subtotal": "320000.00",
+       "shipping_cost": "0.00",
+       "discount_type": "amount",
+       "discount_value": "0.00",
+       "discount_amount": "0.00",
+       "tax_percent": "0.00",
+       "tax_amount": "0.00",
        "total": "320000.00",
+       "status": "posted",
        "created_by": 1,
        "created_at": "<ts>",
+       "posted_at": "<now>",
+       "posted_by": 1,
        "items": [
         {
          "id": 1,
@@ -9333,6 +9360,7 @@
          "unit": "kg",
          "unit_price": "160000.00",
          "total": "240000.00",
+         "cost_total": "240000.00",
          "stock_quantity": "1.50",
          "stock_unit": "kg",
          "stock_unit_cost": 153333,
@@ -9347,6 +9375,7 @@
          "unit": "kg",
          "unit_price": "15000.00",
          "total": "30000.00",
+         "cost_total": "30000.00",
          "stock_quantity": "2.00",
          "stock_unit": "kg",
          "stock_unit_cost": 15000,
@@ -9361,12 +9390,14 @@
          "unit": "pcs",
          "unit_price": "500.00",
          "total": "50000.00",
+         "cost_total": "50000.00",
          "stock_quantity": "100.00",
          "stock_unit": "pcs",
          "stock_unit_cost": 357,
          "stock_value_after": "50000.00"
         }
-       ]
+       ],
+       "attachments": []
       }
      ],
      "total": 2,
@@ -9392,10 +9423,12 @@
          "unit": "kg",
          "unitPrice": 160000,
          "total": 240000,
+         "costTotal": 240000,
          "stockQuantity": 1.5,
          "stockUnit": "kg",
          "stockAverageCost": 153333,
-         "stockValueAfter": 690000
+         "stockValueAfter": 690000,
+         "attachments": []
         }
        ],
        "logs": [
@@ -9448,10 +9481,12 @@
          "unit": "pcs",
          "unitPrice": 500,
          "total": 50000,
+         "costTotal": 50000,
          "stockQuantity": 100,
          "stockUnit": "pcs",
          "stockAverageCost": 357,
-         "stockValueAfter": 50000
+         "stockValueAfter": 50000,
+         "attachments": []
         }
        ],
        "logs": [
@@ -9504,10 +9539,12 @@
          "unit": "gr",
          "unitPrice": 20,
          "total": 10000,
+         "costTotal": 10000,
          "stockQuantity": 0.5,
          "stockUnit": "kg",
          "stockAverageCost": 16000,
-         "stockValueAfter": 40000
+         "stockValueAfter": 40000,
+         "attachments": []
         },
         {
          "id": 2,
@@ -9521,10 +9558,12 @@
          "unit": "kg",
          "unitPrice": 15000,
          "total": 30000,
+         "costTotal": 30000,
          "stockQuantity": 2,
          "stockUnit": "kg",
          "stockAverageCost": 15000,
-         "stockValueAfter": 30000
+         "stockValueAfter": 30000,
+         "attachments": []
         }
        ],
        "logs": [
@@ -9609,10 +9648,21 @@
        "suplier_id": 4,
        "suplier_name": "Pasar Uji",
        "payment_method": "Cash",
+       "payment_source_id": null,
        "note": "belanja rutin",
+       "subtotal": "320000.00",
+       "shipping_cost": "0.00",
+       "discount_type": "amount",
+       "discount_value": "0.00",
+       "discount_amount": "0.00",
+       "tax_percent": "0.00",
+       "tax_amount": "0.00",
        "total": "320000.00",
+       "status": "posted",
        "created_by": 1,
        "created_at": "<ts>",
+       "posted_at": "<now>",
+       "posted_by": 1,
        "items": [
         {
          "id": 1,
@@ -9623,6 +9673,7 @@
          "unit": "kg",
          "unit_price": "160000.00",
          "total": "240000.00",
+         "cost_total": "240000.00",
          "stock_quantity": "1.50",
          "stock_unit": "kg",
          "stock_unit_cost": 153333,
@@ -9637,6 +9688,7 @@
          "unit": "kg",
          "unit_price": "15000.00",
          "total": "30000.00",
+         "cost_total": "30000.00",
          "stock_quantity": "2.00",
          "stock_unit": "kg",
          "stock_unit_cost": 15000,
@@ -9651,12 +9703,14 @@
          "unit": "pcs",
          "unit_price": "500.00",
          "total": "50000.00",
+         "cost_total": "50000.00",
          "stock_quantity": "100.00",
          "stock_unit": "pcs",
          "stock_unit_cost": 357,
          "stock_value_after": "50000.00"
         }
-       ]
+       ],
+       "attachments": []
       }
      ],
      "total": 1,
@@ -9682,10 +9736,12 @@
          "unit": "kg",
          "unitPrice": 160000,
          "total": 240000,
+         "costTotal": 240000,
          "stockQuantity": 1.5,
          "stockUnit": "kg",
          "stockAverageCost": 153333,
-         "stockValueAfter": 690000
+         "stockValueAfter": 690000,
+         "attachments": []
         }
        ],
        "logs": [
@@ -17238,6 +17294,14 @@
      }
     ]
    },
+   "history_payment_source_mutations": {
+    "ddl": "CREATE TABLE `history_payment_source_mutations` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `payment_source_id` int unsigned NOT NULL,\n  `mutation_date` date NOT NULL,\n  `amount_in` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `amount_out` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `balance_after` decimal(14,2) NOT NULL,\n  `reference_type` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `reference_id` int unsigned DEFAULT NULL,\n  `note` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `user_id` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_payment_source_mutations_source` (`payment_source_id`,`id`),\n  KEY `idx_payment_source_mutations_reference` (`reference_type`,`reference_id`),\n  KEY `user_id` (`user_id`),\n  CONSTRAINT `history_payment_source_mutations_ibfk_1` FOREIGN KEY (`payment_source_id`) REFERENCES `meta_data_payment_source` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `history_payment_source_mutations_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_raw_purchase_attachments": {
+    "ddl": "CREATE TABLE `history_stock_raw_purchase_attachments` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `file_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `mime_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `size_bytes` int unsigned NOT NULL,\n  `uploaded_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `file_name` (`file_name`),\n  KEY `idx_purchase_attachments_purchase` (`purchase_id`,`id`),\n  KEY `uploaded_by` (`uploaded_by`),\n  CONSTRAINT `history_stock_raw_purchase_attachments_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_raw_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_raw_purchase_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "history_stock_raw_purchase_item_logs": {
     "ddl": "CREATE TABLE `history_stock_raw_purchase_item_logs` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_item_id` int unsigned DEFAULT NULL,\n  `purchase_id` int unsigned DEFAULT NULL,\n  `stock_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `action` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `old_data` json DEFAULT NULL,\n  `new_data` json DEFAULT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `user_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_stock_purchase_item_logs_item` (`stock_item_id`,`created_at`),\n  KEY `idx_stock_purchase_item_logs_purchase_item` (`purchase_item_id`,`created_at`),\n  KEY `purchase_id` (`purchase_id`),\n  KEY `user_id` (`user_id`),\n  CONSTRAINT `history_stock_raw_purchase_item_logs_ibfk_1` FOREIGN KEY (`purchase_item_id`) REFERENCES `history_stock_raw_purchase_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_raw_purchase_item_logs_ibfk_2` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_raw_purchases` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_raw_purchase_item_logs_ibfk_3` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_raw_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_raw_purchase_item_logs_ibfk_4` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -17413,7 +17477,7 @@
     ]
    },
    "history_stock_raw_purchase_items": {
-    "ddl": "CREATE TABLE `history_stock_raw_purchase_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `stock_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` decimal(12,3) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_price` decimal(14,2) NOT NULL,\n  `total` decimal(14,2) NOT NULL,\n  `stock_quantity` decimal(12,2) NOT NULL,\n  `stock_unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock_unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value_after` decimal(14,2) NOT NULL DEFAULT '0.00',\n  PRIMARY KEY (`id`),\n  KEY `purchase_id` (`purchase_id`),\n  KEY `stock_item_id` (`stock_item_id`),\n  CONSTRAINT `history_stock_raw_purchase_items_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_raw_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_raw_purchase_items_ibfk_2` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_raw_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `history_stock_raw_purchase_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `stock_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` decimal(12,3) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_price` decimal(14,2) NOT NULL,\n  `total` decimal(14,2) NOT NULL,\n  `cost_total` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `stock_quantity` decimal(12,2) NOT NULL,\n  `stock_unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock_unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value_after` decimal(14,2) NOT NULL DEFAULT '0.00',\n  PRIMARY KEY (`id`),\n  KEY `purchase_id` (`purchase_id`),\n  KEY `stock_item_id` (`stock_item_id`),\n  CONSTRAINT `history_stock_raw_purchase_items_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_raw_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_raw_purchase_items_ibfk_2` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_raw_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -17424,6 +17488,7 @@
       "unit": "kg",
       "unit_price": "160000.00",
       "total": "240000.00",
+      "cost_total": "240000.00",
       "stock_quantity": "1.50",
       "stock_unit": "kg",
       "stock_unit_cost": 153333,
@@ -17438,6 +17503,7 @@
       "unit": "pcs",
       "unit_price": "550.00",
       "total": "44000.00",
+      "cost_total": "44000.00",
       "stock_quantity": "80.00",
       "stock_unit": "pcs",
       "stock_unit_cost": 367,
@@ -17452,6 +17518,7 @@
       "unit": "gr",
       "unit_price": "20.00",
       "total": "10000.00",
+      "cost_total": "10000.00",
       "stock_quantity": "0.50",
       "stock_unit": "kg",
       "stock_unit_cost": 16000,
@@ -17460,7 +17527,7 @@
     ]
    },
    "history_stock_raw_purchases": {
-    "ddl": "CREATE TABLE `history_stock_raw_purchases` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `request_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payload_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `purchase_date` date NOT NULL,\n  `suplier_id` int unsigned NOT NULL,\n  `suplier_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_method` varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `note` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `total` decimal(14,2) NOT NULL,\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `request_id` (`request_id`),\n  KEY `idx_stock_purchases_date` (`purchase_date`,`id`),\n  KEY `suplier_id` (`suplier_id`),\n  KEY `created_by` (`created_by`),\n  CONSTRAINT `history_stock_raw_purchases_ibfk_1` FOREIGN KEY (`suplier_id`) REFERENCES `suplier` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `history_stock_raw_purchases_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `history_stock_raw_purchases` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `request_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payload_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `purchase_date` date NOT NULL,\n  `suplier_id` int unsigned NOT NULL,\n  `suplier_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_method` varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_source_id` int unsigned DEFAULT NULL,\n  `note` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `subtotal` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `shipping_cost` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `discount_type` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'amount',\n  `discount_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `tax_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `tax_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `total` decimal(14,2) NOT NULL,\n  `status` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'posted',\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `posted_at` timestamp NULL DEFAULT NULL,\n  `posted_by` int unsigned DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `request_id` (`request_id`),\n  KEY `idx_stock_purchases_date` (`purchase_date`,`id`),\n  KEY `suplier_id` (`suplier_id`),\n  KEY `created_by` (`created_by`),\n  KEY `idx_raw_purchases_status` (`status`,`purchase_date`,`id`),\n  KEY `fk_raw_purchases_payment_source` (`payment_source_id`),\n  KEY `fk_raw_purchases_posted_by` (`posted_by`),\n  CONSTRAINT `fk_raw_purchases_payment_source` FOREIGN KEY (`payment_source_id`) REFERENCES `meta_data_payment_source` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_raw_purchases_posted_by` FOREIGN KEY (`posted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_raw_purchases_ibfk_1` FOREIGN KEY (`suplier_id`) REFERENCES `suplier` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `history_stock_raw_purchases_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 2,
@@ -17470,10 +17537,21 @@
       "suplier_id": 4,
       "suplier_name": "Pasar Uji",
       "payment_method": "Cash",
+      "payment_source_id": null,
       "note": "belanja rutin",
+      "subtotal": "284000.00",
+      "shipping_cost": "0.00",
+      "discount_type": "amount",
+      "discount_value": "0.00",
+      "discount_amount": "0.00",
+      "tax_percent": "0.00",
+      "tax_amount": "0.00",
       "total": "284000.00",
+      "status": "posted",
       "created_by": 1,
-      "created_at": "<ts>"
+      "created_at": "<ts>",
+      "posted_at": "<now>",
+      "posted_by": 1
      },
      {
       "id": 5,
@@ -17483,15 +17561,38 @@
       "suplier_id": 1,
       "suplier_name": "Toko Uji Baru",
       "payment_method": "Cash",
+      "payment_source_id": null,
       "note": "belanja rutin",
+      "subtotal": "10000.00",
+      "shipping_cost": "0.00",
+      "discount_type": "amount",
+      "discount_value": "0.00",
+      "discount_amount": "0.00",
+      "tax_percent": "0.00",
+      "tax_amount": "0.00",
       "total": "10000.00",
+      "status": "posted",
       "created_by": 1,
-      "created_at": "<ts>"
+      "created_at": "<ts>",
+      "posted_at": "<now>",
+      "posted_by": 1
      }
     ]
    },
    "history_stock_semi_wastes": {
     "ddl": "CREATE TABLE `history_stock_semi_wastes` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `semi_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `waste_date` date NOT NULL,\n  `quantity` decimal(12,2) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `cost` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `reason` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_history_stock_semi_wastes_date` (`waste_date`),\n  KEY `idx_history_stock_semi_wastes_item` (`semi_item_id`,`waste_date`),\n  KEY `fk_history_stock_semi_wastes_user` (`user_id`),\n  CONSTRAINT `fk_history_stock_semi_wastes_semi_item` FOREIGN KEY (`semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_history_stock_semi_wastes_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_supply_purchase_attachments": {
+    "ddl": "CREATE TABLE `history_stock_supply_purchase_attachments` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `file_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `mime_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `size_bytes` int unsigned NOT NULL,\n  `uploaded_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `file_name` (`file_name`),\n  KEY `idx_supply_purchase_attachments_purchase` (`purchase_id`,`id`),\n  KEY `uploaded_by` (`uploaded_by`),\n  CONSTRAINT `history_stock_supply_purchase_attachments_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_supply_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_supply_purchase_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_supply_purchase_items": {
+    "ddl": "CREATE TABLE `history_stock_supply_purchase_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `supply_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` decimal(12,3) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_price` decimal(14,2) NOT NULL,\n  `total` decimal(14,2) NOT NULL,\n  `cost_total` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `stock_quantity` decimal(12,2) NOT NULL,\n  `stock_unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock_unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value_after` decimal(14,2) NOT NULL DEFAULT '0.00',\n  PRIMARY KEY (`id`),\n  KEY `idx_supply_purchase_items_item` (`supply_item_id`),\n  KEY `purchase_id` (`purchase_id`),\n  CONSTRAINT `history_stock_supply_purchase_items_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_supply_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_supply_purchase_items_ibfk_2` FOREIGN KEY (`supply_item_id`) REFERENCES `stock_supply_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_supply_purchases": {
+    "ddl": "CREATE TABLE `history_stock_supply_purchases` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `request_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payload_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `purchase_date` date NOT NULL,\n  `suplier_id` int unsigned NOT NULL,\n  `suplier_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_method` varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_source_id` int unsigned DEFAULT NULL,\n  `note` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `subtotal` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `shipping_cost` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `discount_type` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'amount',\n  `discount_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `tax_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `tax_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `total` decimal(14,2) NOT NULL,\n  `status` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'posted',\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `posted_at` timestamp NULL DEFAULT NULL,\n  `posted_by` int unsigned DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `request_id` (`request_id`),\n  KEY `idx_supply_purchases_date` (`purchase_date`,`id`),\n  KEY `suplier_id` (`suplier_id`),\n  KEY `created_by` (`created_by`),\n  KEY `idx_supply_purchases_status` (`status`,`purchase_date`,`id`),\n  KEY `fk_supply_purchases_payment_source` (`payment_source_id`),\n  KEY `fk_supply_purchases_posted_by` (`posted_by`),\n  CONSTRAINT `fk_supply_purchases_payment_source` FOREIGN KEY (`payment_source_id`) REFERENCES `meta_data_payment_source` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_supply_purchases_posted_by` FOREIGN KEY (`posted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_supply_purchases_ibfk_1` FOREIGN KEY (`suplier_id`) REFERENCES `suplier` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `history_stock_supply_purchases_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "menu_item_prices": {
@@ -18432,6 +18533,38 @@
       "code": "monthly",
       "label": "Bulanan",
       "description": "Rekap operasional bulanan",
+      "is_active": 1,
+      "sort_order": 3,
+      "created_at": "<ts>",
+      "updated_at": "<ts>"
+     }
+    ]
+   },
+   "meta_data_payment_source": {
+    "ddl": "CREATE TABLE `meta_data_payment_source` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `balance` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `sort_order` int unsigned NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": [
+     {
+      "id": 1,
+      "name": "Kasir (Tunai)",
+      "balance": "0.00",
+      "is_active": 1,
+      "sort_order": 1,
+      "created_at": "<ts>",
+      "updated_at": "<ts>"
+     },
+     {
+      "id": 2,
+      "name": "Rekening Penjualan",
+      "balance": "0.00",
+      "is_active": 1,
+      "sort_order": 2,
+      "created_at": "<ts>",
+      "updated_at": "<ts>"
+     },
+     {
+      "id": 3,
+      "name": "Niskala",
+      "balance": "0.00",
       "is_active": 1,
       "sort_order": 3,
       "created_at": "<ts>",
@@ -21377,6 +21510,10 @@
    },
    "stock_semi_items": {
     "ddl": "CREATE TABLE `stock_semi_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `minimum_stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `portion_size` double NOT NULL DEFAULT '0',\n  `yield_quantity` double NOT NULL DEFAULT '0',\n  `reset_daily` tinyint(1) NOT NULL DEFAULT '1',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_stock_semi_items_is_active` (`is_active`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "stock_supply_items": {
+    "ddl": "CREATE TABLE `stock_supply_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `minimum_stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `supplier` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `is_unlimited` tinyint(1) NOT NULL DEFAULT '0',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_stock_supply_items_category` (`category`,`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "suplier": {
@@ -21546,6 +21683,14 @@
      }
     ]
    },
+   "history_payment_source_mutations": {
+    "ddl": "CREATE TABLE `history_payment_source_mutations` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `payment_source_id` int unsigned NOT NULL,\n  `mutation_date` date NOT NULL,\n  `amount_in` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `amount_out` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `balance_after` decimal(14,2) NOT NULL,\n  `reference_type` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `reference_id` int unsigned DEFAULT NULL,\n  `note` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `user_id` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_payment_source_mutations_source` (`payment_source_id`,`id`),\n  KEY `idx_payment_source_mutations_reference` (`reference_type`,`reference_id`),\n  KEY `user_id` (`user_id`),\n  CONSTRAINT `history_payment_source_mutations_ibfk_1` FOREIGN KEY (`payment_source_id`) REFERENCES `meta_data_payment_source` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `history_payment_source_mutations_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_raw_purchase_attachments": {
+    "ddl": "CREATE TABLE `history_stock_raw_purchase_attachments` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `file_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `mime_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `size_bytes` int unsigned NOT NULL,\n  `uploaded_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `file_name` (`file_name`),\n  KEY `idx_purchase_attachments_purchase` (`purchase_id`,`id`),\n  KEY `uploaded_by` (`uploaded_by`),\n  CONSTRAINT `history_stock_raw_purchase_attachments_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_raw_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_raw_purchase_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "history_stock_raw_purchase_item_logs": {
     "ddl": "CREATE TABLE `history_stock_raw_purchase_item_logs` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_item_id` int unsigned DEFAULT NULL,\n  `purchase_id` int unsigned DEFAULT NULL,\n  `stock_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `action` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `old_data` json DEFAULT NULL,\n  `new_data` json DEFAULT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `user_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_stock_purchase_item_logs_item` (`stock_item_id`,`created_at`),\n  KEY `idx_stock_purchase_item_logs_purchase_item` (`purchase_item_id`,`created_at`),\n  KEY `purchase_id` (`purchase_id`),\n  KEY `user_id` (`user_id`),\n  CONSTRAINT `history_stock_raw_purchase_item_logs_ibfk_1` FOREIGN KEY (`purchase_item_id`) REFERENCES `history_stock_raw_purchase_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_raw_purchase_item_logs_ibfk_2` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_raw_purchases` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_raw_purchase_item_logs_ibfk_3` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_raw_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_raw_purchase_item_logs_ibfk_4` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -21721,7 +21866,7 @@
     ]
    },
    "history_stock_raw_purchase_items": {
-    "ddl": "CREATE TABLE `history_stock_raw_purchase_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `stock_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` decimal(12,3) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_price` decimal(14,2) NOT NULL,\n  `total` decimal(14,2) NOT NULL,\n  `stock_quantity` decimal(12,2) NOT NULL,\n  `stock_unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock_unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value_after` decimal(14,2) NOT NULL DEFAULT '0.00',\n  PRIMARY KEY (`id`),\n  KEY `purchase_id` (`purchase_id`),\n  KEY `stock_item_id` (`stock_item_id`),\n  CONSTRAINT `history_stock_raw_purchase_items_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_raw_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_raw_purchase_items_ibfk_2` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_raw_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `history_stock_raw_purchase_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `stock_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` decimal(12,3) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_price` decimal(14,2) NOT NULL,\n  `total` decimal(14,2) NOT NULL,\n  `cost_total` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `stock_quantity` decimal(12,2) NOT NULL,\n  `stock_unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock_unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value_after` decimal(14,2) NOT NULL DEFAULT '0.00',\n  PRIMARY KEY (`id`),\n  KEY `purchase_id` (`purchase_id`),\n  KEY `stock_item_id` (`stock_item_id`),\n  CONSTRAINT `history_stock_raw_purchase_items_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_raw_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_raw_purchase_items_ibfk_2` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_raw_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -21732,6 +21877,7 @@
       "unit": "kg",
       "unit_price": "160000.00",
       "total": "240000.00",
+      "cost_total": "240000.00",
       "stock_quantity": "1.50",
       "stock_unit": "kg",
       "stock_unit_cost": 153333,
@@ -21746,6 +21892,7 @@
       "unit": "pcs",
       "unit_price": "550.00",
       "total": "44000.00",
+      "cost_total": "44000.00",
       "stock_quantity": "80.00",
       "stock_unit": "pcs",
       "stock_unit_cost": 367,
@@ -21760,6 +21907,7 @@
       "unit": "gr",
       "unit_price": "20.00",
       "total": "10000.00",
+      "cost_total": "10000.00",
       "stock_quantity": "0.50",
       "stock_unit": "kg",
       "stock_unit_cost": 16000,
@@ -21768,7 +21916,7 @@
     ]
    },
    "history_stock_raw_purchases": {
-    "ddl": "CREATE TABLE `history_stock_raw_purchases` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `request_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payload_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `purchase_date` date NOT NULL,\n  `suplier_id` int unsigned NOT NULL,\n  `suplier_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_method` varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `note` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `total` decimal(14,2) NOT NULL,\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `request_id` (`request_id`),\n  KEY `idx_stock_purchases_date` (`purchase_date`,`id`),\n  KEY `suplier_id` (`suplier_id`),\n  KEY `created_by` (`created_by`),\n  CONSTRAINT `history_stock_raw_purchases_ibfk_1` FOREIGN KEY (`suplier_id`) REFERENCES `suplier` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `history_stock_raw_purchases_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `history_stock_raw_purchases` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `request_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payload_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `purchase_date` date NOT NULL,\n  `suplier_id` int unsigned NOT NULL,\n  `suplier_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_method` varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_source_id` int unsigned DEFAULT NULL,\n  `note` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `subtotal` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `shipping_cost` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `discount_type` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'amount',\n  `discount_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `tax_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `tax_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `total` decimal(14,2) NOT NULL,\n  `status` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'posted',\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `posted_at` timestamp NULL DEFAULT NULL,\n  `posted_by` int unsigned DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `request_id` (`request_id`),\n  KEY `idx_stock_purchases_date` (`purchase_date`,`id`),\n  KEY `suplier_id` (`suplier_id`),\n  KEY `created_by` (`created_by`),\n  KEY `idx_raw_purchases_status` (`status`,`purchase_date`,`id`),\n  KEY `fk_raw_purchases_payment_source` (`payment_source_id`),\n  KEY `fk_raw_purchases_posted_by` (`posted_by`),\n  CONSTRAINT `fk_raw_purchases_payment_source` FOREIGN KEY (`payment_source_id`) REFERENCES `meta_data_payment_source` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_raw_purchases_posted_by` FOREIGN KEY (`posted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_raw_purchases_ibfk_1` FOREIGN KEY (`suplier_id`) REFERENCES `suplier` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `history_stock_raw_purchases_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 2,
@@ -21778,10 +21926,21 @@
       "suplier_id": 4,
       "suplier_name": "Pasar Uji",
       "payment_method": "Cash",
+      "payment_source_id": null,
       "note": "belanja rutin",
+      "subtotal": "284000.00",
+      "shipping_cost": "0.00",
+      "discount_type": "amount",
+      "discount_value": "0.00",
+      "discount_amount": "0.00",
+      "tax_percent": "0.00",
+      "tax_amount": "0.00",
       "total": "284000.00",
+      "status": "posted",
       "created_by": 1,
-      "created_at": "<ts>"
+      "created_at": "<ts>",
+      "posted_at": "<now>",
+      "posted_by": 1
      },
      {
       "id": 5,
@@ -21791,15 +21950,38 @@
       "suplier_id": 1,
       "suplier_name": "Toko Uji Baru",
       "payment_method": "Cash",
+      "payment_source_id": null,
       "note": "belanja rutin",
+      "subtotal": "10000.00",
+      "shipping_cost": "0.00",
+      "discount_type": "amount",
+      "discount_value": "0.00",
+      "discount_amount": "0.00",
+      "tax_percent": "0.00",
+      "tax_amount": "0.00",
       "total": "10000.00",
+      "status": "posted",
       "created_by": 1,
-      "created_at": "<ts>"
+      "created_at": "<ts>",
+      "posted_at": "<now>",
+      "posted_by": 1
      }
     ]
    },
    "history_stock_semi_wastes": {
     "ddl": "CREATE TABLE `history_stock_semi_wastes` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `semi_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `waste_date` date NOT NULL,\n  `quantity` decimal(12,2) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `cost` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `reason` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_history_stock_semi_wastes_date` (`waste_date`),\n  KEY `idx_history_stock_semi_wastes_item` (`semi_item_id`,`waste_date`),\n  KEY `fk_history_stock_semi_wastes_user` (`user_id`),\n  CONSTRAINT `fk_history_stock_semi_wastes_semi_item` FOREIGN KEY (`semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_history_stock_semi_wastes_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_supply_purchase_attachments": {
+    "ddl": "CREATE TABLE `history_stock_supply_purchase_attachments` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `file_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `mime_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `size_bytes` int unsigned NOT NULL,\n  `uploaded_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `file_name` (`file_name`),\n  KEY `idx_supply_purchase_attachments_purchase` (`purchase_id`,`id`),\n  KEY `uploaded_by` (`uploaded_by`),\n  CONSTRAINT `history_stock_supply_purchase_attachments_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_supply_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_supply_purchase_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_supply_purchase_items": {
+    "ddl": "CREATE TABLE `history_stock_supply_purchase_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `supply_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` decimal(12,3) NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit_price` decimal(14,2) NOT NULL,\n  `total` decimal(14,2) NOT NULL,\n  `cost_total` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `stock_quantity` decimal(12,2) NOT NULL,\n  `stock_unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock_unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value_after` decimal(14,2) NOT NULL DEFAULT '0.00',\n  PRIMARY KEY (`id`),\n  KEY `idx_supply_purchase_items_item` (`supply_item_id`),\n  KEY `purchase_id` (`purchase_id`),\n  CONSTRAINT `history_stock_supply_purchase_items_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_supply_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_supply_purchase_items_ibfk_2` FOREIGN KEY (`supply_item_id`) REFERENCES `stock_supply_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_supply_purchases": {
+    "ddl": "CREATE TABLE `history_stock_supply_purchases` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `request_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payload_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `purchase_date` date NOT NULL,\n  `suplier_id` int unsigned NOT NULL,\n  `suplier_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_method` varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `payment_source_id` int unsigned DEFAULT NULL,\n  `note` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `subtotal` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `shipping_cost` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `discount_type` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'amount',\n  `discount_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `tax_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `tax_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `total` decimal(14,2) NOT NULL,\n  `status` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'posted',\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `posted_at` timestamp NULL DEFAULT NULL,\n  `posted_by` int unsigned DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `request_id` (`request_id`),\n  KEY `idx_supply_purchases_date` (`purchase_date`,`id`),\n  KEY `suplier_id` (`suplier_id`),\n  KEY `created_by` (`created_by`),\n  KEY `idx_supply_purchases_status` (`status`,`purchase_date`,`id`),\n  KEY `fk_supply_purchases_payment_source` (`payment_source_id`),\n  KEY `fk_supply_purchases_posted_by` (`posted_by`),\n  CONSTRAINT `fk_supply_purchases_payment_source` FOREIGN KEY (`payment_source_id`) REFERENCES `meta_data_payment_source` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_supply_purchases_posted_by` FOREIGN KEY (`posted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_supply_purchases_ibfk_1` FOREIGN KEY (`suplier_id`) REFERENCES `suplier` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `history_stock_supply_purchases_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "menu_item_prices": {
@@ -22740,6 +22922,38 @@
       "code": "monthly",
       "label": "Bulanan",
       "description": "Rekap operasional bulanan",
+      "is_active": 1,
+      "sort_order": 3,
+      "created_at": "<ts>",
+      "updated_at": "<ts>"
+     }
+    ]
+   },
+   "meta_data_payment_source": {
+    "ddl": "CREATE TABLE `meta_data_payment_source` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `balance` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `sort_order` int unsigned NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": [
+     {
+      "id": 1,
+      "name": "Kasir (Tunai)",
+      "balance": "0.00",
+      "is_active": 1,
+      "sort_order": 1,
+      "created_at": "<ts>",
+      "updated_at": "<ts>"
+     },
+     {
+      "id": 2,
+      "name": "Rekening Penjualan",
+      "balance": "0.00",
+      "is_active": 1,
+      "sort_order": 2,
+      "created_at": "<ts>",
+      "updated_at": "<ts>"
+     },
+     {
+      "id": 3,
+      "name": "Niskala",
+      "balance": "0.00",
       "is_active": 1,
       "sort_order": 3,
       "created_at": "<ts>",
@@ -25685,6 +25899,10 @@
    },
    "stock_semi_items": {
     "ddl": "CREATE TABLE `stock_semi_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `minimum_stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `portion_size` double NOT NULL DEFAULT '0',\n  `yield_quantity` double NOT NULL DEFAULT '0',\n  `reset_daily` tinyint(1) NOT NULL DEFAULT '1',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_stock_semi_items_is_active` (`is_active`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "stock_supply_items": {
+    "ddl": "CREATE TABLE `stock_supply_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `category` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `minimum_stock` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `stock_value` decimal(14,2) NOT NULL DEFAULT '0.00',\n  `supplier` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `is_unlimited` tinyint(1) NOT NULL DEFAULT '0',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_stock_supply_items_category` (`category`,`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "suplier": {

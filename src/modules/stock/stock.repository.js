@@ -224,6 +224,7 @@ module.exports = {
   findSemiItemNames,
   getStockStatus,
   isSemiItemName,
+  RESCALED_STOCK_VALUE,
   remove,
   update,
   updateCogs,

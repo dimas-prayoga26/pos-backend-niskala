@@ -33,6 +33,7 @@ const createApp = () => {
   app.use("/api/stock-item", require("./modules/stock/stock.routes"));
   app.use("/api/shopping", require("./modules/shopping/shopping.routes"));
   app.use("/api/order-platform", require("./modules/platforms/platform.routes"));
+  app.use("/api/payment-source", require("./modules/paymentSources/paymentSource.routes"));
   app.use("/api/recap", require("./modules/recaps/recap.routes"));
 
   app.use(errorHandler);
