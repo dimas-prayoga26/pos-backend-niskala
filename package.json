@@ -11,7 +11,11 @@
     "test:integration": "node tests/integration/shopping.test.js && node --test tests/integration/regressions.test.js",
     "test:characterization": "node tests/characterization/run.js",
     "test:characterization:update": "node tests/characterization/run.js --update",
-    "test": "npm run test:unit && npm run test:integration && npm run test:characterization"
+    "test": "npm run test:unit && npm run test:integration && npm run test:characterization",
+    "import:rekap:check": "node scripts/import-rekap-pengeluaran.js",
+    "import:rekap": "node scripts/import-rekap-pengeluaran.js --apply",
+    "rekap:rapikan:check": "node scripts/normalize-rekap-raw-items.js",
+    "rekap:rapikan": "node scripts/normalize-rekap-raw-items.js --apply"
   },
   "keywords": [],
   "author": "",

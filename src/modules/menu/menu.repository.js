@@ -196,6 +196,10 @@ const replacePriceAndRecipe = async (
         ]),
       ]
     );
+    // A bahan a recipe uses is a bahan resep (Stok → Bahan Baku).
+    await connection.query("UPDATE stock_raw_items SET is_recipe_ingredient = TRUE WHERE id IN (?)", [
+      rawRows.map((ingredient) => ingredient.stockItemId),
+    ]);
   }
   if (semiRows.length) {
     await connection.query(

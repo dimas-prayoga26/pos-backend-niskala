@@ -12,9 +12,11 @@ const { ensureSemiItemsSchema } = require("../../src/infrastructure/database/boo
 const { ensureShoppingSchema } = require("../../src/infrastructure/database/bootstrap/shoppingSchema");
 const { ensureSupplySchema } = require("../../src/infrastructure/database/bootstrap/supplySchema");
 const { ensureNotaSchema } = require("../../src/infrastructure/database/bootstrap/notaSchema");
+const { ensureRecipeIngredientSchema } = require("../../src/infrastructure/database/bootstrap/recipeIngredientSchema");
 const { createPaymentSourceService } = require("../../src/modules/paymentSources/paymentSource.service");
 const { RECEIPT_TARGETS, createAttachmentService } = require("../../src/modules/shopping/shopping.attachments");
 const { createSupplyShoppingService } = require("../../src/modules/shopping/shopping.supply");
+const { createShoppingSummary } = require("../../src/modules/shopping/shopping.summary");
 const { createShoppingService: createShoppingModel } = require("../../src/modules/shopping/shopping.service");
 const { convertQuantity } = require("../../src/modules/shopping/shopping.validation");
 const database = `pos_shopping_test_${crypto.randomBytes(6).toString("hex")}`;
@@ -53,6 +55,8 @@ let testPool, created = false, receiptDir;
   await ensureNotaSchema(testPool);
   await ensureSemiItemsSchema(testPool);
   await ensureSemiItemsSchema(testPool);
+  await ensureRecipeIngredientSchema(testPool);
+  await ensureRecipeIngredientSchema(testPool);
   const shopping = createShoppingModel(testPool);
   assert.deepEqual(await shopping.suppliers(), []);
   const [seed] = await testPool.query("INSERT INTO stock_raw_items (name,category,unit,stock,supplier) VALUES ('Kopi Uji','Umum','gr',-50,'Legacy Shop')");
@@ -253,6 +257,10 @@ let testPool, created = false, receiptDir;
   assert.equal((await testPool.query("SELECT id FROM stock_supply_items WHERE name='Sapu'"))[0].length,0);
   const supplyHistory = await supply.list({search:"Gas"});
   assert.equal(supplyHistory.groupTotal,1);
+  // TOTAL PENGELUARAN of Per Item: the cost of every matching line, all pages.
+  assert.equal(supplyHistory.totalSpending,supplyHistory.itemGroups[0].histories.reduce((sum,item)=>sum+item.costTotal,0));
+  assert.ok(supplyHistory.totalSpending>0);
+  assert.equal((await supply.list({search:"Promosi"})).totalSpending,0);
   assert.deepEqual([supplyHistory.itemGroups[0].itemName,supplyHistory.itemGroups[0].category,supplyHistory.itemGroups[0].stockItemId,supplyHistory.itemGroups[0].histories.length],["Gas LPG","Perlengkapan",gas.id,2]);
   assert.equal(supplyHistory.itemGroups[0].histories[0].paymentMethod,"Kasir (Tunai)");
   // Search also matches the category; the deleted banner line left no history.
@@ -366,6 +374,11 @@ let testPool, created = false, receiptDir;
   assert.ok(tehDetail.itemGroups[0].histories.length>=1 && tehDetail.itemGroups[0].histories.every(item=>item.itemName==="Teh Footer"));
   assert.ok(tehDetail.itemGroups[0].histories.some(item=>item.purchaseId===draft.id),"the nota's line is in the barang riwayat");
   assert.equal(tehDetail.groupTotal,1);
+  // Per Item and Per Struk agree on TOTAL PENGELUARAN: the lines' cost_total add up to the Grand Totals.
+  for (const range of [{}, {from:"2026-09-01",to:"2026-09-30"}]) {
+    assert.equal((await shopping.list({...range,page:2})).totalSpending,(await shopping.listNotas(range)).totalSpending,JSON.stringify(range));
+  }
+  assert.equal((await shopping.list({from:"2099-01-01"})).totalSpending,0);
   await assert.rejects(shopping.list({itemId:"abc"}),error=>error.status===400);
   assert.equal((await shopping.list({search:"Gula Draft"})).itemGroups.length,1);
   await assert.rejects(shopping.updateDraft(draft.id,{...draftPayload,status:"draft"},1),error=>error.status===409);
@@ -402,6 +415,28 @@ let testPool, created = false, receiptDir;
   const [milkSim] = await testPool.query("INSERT INTO stock_raw_items (name,category,unit,stock,unit_cost,stock_value) VALUES ('Fresh Milk Simulasi','Umum','ml',-2000,20,0)");
   await shopping.save({...payload,requestId:crypto.randomUUID(),paymentSourceId:kasir.id,items:[{stockItemId:milkSim.insertId,quantity:3000,unit:"ml",unitPrice:19.7}]},1);
   assert.deepEqual(await stockRow(milkSim.insertId),{stock:"1000.00",unit_cost:19,stock_value:"19100.00"});
+  // Isi per kemasan: 2 pack of 0,25 kg add 500 gr (the isi is kept in the stock unit).
+  const [packSeed] = await testPool.query("INSERT INTO stock_raw_items (name,category,unit,stock,unit_cost,stock_value) VALUES ('Gula Pack Uji','Umum','gr',0,0,0)");
+  const packed = await shopping.save({...payload,requestId:crypto.randomUUID(),paymentSourceId:kasir.id,items:[{stockItemId:packSeed.insertId,quantity:2,unit:"pack",packSize:0.25,packUnit:"kg",unitPrice:5000}]},1);
+  assert.deepEqual(await stockRow(packSeed.insertId),{stock:"500.00",unit_cost:20,stock_value:"10000.00"});
+  const [[packLine]] = await testPool.query("SELECT id, quantity, unit, pack_size, stock_quantity, stock_unit FROM history_stock_raw_purchase_items WHERE purchase_id=?",[packed.id]);
+  assert.deepEqual([Number(packLine.quantity),packLine.unit,Number(packLine.pack_size),Number(packLine.stock_quantity),packLine.stock_unit],[2,"pack",250,500,"gr"]);
+  // Editing the qty keeps the isi; a new isi changes the stock; no isi (pack is not gr) is refused.
+  await shopping.updateItem(packLine.id,{quantity:3,unit:"pack",unitPrice:5000},1);
+  assert.equal((await stockRow(packSeed.insertId)).stock,"750.00");
+  await shopping.updateItem(packLine.id,{quantity:3,unit:"pack",packSize:100,unitPrice:5000},1);
+  assert.equal((await stockRow(packSeed.insertId)).stock,"300.00");
+  await assert.rejects(shopping.updateItem(packLine.id,{quantity:3,unit:"pack",packSize:null,unitPrice:5000},1),error=>error.status===400);
+  await assert.rejects(shopping.save({...payload,requestId:crypto.randomUUID(),items:[{stockItemId:packSeed.insertId,quantity:1,unit:"dus",packSize:1,packUnit:"ml",unitPrice:1}]},1),error=>error.status===400,"the isi must fit the stock unit");
+  // A new item bought by the dus takes the isi's unit: 1 dus isi 24 botol for Rp 48.000 = 24 botol at Rp 2.000.
+  await shopping.save({...payload,requestId:crypto.randomUUID(),paymentSourceId:kasir.id,items:[{itemName:"Aqua Dus Uji",quantity:1,unit:"dus",packSize:24,packUnit:"botol",unitPrice:48000}]},1);
+  const [[aquaDus]] = await testPool.query("SELECT unit, stock, unit_cost FROM stock_raw_items WHERE name='Aqua Dus Uji'");
+  assert.deepEqual([aquaDus.unit,Number(aquaDus.stock),aquaDus.unit_cost],["botol",24,2000]);
+  const [listedPack] = (await shopping.listNotas({search:"Aqua Dus Uji"})).notas;
+  assert.deepEqual(listedPack.items.map(item=>[item.quantity,item.unit,item.packSize,item.packUnit,item.stockQuantity,item.stockUnit]),[[1,"dus",24,"botol",24,"botol"]]);
+  const packDraft = await shopping.save({...payload,requestId:crypto.randomUUID(),status:"draft",items:[{stockItemId:packSeed.insertId,quantity:1,unit:"pack",packSize:250,unitPrice:5000}]},1);
+  assert.deepEqual((await shopping.listDrafts()).find(row=>row.id===packDraft.id).items.map(item=>[item.unit,item.packSize,item.packUnit]),[["pack",250,"gr"]]);
+  await shopping.removeDraft(packDraft.id);
   // Barang Lainnya need no unit: a new one is counted in pcs, an existing one keeps its own unit.
   await supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{itemName:"Lakban Uji",category:"Perlengkapan",quantity:3,unitPrice:5000}]},1);
   assert.deepEqual(await supplyRow("Lakban Uji"),{category:"Perlengkapan",unit:"pcs",stock:"3.00",unit_cost:5000,stock_value:"15000.00"});
@@ -440,6 +475,20 @@ let testPool, created = false, receiptDir;
   assert.equal((await supply.listNotas({category:"Promosi",search:"Campur",from:"2026-10-29",to:"2026-10-29"})).total,1);
   assert.equal((await supply.listNotas({category:"Promosi",search:"Campur",from:"2026-10-30"})).total,0);
   assert.equal((await supply.list({search:"Campur",to:"2026-10-28"})).itemGroups.length,0);
+  // Summary cards: Bahan Baku = the posted nota; each kategori what its lines cost (the Campur nota split
+  // between Promosi and Peralatan, never counted twice); Valuasi Aset = active Peralatan, lifetime.
+  const summaryOf = createShoppingSummary(testPool);
+  const lifetime = await summaryOf({});
+  assert.equal(lifetime.bahanBaku.total,(await shopping.listNotas({})).totalSpending);
+  const [[supplySpent]] = await testPool.query("SELECT COALESCE(SUM(total),0) AS total FROM history_stock_supply_purchases WHERE status='posted'");
+  assert.equal(Math.round((lifetime.peralatan.total+lifetime.perlengkapan.total+lifetime.promosi.total+lifetime.lainLain.total)*100),Math.round(Number(supplySpent.total)*100));
+  const [[assetValue]] = await testPool.query("SELECT COALESCE(SUM(stock_value),0) AS value FROM stock_supply_items WHERE is_active=TRUE AND category='Peralatan'");
+  assert.equal(lifetime.asetPeralatan.value,Number(assetValue.value));
+  const campurDay = await summaryOf({from:"2026-10-29",to:"2026-10-29"});
+  assert.ok(campurDay.promosi.total>=50000 && campurDay.peralatan.total>=30000,"Spanduk (Promosi) and Pisau (Peralatan) of one nota");
+  const future = await summaryOf({from:"2099-01-01"});
+  assert.deepEqual([future.bahanBaku,future.lainLain,future.asetPeralatan.value],[{total:0,notas:0},{total:0,notas:0},lifetime.asetPeralatan.value]);
+  await assert.rejects(summaryOf({from:"2026-10-02",to:"2026-10-01"}),error=>error.status===400);
   await assert.rejects(supply.listNotas({category:"Operasional"}),error=>error.status===400);
   assert.ok((await supply.list({search:"Kategori"})).itemGroups.length>=4,"no category lists them all");
   await assert.rejects(supply.list({category:"Operasional"}),error=>error.status===400);

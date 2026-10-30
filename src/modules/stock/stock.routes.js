@@ -8,7 +8,9 @@ const {
   getStockItems,
   updateStockCogs,
   updateStockItem,
+  updateStockRecipeUse,
   updateStockQuantity,
+  updateStockUnit,
 } = require("./stock.controller");
 const {
   addSemiItem,
@@ -74,6 +76,8 @@ router.post("/", authenticate, adminOnly, addStockItem);
 router.put("/:id", authenticate, adminOnly, requireNumericId(), updateStockItem);
 router.delete("/:id", authenticate, adminOnly, requireNumericId(), deleteStockItem);
 router.patch("/:id/cogs", authenticate, adminOnly, requireNumericId(), updateStockCogs);
+router.patch("/:id/recipe-use", authenticate, adminOnly, requireNumericId(), updateStockRecipeUse);
+router.patch("/:id/unit", authenticate, adminOnly, requireNumericId(), updateStockUnit);
 router.patch("/:id/stock", authenticate, requireNumericId(), staffOnly, updateStockQuantity);
 
 module.exports = router;

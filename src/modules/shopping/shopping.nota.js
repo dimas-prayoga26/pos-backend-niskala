@@ -18,7 +18,7 @@ const { clean, dateKey, number, todayKey } = require("../../shared/utils/validat
 const { findPurchaseSourceId, postMutation } = require("../paymentSources/paymentSource.ledger");
 const { receiveIntoStock } = require("./shopping.costing");
 const { NO_ADJUSTMENTS, adjustmentsFromHeader, computeNotaTotals } = require("./shopping.totals");
-const { convertQuantity, normalizeItemPatch } = require("./shopping.validation");
+const { convertQuantity, normalizeItemPatch, round3, stockQuantityOf } = require("./shopping.validation");
 
 const NOTA_PAGE_SIZE = 10;
 
@@ -84,7 +84,9 @@ const postPurchaseDifference = async (
   });
 };
 
-const lineAmount = item => roundCurrency(item.quantity * item.unitPrice);
+// The harga total typed on the form when sent (exact even when the price per
+// gr or ml has more than 2 decimals: 19.000 ml for Rp 8.000), else qty x harga.
+const lineAmount = item => roundCurrency(item.total ?? item.quantity * item.unitPrice);
 const footerColumns = totals => [
   totals.subtotal,
   totals.shippingCost,
@@ -140,7 +142,7 @@ const createNotaEngine = (db, cfg) => {
       }
       const stock = byId.get(id);
       if (!stock || !stock.is_active) throw createError(400, "Salah satu barang tidak tersedia. Muat ulang daftar barang.");
-      if (stock.unit && item.unit) convertQuantity(item.quantity, item.unit, stock.unit);
+      if (stock.unit && (item.unit || item.packSize)) stockQuantityOf(item, stock.unit);
     }
     return byId;
   };
@@ -151,14 +153,20 @@ const createNotaEngine = (db, cfg) => {
       item.unit ? item : { ...item, unit: stocksById.get(item[cfg.itemIdKey])?.unit || cfg.defaultUnit }
     );
 
+  // A packed line (isi per kemasan) keeps its isi in the stock unit
+  // (pack_size) with that unit (stock_unit); a new item takes the isi's unit.
   const insertLines = async (connection, purchaseId, items, totals, stocksById) => {
     for (const [index, item] of items.entries()) {
       const stock = stocksById.get(item[cfg.itemIdKey]);
       const category = cfg.lineCategory ? [cfg.lineCategory(item, stock)] : [];
+      const packUnit = stock?.unit || item.packUnit || cfg.defaultUnit || "pcs";
+      const packSize = item.packSize
+        ? stock?.unit ? convertQuantity(item.packSize, item.packUnit || stock.unit, stock.unit) : item.packSize
+        : null;
       await connection.query(
         `INSERT INTO ${cfg.items}
-          (purchase_id, ${cfg.itemFk}, item_name, ${cfg.lineCategory ? "category, " : ""}quantity, unit, unit_price, total, cost_total, stock_quantity, stock_unit)
-         VALUES (?, ?, ?, ${cfg.lineCategory ? "?, " : ""}?, ?, ?, ?, ?, ?, ?)`,
+          (purchase_id, ${cfg.itemFk}, item_name, ${cfg.lineCategory ? "category, " : ""}quantity, unit, pack_size, unit_price, total, cost_total, stock_quantity, stock_unit)
+         VALUES (?, ?, ?, ${cfg.lineCategory ? "?, " : ""}?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           purchaseId,
           stock ? stock.id : null,
@@ -166,11 +174,12 @@ const createNotaEngine = (db, cfg) => {
           ...category,
           item.quantity,
           item.unit,
+          packSize,
           item.unitPrice,
           lineAmount(item),
           totals.costTotals[index],
-          item.quantity,
-          stock?.unit || item.unit,
+          packSize ? round3(item.quantity * packSize) : item.quantity,
+          packSize ? packUnit : stock?.unit || item.unit,
         ]
       );
     }
@@ -207,9 +216,14 @@ const createNotaEngine = (db, cfg) => {
       if (!stock || !stock.is_active) throw createError(400, "Salah satu barang tidak tersedia. Muat ulang daftar barang.");
       if (!stock.unit) {
         if (Number(stock.stock) !== 0) throw createError(400, cfg.missingUnitMessage(stock.name));
-        stock.unit = line.unit;
+        stock.unit = line.pack_size ? line.stock_unit : line.unit;
       }
-      const stockQty = convertQuantity(Number(line.quantity), line.unit, stock.unit);
+      const packSize = line.pack_size
+        ? convertQuantity(Number(line.pack_size), line.stock_unit || stock.unit, stock.unit)
+        : null;
+      const stockQty = packSize
+        ? round3(Number(line.quantity) * packSize)
+        : convertQuantity(Number(line.quantity), line.unit, stock.unit);
       const received = receiveIntoStock(
         { stock: stock.stock, stockValue: stock.stock_value, unitCost: stock.unit_cost },
         stockQty,
@@ -226,12 +240,13 @@ const createNotaEngine = (db, cfg) => {
       await connection.query(
         `UPDATE ${cfg.items}
          SET ${cfg.itemFk} = ?, item_name = ?, ${cfg.lineCategory ? "category = ?, " : ""}
-             stock_quantity = ?, stock_unit = ?, stock_unit_cost = ?, stock_value_after = ?
+             pack_size = ?, stock_quantity = ?, stock_unit = ?, stock_unit_cost = ?, stock_value_after = ?
          WHERE id = ?`,
         [
           stock.id,
           stock.name,
           ...(cfg.lineCategory ? [stock.category] : []),
+          packSize,
           stockQty,
           stock.unit,
           stock.unit_cost,
@@ -387,13 +402,18 @@ const createNotaEngine = (db, cfg) => {
         const [[stock]] = await connection.query(`SELECT unit FROM ${cfg.stockTable} WHERE id = ?`, [target[cfg.itemFk]]);
         const stockUnit = stock?.unit || target.stock_unit;
         const lineUnit = edit.unit || target.unit;
+        // The isi stays unless the patch sets or drops it (in the stock unit).
+        const packSize = "packSize" in edit
+          ? edit.packSize
+          : target.pack_size == null ? null : convertQuantity(Number(target.pack_size), target.stock_unit || stockUnit, stockUnit);
         edited = {
           ...target,
           quantity: edit.quantity,
           unit: lineUnit,
           unit_price: edit.unitPrice,
-          total: roundCurrency(edit.quantity * edit.unitPrice),
-          stock_quantity: convertQuantity(edit.quantity, lineUnit, stockUnit),
+          total: lineAmount(edit),
+          pack_size: packSize,
+          stock_quantity: stockQuantityOf({ quantity: edit.quantity, unit: lineUnit, packSize }, stockUnit),
           stock_unit: stockUnit,
         };
       }
@@ -433,10 +453,10 @@ const createNotaEngine = (db, cfg) => {
           const state = states.get(line[cfg.itemFk]);
           await connection.query(
             `UPDATE ${cfg.items}
-             SET quantity = ?, unit = ?, unit_price = ?, total = ?, cost_total = ?,
+             SET quantity = ?, unit = ?, pack_size = ?, unit_price = ?, total = ?, cost_total = ?,
                  stock_quantity = ?, stock_unit = ?, stock_unit_cost = ?, stock_value_after = ?
              WHERE id = ?`,
-            [line.quantity, line.unit, line.unit_price, line.total, totals.costTotals[index],
+            [line.quantity, line.unit, line.pack_size, line.unit_price, line.total, totals.costTotals[index],
               line.stock_quantity, line.stock_unit, state.averageCost, state.stockValue, line.id]
           );
         } else if (Number(line.cost_total) !== totals.costTotals[index]) {
@@ -524,6 +544,8 @@ const createNotaEngine = (db, cfg) => {
           ...(cfg.lineCategory && { category: posted ? line.current_category : line.category }),
           quantity: Number(line.quantity),
           unit: line.unit,
+          // Isi per kemasan: packSize of packUnit (the stock unit) per package.
+          ...(line.pack_size != null && { packSize: Number(line.pack_size), packUnit: line.stock_unit }),
           unitPrice: Number(line.unit_price),
           total: Number(line.total),
           ...(posted && {

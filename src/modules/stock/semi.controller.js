@@ -3,6 +3,7 @@ const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
 const { roundRecipeQuantity } = require("../menu/menu.options");
+const { dateKey, todayKey } = require("../../shared/utils/validate");
 const SemiItem = require("./semi.repository");
 
 const toNonNegativeNumber = (value) => Math.max(Number(value) || 0, 0);
@@ -136,9 +137,15 @@ const recordProduction = asyncHandler(async (req, res, next) => {
   const outputWeight = roundRecipeQuantity(toNonNegativeNumber(req.body.outputWeight));
   const portionQuantity = toNonNegativeNumber(req.body.portionQuantity);
   const note = String(req.body.note || "").trim().slice(0, 255);
+  // Daily Prep of another business day (a shift recorded after midnight);
+  // today when not given.
+  const producedDate = req.body.producedDate ? dateKey(req.body.producedDate, "Tanggal masak") : null;
 
   if (batchQuantity <= 0) {
     return next(createHttpError(400, "Jumlah resep yang dimasak harus lebih dari 0."));
+  }
+  if (producedDate && producedDate > todayKey()) {
+    return next(createHttpError(400, "Tanggal masak tidak boleh setelah hari ini."));
   }
   if (outputWeight <= 0 && portionQuantity <= 0) {
     return next(createHttpError(400, "Isi berat hasil masak atau jumlah porsinya."));
@@ -147,7 +154,7 @@ const recordProduction = asyncHandler(async (req, res, next) => {
   const semiId = Number(req.params.id);
   const productionId = await SemiItem.recordProduction(
     semiId,
-    { batchQuantity, outputWeight, portionQuantity, note },
+    { batchQuantity, outputWeight, portionQuantity, note, producedDate: producedDate === todayKey() ? null : producedDate },
     req.user?.id || req.user?._id
   );
   if (!productionId) return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));

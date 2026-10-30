@@ -12,6 +12,7 @@ const { roundCost, roundCurrency } = require("../../shared/utils/money");
 const { roundRecipeQuantity } = require("../menu/menu.options");
 const { refreshMenuCosts } = require("../menu/menu.costs");
 const { getStockStatus } = require("./stock.repository");
+const { allocateBatchCosts, dayOf } = require("../orders/order.hpp");
 
 const roundStock = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
@@ -179,6 +180,10 @@ const save = (id, { name, category, unit, portionSize, minimumStock, resetDaily,
         index + 1,
       ])]
     );
+    // A bahan a recipe uses is a bahan resep (Stok → Bahan Baku).
+    await connection.query("UPDATE stock_raw_items SET is_recipe_ingredient = TRUE WHERE id IN (?)", [
+      components.map((component) => component.stockItemId),
+    ]);
     await connection.query(
       `UPDATE stock_semi_item_recipes sr
        JOIN stock_raw_items si ON si.id = sr.stock_item_id
@@ -223,7 +228,8 @@ const today = () => {
 
 // Writes off quantity portions of a locked semi item row: its stock and
 // stock_value drop at the exact unit cost (stock_value / stock) and one
-// history_stock_semi_wastes row keeps the loss.
+// history_stock_semi_wastes row keeps the loss. A negative quantity (a
+// recount above the stock) adds the portions back at that cost.
 const writeOff = async (connection, item, { quantity, reason, note, wasteDate, userId }) => {
   const stock = Number(item.stock) || 0;
   const value = Number(item.stock_value) || 0;
@@ -231,6 +237,7 @@ const writeOff = async (connection, item, { quantity, reason, note, wasteDate, u
   const cost = stock > 0 && value > 0
     ? roundCurrency((value * portions) / stock)
     : roundCurrency(portions * Number(item.unit_cost || 0));
+  const unitCost = portions !== 0 ? roundCost(cost / portions) : Number(item.unit_cost || 0);
 
   await connection.query(
     "UPDATE stock_semi_items SET stock = ?, stock_value = ? WHERE id = ?",
@@ -246,7 +253,7 @@ const writeOff = async (connection, item, { quantity, reason, note, wasteDate, u
       wasteDate || today(),
       portions,
       item.unit,
-      portions > 0 ? roundCost(cost / portions) : Number(item.unit_cost || 0),
+      unitCost,
       cost,
       reason,
       note || null,
@@ -257,9 +264,11 @@ const writeOff = async (connection, item, { quantity, reason, note, wasteDate, u
   return cost;
 };
 
-// Manual count of the portions left. A lower count is written off as
-// "Penyesuaian" (kerugian); a higher one rescales stock_value at the exact
-// unit cost, as for raw items.
+// Manual count of the portions left, kept as a "Penyesuaian" at the exact
+// cost per portion (stock_value / stock, else the latest one): a lower count
+// is kerugian, a higher one a selisih lebih (negative quantity and cost) that
+// lowers the day's kerugian. The cost per portion never changes, so a count
+// and its correction (150 -> 100 -> 150) cancel out.
 const updateStock = (id, stock, userId) =>
   withTransaction(async (connection) => {
     const [[item]] = await connection.query(
@@ -269,19 +278,8 @@ const updateStock = (id, stock, userId) =>
     if (!item) return false;
 
     const missing = roundStock(Number(item.stock) - stock);
-    if (missing > 0 && Number(item.stock) > 0) {
+    if (missing !== 0) {
       await writeOff(connection, item, { quantity: missing, reason: "Penyesuaian", userId });
-    } else {
-      await connection.query(
-        `UPDATE stock_semi_items
-         SET stock_value = CASE
-               WHEN stock > 0 AND stock_value > 0 THEN ROUND(stock_value * ? / stock, 2)
-               ELSE ROUND(? * unit_cost, 2)
-             END,
-             stock = ?
-         WHERE id = ?`,
-        [stock, stock, stock, id]
-      );
     }
 
     return true;
@@ -317,7 +315,7 @@ const recordWaste = (semiId, { quantity, reason, note }, userId) =>
 const closeDay = async (connection, { date, userId }) => {
   const [items] = await connection.query(
     `SELECT * FROM stock_semi_items
-     WHERE reset_daily = TRUE AND is_active = TRUE AND stock > 0
+     WHERE reset_daily = TRUE AND is_active = TRUE AND stock <> 0
      ORDER BY id
      FOR UPDATE`
   );
@@ -330,6 +328,12 @@ const closeDay = async (connection, { date, userId }) => {
        WHERE semi_item_id = ? AND produced_at >= DATE_ADD(?, INTERVAL 1 DAY)`,
       [item.id, date]
     );
+    // Sold more than the cookings recorded (no Daily Prep, or a short one):
+    // the next day still starts from zero, with nothing to write off.
+    if (Number(item.stock) < 0) {
+      await connection.query("UPDATE stock_semi_items SET stock = 0, stock_value = 0 WHERE id = ?", [item.id]);
+      continue;
+    }
     const leftover = roundStock(Number(item.stock) - Number(later.portions));
     if (leftover <= 0) continue;
 
@@ -441,9 +445,21 @@ const deleteWaste = (wasteId) =>
 
 // Records one cooking of batchQuantity recipes. The portions come from
 // outputWeight / portion_size, or portionQuantity when counted directly.
+// producedDate: the business day of a Daily Prep recorded later (a shift
+// that ended after midnight), refused once that day is closed
+// (business_day_closings, recaps/dayClosing).
 // Returns the production id, or null when the semi item is not found.
-const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity, note }, userId) =>
+const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity, note, producedDate = null }, userId) =>
   withTransaction(async (connection) => {
+    if (producedDate) {
+      const [closed] = await connection.query(
+        "SELECT 1 FROM business_day_closings WHERE business_date = ? LIMIT 1",
+        [producedDate]
+      );
+      if (closed.length) {
+        throw createHttpError(409, `Hari ${producedDate} sudah ditutup. HPP hari itu sudah dikunci.`);
+      }
+    }
     const [[item]] = await connection.query(
       "SELECT * FROM stock_semi_items WHERE id = ? AND is_active = TRUE FOR UPDATE",
       [semiId]
@@ -520,16 +536,25 @@ const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity
       );
     }
 
-    // Same moving average as a purchase (shopping.service).
+    // Same moving average as a purchase (shopping.service). Portions already
+    // sold before this cooking (a Daily Prep recorded after the sales, stock
+    // below 0) take this cooking's cost; only what is left stays in stock.
     const cost = roundCurrency(usedItems.reduce((total, used) => total + used.cost, 0));
-    const previousStock = Math.max(Number(item.stock || 0), 0);
-    const previousValue = Math.max(
-      Number(item.stock_value || 0),
-      roundCurrency(previousStock * Number(item.unit_cost || 0))
-    );
     const nextStock = roundStock(Number(item.stock || 0) + portions);
-    const nextValue = roundCurrency(previousValue + cost);
-    const nextUnitCost = nextStock > 0 ? roundCost(nextValue / nextStock) : 0;
+    let nextValue;
+    let nextUnitCost;
+    if (Number(item.stock || 0) < 0) {
+      nextValue = roundCurrency(Math.max(nextStock, 0) * (cost / portions));
+      nextUnitCost = roundCost(cost / portions);
+    } else {
+      const previousStock = Number(item.stock || 0);
+      const previousValue = Math.max(
+        Number(item.stock_value || 0),
+        roundCurrency(previousStock * Number(item.unit_cost || 0))
+      );
+      nextValue = roundCurrency(previousValue + cost);
+      nextUnitCost = nextStock > 0 ? roundCost(nextValue / nextStock) : 0;
+    }
     await connection.query(
       `UPDATE stock_semi_items
        SET stock = ?, stock_value = ?, unit_cost = ?, yield_quantity = ?
@@ -540,8 +565,8 @@ const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity
     const [production] = await connection.query(
       `INSERT INTO stock_semi_item_productions
         (semi_item_id, item_name, batch_quantity, output_weight, portion_quantity,
-         cost, unit_cost, note, user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         cost, unit_cost, note, user_id, produced_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${producedDate ? "TIMESTAMP(?, CURTIME())" : "NOW()"})`,
       [
         semiId,
         item.name,
@@ -552,6 +577,7 @@ const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity
         roundCost(cost / portions),
         note || null,
         userId || null,
+        ...(producedDate ? [producedDate] : []),
       ]
     );
     await connection.query(
@@ -569,6 +595,11 @@ const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity
       ])]
     );
     await refreshMenuCosts(connection, { semiItemIds: [semiId] });
+    // Daily Prep: the day's pending notas take its cost per portion.
+    await allocateBatchCosts(connection, {
+      date: await dayOf(connection, "stock_semi_item_productions", production.insertId, "produced_at"),
+      semiItemIds: [semiId],
+    });
 
     return production.insertId;
   });
@@ -622,6 +653,7 @@ const deleteProduction = (productionId) =>
 
     const semiId = production.semi_item_id;
     const portions = Number(production.portion_quantity);
+    const producedOn = await dayOf(connection, "stock_semi_item_productions", productionId, "produced_at");
     let item = null;
 
     if (semiId) {
@@ -689,6 +721,8 @@ const deleteProduction = (productionId) =>
         ]
       );
       await refreshMenuCosts(connection, { semiItemIds: [semiId] });
+      // The day's pending notas follow the cookings that remain.
+      await allocateBatchCosts(connection, { date: producedOn, semiItemIds: [semiId] });
     }
 
     return semiId || 0;

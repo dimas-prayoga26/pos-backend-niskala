@@ -22,6 +22,8 @@ const normalizeStockPayload = (body) => ({
   minimumStock: toNonNegativeNumber(body.minimumStock),
   supplier: String(body.supplier || "").trim(),
   isUnlimited: Boolean(body.isUnlimited),
+  // Only used on create; the flag has its own endpoint (PATCH /:id/recipe-use).
+  isRecipeIngredient: body.isRecipeIngredient === undefined ? true : Boolean(body.isRecipeIngredient),
 });
 
 const validateStockPayload = async ({ name, category, unit }) => {
@@ -34,7 +36,7 @@ const validateStockPayload = async ({ name, category, unit }) => {
   }
 
   if (await isSupplyItemName(name)) {
-    return createHttpError(409, `${name} sudah ada di Stok → Lainnya. Pilih nama lain.`);
+    return createHttpError(409, `${name} sudah tercatat sebagai barang Lainnya. Pilih nama lain.`);
   }
 
   return null;
@@ -120,6 +122,57 @@ const updateStockCogs = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Konversi Satuan: { unit, factor }, 1 old unit = factor new units (asked only
+// when the units are not converted by the server, e.g. 1 galon = 19000 ml).
+const updateStockUnit = asyncHandler(async (req, res, next) => {
+  const unit = String(req.body.unit || "").trim().toLowerCase();
+  if (!unit || unit.length > 30) return next(createHttpError(400, "Satuan baru wajib diisi (maksimal 30 huruf)."));
+
+  const converted = await StockItem.convertUnit(req.params.id, { unit, factor: req.body.factor });
+  if (!converted) return next(createHttpError(404, "Stock item not found!"));
+
+  const { item, fromUnit, factor } = converted;
+  const isi = Number(factor).toLocaleString("id-ID", { maximumFractionDigits: 3 });
+  emitStockChanged("stock-unit-converted", item.id);
+  res.status(200).json({
+    success: true,
+    message: `Satuan ${item.name} dikonversi: 1 ${fromUnit} = ${isi} ${item.unit}. Stok, resep, dan riwayat belanja ikut disesuaikan.`,
+    data: item,
+  });
+});
+
+// Bahan Resep on/off. A bahan a recipe still uses stays on, so the recipe
+// editors keep showing what the recipes contain.
+const updateStockRecipeUse = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const isRecipeIngredient = Boolean(req.body.isRecipeIngredient);
+
+  if (!isRecipeIngredient) {
+    const usedBy = [
+      ...(await StockItem.findRecipeMenuNames(id)),
+      ...(await StockItem.findSemiItemNames(id)),
+    ];
+    if (usedBy.length) {
+      return next(
+        createHttpError(409, `Bahan masih dipakai di resep: ${usedBy.join(", ")}. Hapus dari resep terlebih dahulu.`)
+      );
+    }
+  }
+
+  const stockItem = await StockItem.setRecipeIngredient(id, isRecipeIngredient);
+
+  if (!stockItem) {
+    return next(createHttpError(404, "Stock item not found!"));
+  }
+
+  emitStockChanged("stock-recipe-use-updated", stockItem.id);
+  res.status(200).json({
+    success: true,
+    message: isRecipeIngredient ? "Bahan ditandai sebagai bahan resep." : "Bahan tidak lagi ditandai sebagai bahan resep.",
+    data: stockItem,
+  });
+});
+
 const deleteStockItem = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const recipeMenuNames = await StockItem.findRecipeMenuNames(id);
@@ -158,6 +211,8 @@ module.exports = {
   deleteStockItem,
   getStockItems,
   updateStockCogs,
+  updateStockRecipeUse,
   updateStockItem,
   updateStockQuantity,
+  updateStockUnit,
 };

@@ -27,6 +27,9 @@ const { refreshMenuCosts } = require("../../../modules/menu/menu.costs");
 const { ensureNotaSchema } = require("./notaSchema");
 const { ensurePaymentSourcesSchema } = require("./paymentSourcesSchema");
 const { ensureSemiItemsSchema } = require("./semiItemsSchema");
+const { ensureRecipeIngredientSchema } = require("./recipeIngredientSchema");
+const { ensureHppPendingSchema } = require("./hppPendingSchema");
+const { ensureDayClosingSchema } = require("./dayClosingSchema");
 const { ensureShoppingSchema } = require("./shoppingSchema");
 const { ensureSupplySchema } = require("./supplySchema");
 
@@ -164,6 +167,7 @@ const connectDB = async () => {
       stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
       supplier VARCHAR(150),
       is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
+      is_recipe_ingredient BOOLEAN NOT NULL DEFAULT TRUE,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -311,6 +315,8 @@ const connectDB = async () => {
       customer_phone VARCHAR(50) NULL,
       order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
       order_status VARCHAR(50) NOT NULL,
+      hpp_status VARCHAR(10) NOT NULL DEFAULT 'closed',
+      hpp_closed_at DATETIME NULL,
       order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       total DECIMAL(12,2) NOT NULL,
       online_order_charge DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -443,6 +449,9 @@ const connectDB = async () => {
       unit VARCHAR(30) NOT NULL DEFAULT '',
       unit_cost INT NOT NULL DEFAULT 0,
       cost INT NOT NULL DEFAULT 0,
+      hpp_type VARCHAR(10) NOT NULL DEFAULT 'standar',
+      hpp_source VARCHAR(10) NOT NULL DEFAULT 'penjualan',
+      is_pending BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_order_item_costs_order_item_id (order_item_id),
       INDEX idx_order_item_costs_stock_item_id (stock_item_id),
@@ -658,6 +667,9 @@ const bootstrapDatabase = async () => {
   await ensureSupplySchema(pool);
   await ensureNotaSchema(pool);
   await ensureSemiItemsSchema(pool);
+  await ensureRecipeIngredientSchema(pool);
+  await ensureHppPendingSchema(pool);
+  await ensureDayClosingSchema(pool);
   // Catches average costs changed outside the app (e.g. in phpMyAdmin).
   await refreshMenuCosts(pool);
 };

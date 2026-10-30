@@ -26,6 +26,9 @@ const mapOrder = (row, items = []) => {
     orderPlatformId: row.order_platform_meta_id || null,
     platformTax: Number(row.order_platform_tax || 0),
     orderStatus: row.order_status,
+    // Modul 2: "pending" while a bahan olahan line waits for the Daily Prep.
+    hppStatus: row.hpp_status || "closed",
+    hppClosedAt: row.hpp_closed_at || null,
     orderDate: row.order_date,
     bills: {
       total: Number(row.total),
@@ -260,7 +263,8 @@ const insertOrderItemCosts = async (connection, orderItemId, costs = []) => {
 
   await connection.query(
     `INSERT INTO order_item_costs
-      (order_item_id, stock_item_id, semi_item_id, stock_item_name, quantity, unit, unit_cost, cost)
+      (order_item_id, stock_item_id, semi_item_id, stock_item_name, quantity, unit, unit_cost, cost,
+       hpp_type, hpp_source, is_pending)
      VALUES ?`,
     [
       costs.map((line) => [
@@ -272,10 +276,23 @@ const insertOrderItemCosts = async (connection, orderItemId, costs = []) => {
         line.unit,
         line.unitCost,
         line.cost,
+        line.hppType || "standar",
+        "penjualan",
+        Boolean(line.isPending),
       ]),
     ]
   );
 };
+
+// A nota with a bahan olahan line waits for the Daily Prep; any other has its
+// final HPP at the sale.
+const setHppStatus = (connection, id, hppStatus) =>
+  connection.query(
+    `UPDATE orders
+     SET hpp_status = ?, hpp_closed_at = CASE WHEN ? = 'closed' THEN NOW() ELSE NULL END
+     WHERE id = ?`,
+    [hppStatus, hppStatus, id]
+  );
 
 const updateStatus = (connection, id, orderStatus) =>
   connection.query("UPDATE orders SET order_status = ? WHERE id = ?", [
@@ -362,6 +379,7 @@ module.exports = {
   insertOrder,
   insertOrderItem,
   insertOrderItemCosts,
+  setHppStatus,
   insertOrderPlatform,
   orderExists,
   setCateringPaidStatus,

@@ -23,6 +23,8 @@ const snapshotItem = row => ({
   itemName: row.item_name,
   quantity: Number(row.quantity),
   unit: row.unit,
+  // Isi per kemasan, in the stock unit.
+  ...(row.pack_size != null && { packSize: Number(row.pack_size) }),
   unitPrice: Number(row.unit_price),
   total: Number(row.total),
   stockQuantity: Number(row.stock_quantity),
@@ -57,7 +59,7 @@ const checkNewItem = async (connection, { itemName }) => {
   const [semiRows] = await connection.query("SELECT id FROM stock_semi_items WHERE name = ?", [name]);
   if (semiRows.length) throw createError(400, `${name} adalah bahan setengah jadi, stoknya dari Catat Masak. Belanjakan bahan bakunya.`);
   const [supplyRows] = await connection.query("SELECT id FROM stock_supply_items WHERE name = ?", [name]);
-  if (supplyRows.length) throw createError(400, `${name} ada di Stok → Lainnya. Pilih Jenis Belanja Lainnya.`);
+  if (supplyRows.length) throw createError(400, `${name} sudah tercatat sebagai barang Lainnya. Pilih Jenis Belanja Lainnya.`);
   const [[existing]] = await connection.query("SELECT is_active FROM stock_raw_items WHERE name = ?", [name]);
   if (existing && !existing.is_active) throw createError(409, "Barang sudah ada tetapi tidak aktif. Aktifkan melalui pengelolaan stok.");
 };
@@ -86,8 +88,9 @@ const RAW_NOTA = {
   // The unit is set by the first posted purchase.
   createItem: async (connection, line) => {
     await checkNewItem(connection, { itemName: line.item_name });
-    await connection.query(`INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock)
-      VALUES (?, 'Umum', '', 0, 0) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [line.item_name]);
+    // A bahan first bought here is not a bahan resep until it is marked so in Stok.
+    await connection.query(`INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock, is_recipe_ingredient)
+      VALUES (?, 'Umum', '', 0, 0, FALSE) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [line.item_name]);
     const [[row]] = await connection.query("SELECT id FROM stock_raw_items WHERE name = ?", [line.item_name]);
     return row.id;
   },
@@ -202,6 +205,7 @@ const createShoppingService = (db, { receiptDir } = {}) => {
           note: row.note || "",
           quantity: Number(row.quantity),
           unit: row.unit,
+          ...(row.pack_size != null && { packSize: Number(row.pack_size) }),
           unitPrice: Number(row.unit_price),
           total: Number(row.total),
           costTotal: Number(row.cost_total ?? row.total),
@@ -254,8 +258,11 @@ const createShoppingService = (db, { receiptDir } = {}) => {
     });
     const groupTotal = groupedItems.length;
     const itemGroups = groupedItems.slice((page - 1) * 10, page * 10);
+    // TOTAL PENGELUARAN of the Per Item view: what every matching line cost
+    // (cost_total, its share of ongkir/diskon/PPN included), on all pages.
+    const totalSpending = Math.round(itemRows.reduce((sum, row) => sum + Number(row.cost_total ?? row.total), 0) * 100) / 100;
 
-    return { purchases: rows, total: Number(count.total), itemGroups, groupTotal, page };
+    return { purchases: rows, total: Number(count.total), itemGroups, groupTotal, totalSpending, page };
   };
   return {
     suppliers,

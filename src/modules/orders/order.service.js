@@ -17,6 +17,7 @@ const {
 } = require("./order.recapLock");
 const Order = require("./order.repository");
 const { findMenuItemSnapshot, findPlatformSnapshot } = require("./order.snapshots");
+const { HPP_CLOSED, HPP_PENDING, allocateBatchCosts, dayOf } = require("./order.hpp");
 const { normalizeOrderDateInput } = require("./order.validation");
 
 const CLOSED_DAY_MESSAGE =
@@ -129,6 +130,7 @@ const create = async (orderData) => {
       );
     }
 
+    let hasBatchLines = false;
     for (const item of items) {
       const menuItemSnapshot = await findMenuItemSnapshot(
         connection,
@@ -140,6 +142,17 @@ const create = async (orderData) => {
         menuItemSnapshot,
       });
       await Order.insertOrderItemCosts(connection, orderItemId, menuItemSnapshot.costs);
+      hasBatchLines ||= menuItemSnapshot.costs.some((line) => line.isPending);
+    }
+
+    // Modul 2: barang standar have their final HPP now; bahan olahan wait for
+    // the Daily Prep and take the day's cooking cost already recorded, if any.
+    await Order.setHppStatus(connection, orderId, hasBatchLines ? HPP_PENDING : HPP_CLOSED);
+    if (hasBatchLines) {
+      await allocateBatchCosts(connection, {
+        date: await dayOf(connection, "orders", orderId, "order_date"),
+        orderId,
+      });
     }
 
     await connection.commit();
