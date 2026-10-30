@@ -34,7 +34,7 @@ const validateSupplyPayload = async ({ name, category, unit }) => {
 
 const rethrowDuplicateName = (name) => (error) => {
   if (isDuplicateEntryError(error)) {
-    throw createHttpError(409, `${name} sudah ada di Stok → Lainnya.`);
+    throw createHttpError(409, `${name} sudah tercatat sebagai barang Lainnya.`);
   }
   throw error;
 };

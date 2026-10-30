@@ -6,6 +6,8 @@
 //   posted_at/by       who posted (approved) the nota
 //   items.cost_total   the line's amount plus its share of ongkir/PPN minus
 //                      diskon; this is what enters stock and COGS
+//   items.pack_size    isi per kemasan: a line bought by the package (1 dus)
+//                      adds quantity x pack_size of its stock_unit (24 botol)
 // Runs after the payment source and perlengkapan tables exist.
 const NOTA_TABLES = [
   {
@@ -64,6 +66,9 @@ const ensureNotaSchema = async (db) => {
     if (!(await columnsOf(db, items)).has("cost_total")) {
       await db.query(`ALTER TABLE ${items} ADD COLUMN cost_total DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER total`);
       await db.query(`UPDATE ${items} SET cost_total = total`);
+    }
+    if (!(await columnsOf(db, items)).has("pack_size")) {
+      await db.query(`ALTER TABLE ${items} ADD COLUMN pack_size DECIMAL(12,3) NULL AFTER unit`);
     }
   }
 };

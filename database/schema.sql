@@ -67,6 +67,9 @@ CREATE TABLE IF NOT EXISTS stock_raw_items (
   stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
   supplier VARCHAR(150),
   is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Bahan Resep: offered in the recipe editors (menu, bahan setengah jadi).
+  -- A bahan first bought through belanja starts off; Tambah Stok starts on.
+  is_recipe_ingredient BOOLEAN NOT NULL DEFAULT TRUE,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -146,6 +149,8 @@ CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_items (
   item_name VARCHAR(150) NOT NULL,
   quantity DECIMAL(12,3) NOT NULL,
   unit VARCHAR(30) NOT NULL,
+  -- Isi per kemasan: 1 dus (unit) holds pack_size of stock_unit (24 botol).
+  pack_size DECIMAL(12,3) NULL,
   unit_price DECIMAL(14,2) NOT NULL,
   total DECIMAL(14,2) NOT NULL,
   cost_total DECIMAL(14,2) NOT NULL DEFAULT 0,
@@ -339,6 +344,8 @@ CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_items (
   category VARCHAR(30) NOT NULL,
   quantity DECIMAL(12,3) NOT NULL,
   unit VARCHAR(30) NOT NULL,
+  -- Isi per kemasan: 1 dus (unit) holds pack_size of stock_unit (24 botol).
+  pack_size DECIMAL(12,3) NULL,
   unit_price DECIMAL(14,2) NOT NULL,
   total DECIMAL(14,2) NOT NULL,
   cost_total DECIMAL(14,2) NOT NULL DEFAULT 0,
@@ -582,6 +589,10 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_phone VARCHAR(50) NULL,
   order_type VARCHAR(50) NOT NULL DEFAULT 'Offline',
   order_status VARCHAR(50) NOT NULL,
+  -- HPP of the nota: pending while a bahan olahan line waits for the day's
+  -- cooking cost (Daily Prep), closed once the daily recap locks it.
+  hpp_status VARCHAR(10) NOT NULL DEFAULT 'closed',
+  hpp_closed_at DATETIME NULL,
   order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   total DECIMAL(12,2) NOT NULL,
   online_order_charge DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -654,6 +665,16 @@ CREATE TABLE IF NOT EXISTS order_items (
 -- Per-ingredient HPP of each order item, frozen at sale time: cost =
 -- quantity x unit_cost per portion, and the costs sum to order_items.hpp_cost. Later recipe or price changes
 -- never touch it; names and units are copied so history stays readable.
+-- One row per closed business day: automatically at 05:00 the next morning
+-- (recaps/dayClosing) or by saving its daily recap. Closing locks the HPP of
+-- the day's notas and writes off the leftover of daily bahan setengah jadi once.
+CREATE TABLE IF NOT EXISTS business_day_closings (
+  business_date DATE NOT NULL PRIMARY KEY,
+  source VARCHAR(10) NOT NULL,
+  user_id INT UNSIGNED NULL,
+  closed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS order_item_costs (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_item_id INT UNSIGNED NOT NULL,
@@ -665,6 +686,15 @@ CREATE TABLE IF NOT EXISTS order_item_costs (
   unit VARCHAR(30) NOT NULL DEFAULT '',
   unit_cost INT NOT NULL DEFAULT 0,
   cost INT NOT NULL DEFAULT 0,
+  -- HPP standar (bahan baku, final at the sale) or HPP olahan (bahan setengah
+  -- jadi, priced by the day's cooking).
+  hpp_type VARCHAR(10) NOT NULL DEFAULT 'standar',
+  -- penjualan: the cost at the sale (a locked olahan line: the fallback);
+  -- dapur: the day's Daily Prep.
+  hpp_source VARCHAR(10) NOT NULL DEFAULT 'penjualan',
+  -- Pending Flag of a bahan olahan line: its cost per portion is the day's
+  -- cooking cost, locked when the day is closed.
+  is_pending BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_order_item_costs_order_item_id (order_item_id),
   INDEX idx_order_item_costs_stock_item_id (stock_item_id),

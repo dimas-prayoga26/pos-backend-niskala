@@ -5,9 +5,15 @@ const { isAdmin } = require("../../shared/middleware/authorize");
 const attachments = require("./shopping.attachments");
 const shopping = require("./shopping.service");
 const supplyShopping = require("./shopping.supply");
+const shoppingSummary = require("./shopping.summary");
 
 const getSuppliers = asyncHandler(async (req, res) => {
   res.json({ success: true, data: await shopping.suppliers() });
+});
+
+// The summary cards of the Belanja page for ?from=&to=.
+const getShoppingSummary = asyncHandler(async (req, res) => {
+  res.json({ success: true, data: await shoppingSummary.summary(req.query) });
 });
 
 // Explicit saves from Settings; the shopping form keeps new names local until purchase save.
@@ -134,6 +140,7 @@ module.exports = {
   getSupplyPurchaseDrafts: supply.listDrafts,
   getSupplyPurchaseNotas: supply.listNotas,
   getSupplyPurchases: supply.list,
+  getShoppingSummary,
   getSuppliers,
   updatePurchaseDraft: raw.updateDraft,
   updatePurchaseItem: raw.updateItem,

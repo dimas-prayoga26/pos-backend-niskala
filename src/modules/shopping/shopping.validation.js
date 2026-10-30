@@ -66,12 +66,34 @@ const normalizeNota = (body, normalizeItem, { requireRequestId = true } = {}) =>
     ...(status === "draft" && { status }),
   };
 };
+// Isi per kemasan (optional): the line is quantity packages (unit: dus,
+// pack, ...) of packSize packUnit each (isi 24 botol); packUnit defaults to
+// the item's stock unit.
+const packOf = item =>
+  item?.packSize == null || item.packSize === ""
+    ? {}
+    : {
+      packSize: number(item.packSize, 0.001, 1000000, 3, "Isi per kemasan"),
+      ...(item?.packUnit ? { packUnit: unit(item.packUnit) } : {}),
+    };
+const round3 = value => Math.round(value * 1000) / 1000;
+// The stock quantity of a line: packages x isi, else the quantity, in the stock unit.
+const stockQuantityOf = ({ quantity, unit: lineUnit, packSize, packUnit }, stockUnit) =>
+  packSize
+    ? convertQuantity(round3(quantity * packSize), packUnit || stockUnit, stockUnit)
+    : convertQuantity(quantity, lineUnit, stockUnit);
+// Harga total of a line (optional): kept as typed, so a price per gr or ml
+// with more than 2 decimals does not change it (19.000 ml for Rp 8.000).
+const totalOf = item =>
+  item?.total == null || item.total === "" ? {} : { total: number(item.total, 0, 999999999999.99, 2, "Harga total") };
 // unitRequired false: a line without unit takes its item's unit (Lainnya).
 const normalizeLine = (item, idKey, { unitRequired = true } = {}) => ({
   ...reference(item?.[idKey], item?.itemName, idKey, "itemName", "Barang"),
   quantity: number(item?.quantity, 0.001, 999999999, 3, "Qty"),
   ...(unitRequired || item?.unit ? { unit: unit(item?.unit) } : {}),
+  ...packOf(item),
   unitPrice: number(item?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
+  ...totalOf(item),
 });
 const normalizePurchase = (body, options) => normalizeNota(body, item => normalizeLine(item, "stockItemId"), options);
 // Barang Lainnya need no unit; a new one (itemName) needs its category.
@@ -83,10 +105,15 @@ const normalizeSupplyPurchase = (body, options) => normalizeNota(body, item => {
   }
   return { ...line, category: item.category };
 }, options);
+// packSize in a patch is in the stock unit; null or "" drops it, absent keeps it.
 const normalizeItemPatch = (body, { unitRequired = true } = {}) => ({
   quantity: number(body?.quantity, 0.001, 999999999, 3, "Qty"),
   ...(unitRequired || body?.unit ? { unit: unit(body?.unit) } : {}),
+  ...(body && "packSize" in body
+    ? { packSize: body.packSize == null || body.packSize === "" ? null : number(body.packSize, 0.001, 1000000, 3, "Isi per kemasan") }
+    : {}),
   unitPrice: number(body?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
+  ...totalOf(body),
 });
 
 module.exports = {
@@ -96,4 +123,6 @@ module.exports = {
   normalizePurchase,
   normalizeSupplyPurchase,
   number,
+  round3,
+  stockQuantityOf,
 };

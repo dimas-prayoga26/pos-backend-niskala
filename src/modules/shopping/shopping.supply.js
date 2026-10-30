@@ -23,6 +23,8 @@ const snapshotItem = row => ({
   category: row.category,
   quantity: Number(row.quantity),
   unit: row.unit,
+  // Isi per kemasan, in the stock unit.
+  ...(row.pack_size != null && { packSize: Number(row.pack_size) }),
   unitPrice: Number(row.unit_price),
   total: Number(row.total),
   stockQuantity: Number(row.stock_quantity),
@@ -60,7 +62,7 @@ const SUPPLY_NOTA = {
   },
   normalize: normalizeSupplyPurchase,
   ledgerNote: (id, supplierName) => `Belanja lainnya #${id} - ${supplierName}`,
-  missingUnitMessage: name => `Satuan ${name} di Stok → Lainnya kosong padahal stoknya tidak 0.`,
+  missingUnitMessage: name => `Satuan barang Lainnya ${name} kosong padahal stoknya tidak 0.`,
   unlinkedMessage: "Item belanja ini tidak terhubung ke barang lainnya.",
   stockMissingMessage: "Barang lainnya tidak ditemukan.",
   // The form asks no unit: a line takes its item's unit, a new item pcs.
@@ -168,6 +170,8 @@ const createSupplyShoppingService = (db, { receiptDir } = {}) => {
     return {
       itemGroups: itemGroups.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
       groupTotal: itemGroups.length,
+      // TOTAL PENGELUARAN of the Per Item view (all pages), like the bahan baku list.
+      totalSpending: Math.round(rows.reduce((sum, row) => sum + Number(row.cost_total ?? row.total), 0) * 100) / 100,
       page,
     };
   };

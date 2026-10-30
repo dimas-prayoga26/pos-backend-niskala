@@ -34,7 +34,6 @@ const DEFAULT_SHEET = "1SoZyc5rXEqMmjm4cL5erxPxIxeb1dCfAgyqMzE-fXkU";
 const TABS = ["BAHAN", "PERALATAN", "PERLENGKAPAN", "LAIN LAIN", "PROMOSI"];
 const SOURCE_NAMES = { Niskala: "Niskala", Penjualan: "Rekening Penjualan", Cash: "Kasir (Tunai)", RNB: "RNB" };
 const CATEGORY_OF_TAB = { PERALATAN: "Peralatan", PERLENGKAPAN: "Perlengkapan", "LAIN LAIN": "Lain-lain", PROMOSI: "Promosi" };
-const ADMIN_ID = 1;
 
 const args = process.argv.slice(2);
 const option = (name) => {
@@ -100,20 +99,44 @@ const kindOf = (name) => {
   return "item";
 };
 
+// GET as text, following Google's redirects; plain https so it also runs on
+// the older Node of a shared host (no fetch before Node 18).
+const getText = (url, redirects = 5) =>
+  new Promise((resolve, reject) => {
+    require("https")
+      .get(url, (response) => {
+        if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location && redirects > 0) {
+          response.resume();
+          resolve(getText(new URL(response.headers.location, url).toString(), redirects - 1));
+          return;
+        }
+        if (response.statusCode !== 200) {
+          response.resume();
+          reject(new Error(`${url}: HTTP ${response.statusCode}`));
+          return;
+        }
+        let body = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => {
+          body += chunk;
+        });
+        response.on("end", () => resolve(body));
+      })
+      .on("error", reject);
+  });
+
 const loadTabs = async () => {
   if (csvDir) {
     return Object.fromEntries(TABS.map((tab) => [tab, fs.readFileSync(path.join(csvDir, `${tab.replace(" ", "_")}.csv`), "utf8")]));
   }
-  const html = await (await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/htmlview`)).text();
+  const html = await getText(`https://docs.google.com/spreadsheets/d/${sheetId}/htmlview`);
   const gids = Object.fromEntries(
     [...html.matchAll(/\{name: "([^"]+)", pageUrl: "[^"]*gid=(\d+)/g)].map(([, name, gid]) => [name.trim().toUpperCase(), gid])
   );
   const tabs = {};
   for (const tab of TABS) {
     if (!gids[tab]) throw new Error(`Tab ${tab} tidak ditemukan di sheet (ada: ${Object.keys(gids).join(", ")}).`);
-    const response = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gids[tab]}`);
-    if (!response.ok) throw new Error(`Tab ${tab}: HTTP ${response.status}`);
-    tabs[tab] = await response.text();
+    tabs[tab] = await getText(`https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gids[tab]}`);
   }
   return tabs;
 };
@@ -213,6 +236,11 @@ const cents = (value) => Math.round(value * 100);
   const supply = createSupplyShoppingService(pool);
   const sources = createPaymentSourceService(pool);
   const query = async (sql, params) => (await pool.query(sql, params))[0];
+  // The nota are made and posted by the first admin of this database.
+  const [admin] = await query("SELECT id, name FROM users WHERE role = ? ORDER BY id LIMIT 1", ["Admin"]);
+  if (!admin) throw new Error("Tidak ada user Admin di database ini.");
+  const adminId = admin.id;
+  console.log(`  dicatat sebagai admin: ${admin.name} (#${admin.id})`);
 
   const sourceRows = async () => query("SELECT id, name, balance FROM meta_data_payment_source");
   if (!(await sourceRows()).some((row) => row.name === "RNB")) {
@@ -315,7 +343,7 @@ const cents = (value) => Math.round(value * 100);
           taxPercent,
           items,
         },
-        ADMIN_ID
+        adminId
       );
       if (saved.duplicate) report.skipped += 1;
       else report.posted += 1;

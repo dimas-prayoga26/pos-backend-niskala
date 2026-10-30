@@ -22,6 +22,7 @@ const {
   getSupplyPurchaseDrafts,
   getSupplyPurchaseNotas,
   getSupplyPurchases,
+  getShoppingSummary,
   getSuppliers,
   updatePurchaseDraft,
   updatePurchaseItem,
@@ -39,6 +40,8 @@ const staffOnly = requireRole(["admin", "cashier"], "Hanya admin atau kasir yang
 
 router.use(authenticate);
 router.get("/suppliers", getSuppliers);
+// Summary cards of the Belanja page (?from=&to=).
+router.get("/summary", getShoppingSummary);
 router.post("/suppliers", adminOnly, createSupplier);
 router.put("/suppliers/:id", adminOnly, updateSupplier);
 

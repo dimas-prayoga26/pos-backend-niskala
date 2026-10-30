@@ -2,6 +2,8 @@ const http = require("http");
 const config = require("./config/env");
 const { corsOptions } = require("./config/cors");
 const { bootstrapDatabase } = require("./infrastructure/database/bootstrap");
+const { pool } = require("./infrastructure/database/pool");
+const { startDayClosing } = require("./modules/recaps/dayClosing");
 const { initSocket } = require("./infrastructure/realtime/socket");
 const logger = require("./shared/logger");
 const { printLocalAccessUrls } = require("./shared/utils/networkAddresses");
@@ -23,6 +25,9 @@ const start = () => {
         logger.info(`POS Server is listening on http://${config.host}:${config.port}`);
         if (config.nodeEnv === "development") printLocalAccessUrls();
       });
+      // Closes each business day at 05:00 the next morning (Rekap New saves
+      // nothing). Tests close days themselves.
+      if (config.nodeEnv !== "test") startDayClosing(pool);
     })
     .catch((error) => {
       logger.error(`Database connection failed: ${error.message}`, { stack: error.stack });

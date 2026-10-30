@@ -78,11 +78,15 @@ const buildStockDeductions = async (connection, orderItems = []) => {
   return deductions;
 };
 
+// Bahan olahan (semi items) never block a sale: their portions come from the
+// kitchen's Daily Prep, often recorded after the sales (Modul 2).
 const getInsufficientStock = (deductions) =>
   Array.from(deductions.values())
     .filter(
       (deduction) =>
-        !deduction.isUnlimited && deduction.required > deduction.stock
+        deduction.kind !== "semi" &&
+        !deduction.isUnlimited &&
+        deduction.required > deduction.stock
     )
     .map((deduction) => ({
       [deduction.kind === "semi" ? "semiItemId" : "stockItemId"]: deduction.itemId,

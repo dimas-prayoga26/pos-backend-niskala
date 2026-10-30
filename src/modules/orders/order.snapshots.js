@@ -18,6 +18,9 @@ const findMenuItemSnapshot = async (connection, menuItemId) => {
     unit: row.unit || "",
     unitCost: Number(row.unit_cost) || 0,
     cost: Number(row.line_cost) || 0,
+    // HPP standar (bahan baku) or HPP olahan, priced by the day's cooking (order.hpp).
+    hppType: row.kind === "semi" ? "olahan" : "standar",
+    isPending: row.kind === "semi",
   }));
   const recipeHpp = costs.reduce((total, line) => total + line.cost, 0);
 
