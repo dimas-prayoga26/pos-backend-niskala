@@ -14,6 +14,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { PURCHASE_RECEIPT_DIR } = require("../../config/paths");
 const { roundCost, roundCurrency } = require("../../shared/utils/money");
+const { convertBetweenUnits, measuredBaseUnit } = require("../../shared/utils/units");
 const { clean, dateKey, number, todayKey } = require("../../shared/utils/validate");
 const { findPurchaseSourceId, postMutation } = require("../paymentSources/paymentSource.ledger");
 const { receiveIntoStock } = require("./shopping.costing");
@@ -382,16 +383,35 @@ const createNotaEngine = (db, cfg) => {
     return { id: purchaseId };
   };
 
+  // A bahan counted in pcs (or botol, pack, ... from the rekap import) whose
+  // line is edited into gr or ml (no isi) is weighed from now on: its stock
+  // unit becomes gr or ml, 1 old unit = what this line holds (1 pcs edited to
+  // 250 gr: 1 pcs = 250 gr), and its stok, riwayat and resep follow
+  // (cfg.convertStockUnit, Konversi Satuan). Returns whether it did.
+  const weighStockUnit = async (connection, target, edit) => {
+    const base = measuredBaseUnit(edit.unit);
+    if (!cfg.convertStockUnit || !base || edit.packSize) return false;
+    const [[stock]] = await connection.query(`SELECT unit FROM ${cfg.stockTable} WHERE id = ? FOR UPDATE`, [target[cfg.itemFk]]);
+    if (!stock || !stock.unit || measuredBaseUnit(stock.unit) || !(Number(target.stock_quantity) > 0)) return false;
+    const factor = convertBetweenUnits(edit.quantity, edit.unit, base) / Number(target.stock_quantity);
+    await cfg.convertStockUnit(connection, target[cfg.itemFk], { unit: base, factor });
+    return true;
+  };
+
   // Edit (patch) or delete (remove) one line of a posted nota.
   const changeLine = async (lineId, { patch, remove = false }, user) => {
     lineId = number(lineId, 1, 4294967295, 0, "ID item belanja");
     const edit = patch ? normalizeItemPatch(patch, { unitRequired: !cfg.defaultUnit }) : null;
     return withTransaction(async connection => {
-      const [[target]] = await connection.query(`SELECT * FROM ${cfg.items} WHERE id = ? FOR UPDATE`, [lineId]);
-      if (!target) throw createError(404, "Item belanja tidak ditemukan.");
-      if (!target[cfg.itemFk]) throw createError(400, cfg.unlinkedMessage);
-      const [[header]] = await connection.query(`SELECT * FROM ${cfg.purchases} WHERE id = ? FOR UPDATE`, [target.purchase_id]);
+      const selectTarget = async () => (await connection.query(`SELECT * FROM ${cfg.items} WHERE id = ? FOR UPDATE`, [lineId]))[0][0];
+      const original = await selectTarget();
+      if (!original) throw createError(404, "Item belanja tidak ditemukan.");
+      if (!original[cfg.itemFk]) throw createError(400, cfg.unlinkedMessage);
+      const [[header]] = await connection.query(`SELECT * FROM ${cfg.purchases} WHERE id = ? FOR UPDATE`, [original.purchase_id]);
       if (header.status !== "posted") throw createError(400, "Nota ini masih draft. Ubah lewat Draft Nota.");
+      const weighed = edit ? await weighStockUnit(connection, original, edit) : false;
+      // Konversi Satuan rescaled the line (stock_quantity, isi): read it again.
+      const target = weighed ? await selectTarget() : original;
       const [lines] = await connection.query(
         `SELECT * FROM ${cfg.items} WHERE purchase_id = ? ORDER BY id FOR UPDATE`,
         [header.id]
@@ -402,10 +422,13 @@ const createNotaEngine = (db, cfg) => {
         const [[stock]] = await connection.query(`SELECT unit FROM ${cfg.stockTable} WHERE id = ?`, [target[cfg.itemFk]]);
         const stockUnit = stock?.unit || target.stock_unit;
         const lineUnit = edit.unit || target.unit;
-        // The isi stays unless the patch sets or drops it (in the stock unit).
-        const packSize = "packSize" in edit
-          ? edit.packSize
-          : target.pack_size == null ? null : convertQuantity(Number(target.pack_size), target.stock_unit || stockUnit, stockUnit);
+        // The isi stays unless the patch sets or drops it (in the stock unit); a
+        // line that was just weighed has none.
+        const packSize = weighed
+          ? null
+          : "packSize" in edit
+            ? edit.packSize
+            : target.pack_size == null ? null : convertQuantity(Number(target.pack_size), target.stock_unit || stockUnit, stockUnit);
         edited = {
           ...target,
           quantity: edit.quantity,
@@ -489,7 +512,7 @@ const createNotaEngine = (db, cfg) => {
       const [[updated]] = await connection.query(`SELECT * FROM ${cfg.items} WHERE id = ?`, [target.id]);
       const newData = cfg.snapshotLine(updated);
       if (cfg.logLine) {
-        await cfg.logLine(connection, { line: target, action: "edit", oldData: cfg.snapshotLine(target), newData, user });
+        await cfg.logLine(connection, { line: target, action: "edit", oldData: cfg.snapshotLine(original), newData, user });
       }
       return newData;
     });

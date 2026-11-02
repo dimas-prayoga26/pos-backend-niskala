@@ -6,6 +6,7 @@
 const createError = require("http-errors");
 const { pool } = require("../../infrastructure/database/pool");
 const { refreshMenuCosts } = require("../menu/menu.costs");
+const { convertUnitIn } = require("../stock/stock.repository");
 const { REFERENCE_TYPES } = require("../paymentSources/paymentSource.ledger");
 const { RECEIPT_TARGETS, attachmentUrl } = require("./shopping.attachments");
 const { actor, createNotaEngine, dateRange, itemFilter } = require("./shopping.nota");
@@ -95,6 +96,7 @@ const RAW_NOTA = {
     return row.id;
   },
   afterStock: (connection, stockItemIds) => refreshMenuCosts(connection, { stockItemIds }),
+  convertStockUnit: convertUnitIn,
   logLine: writeItemLog,
   snapshotLine: snapshotItem,
 };

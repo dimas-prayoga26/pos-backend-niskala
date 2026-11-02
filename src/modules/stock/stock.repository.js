@@ -243,92 +243,95 @@ const unitKey = (unit) => String(unit || "").trim().toLowerCase();
 // is no longer converted, e.g. "1 galon (isi 19.000 ml)", so it stays
 // editable); the semi productions (their undo puts the bahan back). Sold
 // orders keep their frozen HPP. Returns { item, fromUnit, factor }, or null.
-const convertUnit = async (id, { unit, factor }) =>
-  withTransaction(async (connection) => {
-    const [[current]] = await connection.query(
-      "SELECT name, unit FROM stock_raw_items WHERE id = ? FOR UPDATE",
-      [id]
-    );
-    if (!current) return null;
+// convertUnitIn runs in the caller's transaction (Edit Belanja, shopping.nota).
+const convertUnitIn = async (connection, id, { unit, factor }) => {
+  const [[current]] = await connection.query(
+    "SELECT name, unit FROM stock_raw_items WHERE id = ? FOR UPDATE",
+    [id]
+  );
+  if (!current) return null;
 
-    const from = unitKey(current.unit);
-    const to = unitKey(unit);
-    if (from === to) throw createHttpError(400, `Satuan ${current.name} sudah ${to}.`);
-    const ratio = areConvertible(from, to) ? convertBetweenUnits(1, from, to) : Number(factor);
-    if (!(ratio > 0) || ratio > 1000000) {
-      throw createHttpError(400, `Isi konversinya: 1 ${from} = berapa ${to}?`);
+  const from = unitKey(current.unit);
+  const to = unitKey(unit);
+  if (from === to) throw createHttpError(400, `Satuan ${current.name} sudah ${to}.`);
+  const ratio = areConvertible(from, to) ? convertBetweenUnits(1, from, to) : Number(factor);
+  if (!(ratio > 0) || ratio > 1000000) {
+    throw createHttpError(400, `Isi konversinya: 1 ${from} = berapa ${to}?`);
+  }
+
+  // The isi of each purchase line in the new unit, checked before anything changes.
+  const [lines] = await connection.query(
+    "SELECT id, unit, pack_size FROM history_stock_raw_purchase_items WHERE stock_item_id = ?",
+    [id]
+  );
+  const packs = [];
+  for (const line of lines) {
+    const lineUnit = unitKey(line.unit);
+    let packSize = null;
+    if (line.pack_size != null) packSize = Number(line.pack_size) * ratio;
+    else if (lineUnit !== to && !areConvertible(lineUnit, to)) {
+      const inOldUnit = lineUnit === from ? 1 : areConvertible(lineUnit, from) ? convertBetweenUnits(1, lineUnit, from) : null;
+      if (inOldUnit != null) packSize = inOldUnit * ratio;
     }
-
-    // The isi of each purchase line in the new unit, checked before anything changes.
-    const [lines] = await connection.query(
-      "SELECT id, unit, pack_size FROM history_stock_raw_purchase_items WHERE stock_item_id = ?",
-      [id]
-    );
-    const packs = [];
-    for (const line of lines) {
-      const lineUnit = unitKey(line.unit);
-      let packSize = null;
-      if (line.pack_size != null) packSize = Number(line.pack_size) * ratio;
-      else if (lineUnit !== to && !areConvertible(lineUnit, to)) {
-        const inOldUnit = lineUnit === from ? 1 : areConvertible(lineUnit, from) ? convertBetweenUnits(1, lineUnit, from) : null;
-        if (inOldUnit != null) packSize = inOldUnit * ratio;
-      }
-      if (packSize == null) continue;
-      if (packSize < 0.001) {
-        throw createHttpError(
-          400,
-          `${to} terlalu besar untuk riwayat belanja ${current.name}: 1 ${lineUnit} jadi kurang dari 0,001 ${to}. Pilih satuan yang lebih kecil.`
-        );
-      }
-      packs.push([Math.round(packSize * 1000) / 1000, line.id]);
+    if (packSize == null) continue;
+    if (packSize < 0.001) {
+      throw createHttpError(
+        400,
+        `${to} terlalu besar untuk riwayat belanja ${current.name}: 1 ${lineUnit} jadi kurang dari 0,001 ${to}. Pilih satuan yang lebih kecil.`
+      );
     }
+    packs.push([Math.round(packSize * 1000) / 1000, line.id]);
+  }
 
-    // unit_cost and stock_value read the old stock: they come before stock.
-    await connection.query(
-      `UPDATE stock_raw_items
-       SET unit = ?,
-           unit_cost = CASE
-             WHEN stock > 0 AND stock_value > 0 THEN ROUND(stock_value / (stock * ?))
-             ELSE ROUND(unit_cost / ?)
-           END,
-           stock = ROUND(stock * ?, 2),
-           minimum_stock = ROUND(minimum_stock * ?, 2)
-       WHERE id = ?`,
-      [to, ratio, ratio, ratio, ratio, id]
-    );
-    await connection.query(
-      "UPDATE menu_item_recipes SET quantity = ROUND(quantity * ?, 4) WHERE stock_item_id = ?",
-      [ratio, id]
-    );
-    await connection.query(
-      "UPDATE stock_semi_item_recipes SET quantity = ROUND(quantity * ?, 4) WHERE stock_item_id = ?",
-      [ratio, id]
-    );
-    await connection.query(
-      `UPDATE history_stock_raw_purchase_items
-       SET stock_quantity = ROUND(stock_quantity * ?, 2),
-           stock_unit = ?,
-           stock_unit_cost = ROUND(stock_unit_cost / ?)
-       WHERE stock_item_id = ?`,
-      [ratio, to, ratio, id]
-    );
-    for (const [packSize, lineId] of packs) {
-      await connection.query("UPDATE history_stock_raw_purchase_items SET pack_size = ? WHERE id = ?", [packSize, lineId]);
-    }
-    await connection.query(
-      `UPDATE stock_semi_item_production_items
-       SET quantity = quantity * ?, unit = ?, unit_cost = ROUND(unit_cost / ?)
-       WHERE stock_item_id = ?`,
-      [ratio, to, ratio, id]
-    );
-    await refreshMenuCosts(connection, { stockItemIds: [id] });
+  // unit_cost and stock_value read the old stock: they come before stock.
+  await connection.query(
+    `UPDATE stock_raw_items
+     SET unit = ?,
+         unit_cost = CASE
+           WHEN stock > 0 AND stock_value > 0 THEN ROUND(stock_value / (stock * ?))
+           ELSE ROUND(unit_cost / ?)
+         END,
+         stock = ROUND(stock * ?, 2),
+         minimum_stock = ROUND(minimum_stock * ?, 2)
+     WHERE id = ?`,
+    [to, ratio, ratio, ratio, ratio, id]
+  );
+  await connection.query(
+    "UPDATE menu_item_recipes SET quantity = ROUND(quantity * ?, 4) WHERE stock_item_id = ?",
+    [ratio, id]
+  );
+  await connection.query(
+    "UPDATE stock_semi_item_recipes SET quantity = ROUND(quantity * ?, 4) WHERE stock_item_id = ?",
+    [ratio, id]
+  );
+  await connection.query(
+    `UPDATE history_stock_raw_purchase_items
+     SET stock_quantity = ROUND(stock_quantity * ?, 2),
+         stock_unit = ?,
+         stock_unit_cost = ROUND(stock_unit_cost / ?)
+     WHERE stock_item_id = ?`,
+    [ratio, to, ratio, id]
+  );
+  for (const [packSize, lineId] of packs) {
+    await connection.query("UPDATE history_stock_raw_purchase_items SET pack_size = ? WHERE id = ?", [packSize, lineId]);
+  }
+  await connection.query(
+    `UPDATE stock_semi_item_production_items
+     SET quantity = quantity * ?, unit = ?, unit_cost = ROUND(unit_cost / ?)
+     WHERE stock_item_id = ?`,
+    [ratio, to, ratio, id]
+  );
+  await refreshMenuCosts(connection, { stockItemIds: [id] });
 
-    const [[row]] = await connection.query("SELECT * FROM stock_raw_items WHERE id = ?", [id]);
-    return { item: mapStockItem(row), fromUnit: from, factor: ratio };
-  });
+  const [[row]] = await connection.query("SELECT * FROM stock_raw_items WHERE id = ?", [id]);
+  return { item: mapStockItem(row), fromUnit: from, factor: ratio };
+};
+
+const convertUnit = (id, options) => withTransaction((connection) => convertUnitIn(connection, id, options));
 
 module.exports = {
   convertUnit,
+  convertUnitIn,
   create,
   findAll,
   findById,

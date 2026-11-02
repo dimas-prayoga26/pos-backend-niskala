@@ -11,7 +11,8 @@ UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posti
 - Pilihan sementara yang tidak dipakai pada belanja tidak ikut disimpan. Form yang ditutup masih menyimpan draf selama komponen terbuka; memuat ulang halaman membuang draf.
 - Inisialisasi schema hanya menyiapkan tabel dan tidak menambahkan supplier secara otomatis. Data yang sudah tersimpan tetap tersedia.
 - Pembelian kg bisa masuk stok g/gr/gram; liter/l bisa masuk stok ml. Satuan lainnya harus sama (pcs/pc/buah dianggap setara). Ukuran kemasan seperti dus ke pcs tidak ditebak; masukkan qty dalam satuan stok.
-- Pilihan **Satuan** di form mengikuti satuan stok bahannya (stok galon hanya galon; stok gr hanya gr). Bahan dengan satuan non-gramasi (galon, pack, bungkus, ... dari import rekap) diubah ke ml/gr/pcs lewat **Stok → Bahan Baku → Konversi Satuan** (lihat `docs/module-boundaries.md`).
+- Pilihan **Satuan** di form mengikuti satuan stok bahannya (stok galon hanya galon; stok gr hanya gr).
+- **Edit Belanja** juga menawarkan pcs (dengan isi per pcs). Untuk bahan yang dihitung per pcs (atau galon, pack, ... dari import rekap), Edit Belanja juga menawarkan gr dan ml. Contoh: Cabai 1 pcs diubah menjadi 250 gr. Bahan itu lalu dihitung dalam gr: 1 pcs = isi baris itu (250 gr). Stok, minimum, COGS, resep, dan baris belanja lainnya ikut dikonversi dalam transaksi yang sama (Konversi Satuan, `stock.repository.convertUnitIn`). Baris lain tetap tercatat dalam pcs, dengan isi 250 gr.
 - Nama barang/supplier, harga, satuan beli dan konversi dicatat sebagai snapshot pada riwayat. Stok negatif dapat bertambah secara normal dari posisi sebelumnya.
 - ID permintaan unik mencegah simpan ulang jaringan menggandakan stok. Perubahan nama barang, supplier, satuan stok, dan penerimaan belanja tetap mengikuti izin admin.
 
