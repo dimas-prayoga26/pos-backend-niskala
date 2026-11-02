@@ -89,9 +89,10 @@ const RAW_NOTA = {
   // The unit is set by the first posted purchase.
   createItem: async (connection, line) => {
     await checkNewItem(connection, { itemName: line.item_name });
-    // A bahan first bought here is not a bahan resep until it is marked so in Stok.
+    // Tambah Belanja lists only Bahan Resep and is the only way to add a bahan
+    // baku (Tambah Stok is gone), so a new one is a Bahan Resep too.
     await connection.query(`INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock, is_recipe_ingredient)
-      VALUES (?, 'Umum', '', 0, 0, FALSE) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [line.item_name]);
+      VALUES (?, 'Umum', '', 0, 0, TRUE) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [line.item_name]);
     const [[row]] = await connection.query("SELECT id FROM stock_raw_items WHERE name = ?", [line.item_name]);
     return row.id;
   },
