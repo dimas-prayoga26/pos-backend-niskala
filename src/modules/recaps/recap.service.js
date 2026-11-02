@@ -21,7 +21,7 @@ const findAll = async (periodType) => {
   return [];
 };
 
-// A daily recap closes the day (if the automatic closing at 05:00 has not
+// A daily recap closes the day (if the automatic closing at 00:00 has not
 // yet, see dayClosing): orders on that date become read-only, their HPP is
 // locked (Modul 2) and the leftover of daily bahan setengah jadi (Nasi) is
 // written off as kerugian, in the same transaction.

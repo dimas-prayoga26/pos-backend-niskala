@@ -1268,7 +1268,7 @@ describe("regressions", () => {
     ]);
   });
 
-  it("closes each business day by itself at 05:00 the next morning: HPP locked, Nasi reset, once", async () => {
+  it("closes each business day by itself at 00:00: HPP locked, Nasi reset, once", async () => {
     const { autoCloseDays } = require("../../src/modules/recaps/dayClosing");
     const day = "2026-05-20";
     const raw = await request("POST", "/api/stock-item", {
@@ -1328,8 +1328,8 @@ describe("regressions", () => {
     const late = await sell("2026-05-10", 1);
     assert.deepEqual(await hppOf(late), ["pending", 1000, true]);
 
-    // 21 May, 04:30: the 20th is still open (a late shift may still record).
-    const early = await autoCloseDays(db, { now: new Date("2026-05-21T04:30:00+07:00") });
+    // 20 May, 23:30: the 20th is still open.
+    const early = await autoCloseDays(db, { now: new Date("2026-05-20T23:30:00+07:00") });
     assert.equal(early.day, "2026-05-19");
     assert.equal(early.lateOrders, 1, "the older day's nota is locked");
     assert.deepEqual(await hppOf(late), ["closed", 1000, false]);
@@ -1337,8 +1337,8 @@ describe("regressions", () => {
     assert.equal((await prep(day)).status, 201, "the 20th still takes Daily Prep");
     assert.deepEqual(await hppOf(sold), ["pending", 1000, true]);
 
-    // 05:30: the 20th closes. Its leftover (10 + 10 cooked - 3 - 1 sold) is reset.
-    const closing = await autoCloseDays(db, { now: new Date("2026-05-21T05:30:00+07:00") });
+    // 21 May, 00:00: the 20th closes. Its leftover (10 + 10 cooked - 3 - 1 sold) is reset.
+    const closing = await autoCloseDays(db, { now: new Date("2026-05-21T00:00:00+07:00") });
     assert.equal(closing.day, day);
     assert.equal(closing.firstClose, true);
     assert.equal(closing.hppClosed.closedOrders, 1);

@@ -32,7 +32,9 @@ const mapSemiItem = (row) => ({
   portionSize: Number(row.portion_size || 0),
   yieldQuantity: Number(row.yield_quantity || 0),
   resetDaily: Boolean(row.reset_daily),
-  status: getStockStatus(row, "HARUS MASAK"),
+  // No minimum stock for semi items (an older minimum_stock is ignored):
+  // they need cooking only once empty.
+  status: getStockStatus({ ...row, minimum_stock: 0 }, "HARUS MASAK"),
   isActive: Boolean(row.is_active),
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -445,8 +447,8 @@ const deleteWaste = (wasteId) =>
 
 // Records one cooking of batchQuantity recipes. The portions come from
 // outputWeight / portion_size, or portionQuantity when counted directly.
-// producedDate: the business day of a Daily Prep recorded later (a shift
-// that ended after midnight), refused once that day is closed
+// producedDate: the business day of a Daily Prep recorded later, refused
+// once that day is closed
 // (business_day_closings, recaps/dayClosing).
 // Returns the production id, or null when the semi item is not found.
 const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity, note, producedDate = null }, userId) =>
