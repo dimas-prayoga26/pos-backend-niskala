@@ -1,7 +1,6 @@
 // Closing of a business day (business_day_closings). Rekap New is a live
-// report that saves nothing, so a day is closed on its own at 05:00 the next
-// morning (Asia/Jakarta; a shift that ends after midnight can still record its
-// Daily Prep until then), or earlier when its daily recap is saved. Closing:
+// report that saves nothing, so a day is closed on its own at 00:00 (midnight,
+// Asia/Jakarta), or earlier when its daily recap is saved. Closing:
 // - locks the HPP of the day's notas (Modul 2, orders/order.hpp): bahan olahan
 //   take the day's cooking cost, or keep the one they were sold with;
 // - writes off the leftover of daily bahan setengah jadi (Nasi), once.
@@ -12,15 +11,15 @@ const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const { allocateBatchCosts } = require("../orders/order.hpp");
 const SemiItem = require("../stock/semi.repository");
 
-const CLOSE_HOUR = 5;
+const CLOSE_HOUR = 0;
 const RUN_EVERY_MS = 15 * 60 * 1000;
 const TIME_ZONE = "Asia/Jakarta";
 
 const dateKeyIn = (date) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 
-// The latest business day that is over at `now`: yesterday from 05:00, the
-// day before until then.
+// The latest business day that is over at `now`: yesterday once CLOSE_HOUR
+// has passed (from 00:00, so always yesterday), the day before until then.
 const lastClosableDay = (now = new Date()) => {
   const shifted = new Date(now.getTime() - CLOSE_HOUR * 60 * 60 * 1000);
   const day = new Date(`${dateKeyIn(shifted)}T00:00:00Z`);

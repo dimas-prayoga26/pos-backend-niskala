@@ -25,7 +25,7 @@ const start = () => {
         logger.info(`POS Server is listening on http://${config.host}:${config.port}`);
         if (config.nodeEnv === "development") printLocalAccessUrls();
       });
-      // Closes each business day at 05:00 the next morning (Rekap New saves
+      // Closes each business day at 00:00, midnight (Rekap New saves
       // nothing). Tests close days themselves.
       if (config.nodeEnv !== "test") startDayClosing(pool);
     })

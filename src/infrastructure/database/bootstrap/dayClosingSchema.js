@@ -1,5 +1,5 @@
 // business_day_closings: one row per business day that was closed, by the
-// automatic day closing (recaps/dayClosing, 05:00 the next morning) or by
+// automatic day closing (recaps/dayClosing, 00:00 midnight) or by
 // saving its daily recap. Closing locks the HPP of the day's notas (Modul 2)
 // and writes off the leftover of daily bahan setengah jadi, once. Days that
 // already have a daily recap were closed by it.
