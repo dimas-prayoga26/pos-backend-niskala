@@ -21,6 +21,11 @@ const areConvertible = (fromUnit, toUnit) =>
 const convertBetweenUnits = (qty, fromUnit, toUnit) =>
   (qty * UNIT_CONVERSIONS[fromUnit][1]) / UNIT_CONVERSIONS[toUnit][1];
 
+// gr or ml: the unit a weighed or measured quantity is kept in; null for a
+// counted one (pcs, botol, pack, ...).
+const measuredBaseUnit = (unit) =>
+  ({ mass: "gr", volume: "ml" })[UNIT_CONVERSIONS[String(unit || "").trim().toLowerCase()]?.[0]] || null;
+
 // Lenient conversion for recipes: unknown or incompatible units fall back to
 // the raw quantity instead of failing (used for order stock and HPP).
 const convertRecipeQuantity = (qty, from, to) => {
@@ -39,4 +44,5 @@ module.exports = {
   areConvertible,
   convertBetweenUnits,
   convertRecipeQuantity,
+  measuredBaseUnit,
 };

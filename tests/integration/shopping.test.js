@@ -437,6 +437,33 @@ let testPool, created = false, receiptDir;
   const packDraft = await shopping.save({...payload,requestId:crypto.randomUUID(),status:"draft",items:[{stockItemId:packSeed.insertId,quantity:1,unit:"pack",packSize:250,unitPrice:5000}]},1);
   assert.deepEqual((await shopping.listDrafts()).find(row=>row.id===packDraft.id).items.map(item=>[item.unit,item.packSize,item.packUnit]),[["pack",250,"gr"]]);
   await shopping.removeDraft(packDraft.id);
+  // A bahan counted in pcs (rekap import) whose line is edited into gr is weighed from now on:
+  // 1 pcs edited to 250 gr makes 1 pcs = 250 gr for its stok, other lines and resep.
+  const [cabaiSeed] = await testPool.query("INSERT INTO stock_raw_items (name,category,unit,stock,unit_cost,stock_value) VALUES ('Cabai Uji','Umum','pcs',0,0,0)");
+  const cabaiId = cabaiSeed.insertId;
+  await testPool.query("INSERT INTO menu_items (id, name) VALUES (3, 'Sambal Uji')");
+  await testPool.query("INSERT INTO menu_item_prices (menu_item_id, regular_price) VALUES (3, 5000)");
+  await testPool.query("INSERT INTO menu_item_recipes (menu_item_id, stock_item_id, quantity) VALUES (3, ?, 1)", [cabaiId]);
+  const cabaiOne = await shopping.save({...payload,requestId:crypto.randomUUID(),paymentSourceId:kasir.id,items:[{stockItemId:cabaiId,quantity:1,unit:"pcs",unitPrice:10000}]},1);
+  const cabaiTwo = await shopping.save({...payload,requestId:crypto.randomUUID(),paymentSourceId:kasir.id,items:[{stockItemId:cabaiId,quantity:2,unit:"pcs",unitPrice:10000}]},1);
+  const cabaiLine = async purchaseId => (await testPool.query("SELECT id, quantity, unit, pack_size, stock_quantity, stock_unit FROM history_stock_raw_purchase_items WHERE purchase_id=?",[purchaseId]))[0][0];
+  const cabaiUnit = async () => (await testPool.query("SELECT unit FROM stock_raw_items WHERE id=?",[cabaiId]))[0][0].unit;
+  const lineOf = line => [Number(line.quantity),line.unit,line.pack_size == null ? null : Number(line.pack_size),Number(line.stock_quantity),line.stock_unit];
+  assert.deepEqual(await stockRow(cabaiId),{stock:"3.00",unit_cost:10000,stock_value:"30000.00"});
+  const firstCabai = await cabaiLine(cabaiOne.id);
+  await shopping.updateItem(firstCabai.id,{quantity:250,unit:"gr",unitPrice:40,total:10000},1);
+  assert.equal(await cabaiUnit(),"gr");
+  assert.deepEqual(await stockRow(cabaiId),{stock:"750.00",unit_cost:40,stock_value:"30000.00"});
+  assert.deepEqual(lineOf(await cabaiLine(cabaiOne.id)),[250,"gr",null,250,"gr"]);
+  assert.deepEqual(lineOf(await cabaiLine(cabaiTwo.id)),[2,"pcs",250,500,"gr"],"other lines keep their pcs with an isi");
+  assert.equal((await testPool.query("SELECT quantity FROM menu_item_recipes WHERE menu_item_id = 3"))[0][0].quantity,250);
+  const [[cabaiLog]] = await testPool.query("SELECT old_data, new_data FROM history_stock_raw_purchase_item_logs WHERE purchase_item_id=? ORDER BY id DESC LIMIT 1",[firstCabai.id]);
+  const logged = value => (typeof value === "string" ? JSON.parse(value) : value);
+  assert.deepEqual([logged(cabaiLog.old_data).unit,logged(cabaiLog.old_data).stockQuantity,logged(cabaiLog.new_data).unit],["pcs",1,"gr"]);
+  // Now in gr: kg converts, no more switch; a line of a bahan already weighed keeps its unit.
+  await shopping.updateItem((await cabaiLine(cabaiTwo.id)).id,{quantity:0.6,unit:"kg",packSize:null,unitPrice:33333.33,total:20000},1);
+  assert.deepEqual(lineOf(await cabaiLine(cabaiTwo.id)),[0.6,"kg",null,600,"gr"]);
+  assert.deepEqual(await stockRow(cabaiId),{stock:"850.00",unit_cost:35,stock_value:"30000.00"});
   // Barang Lainnya need no unit: a new one is counted in pcs, an existing one keeps its own unit.
   await supply.save({...supplyPayload,requestId:crypto.randomUUID(),items:[{itemName:"Lakban Uji",category:"Perlengkapan",quantity:3,unitPrice:5000}]},1);
   assert.deepEqual(await supplyRow("Lakban Uji"),{category:"Perlengkapan",unit:"pcs",stock:"3.00",unit_cost:5000,stock_value:"15000.00"});
