@@ -937,7 +937,7 @@ describe("regressions", () => {
     const galon = (await add({ name: "Galon Bukan Resep", unit: "pcs", isRecipeIngredient: false })).body.data;
     assert.equal(galon.isRecipeIngredient, false);
 
-    // A bahan first bought on a belanja nota is not a bahan resep.
+    // A bahan first bought on a belanja nota is a bahan resep: Tambah Belanja lists only those.
     const nota = await request("POST", "/api/shopping/purchases", {
       as: "admin",
       body: {
@@ -953,7 +953,8 @@ describe("regressions", () => {
     });
     assert.equal(nota.status, 201);
     const tisu = await byName("Tisu Belanja");
-    assert.equal(tisu.isRecipeIngredient, false);
+    assert.equal(tisu.isRecipeIngredient, true);
+    assert.equal((await toggle(tisu.id, false)).body.data.isRecipeIngredient, false);
 
     assert.equal((await toggle(galon.id, true, "cashier")).status, 403);
     assert.equal((await toggle(999999, true)).status, 404);
