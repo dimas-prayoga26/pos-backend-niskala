@@ -66,10 +66,10 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 - **Bahan Resep** (`stock_raw_items.is_recipe_ingredient`): hanya bahan baku bertanda Ya yang muncul di editor resep menu dan bahan setengah jadi. Admin mengubahnya per bahan di Stok → Bahan Baku (`PATCH /api/stock-item/:id/recipe-use`, filter Semua / Bahan Resep / Bukan Resep). Bahan baru dari Tambah Belanja default Ya (sejak 2026-11-02; tombol Tambah Stok dihapus dari UI, dan Tambah Belanja bahan baku hanya menampilkan Bahan Resep); menyimpan resep menandai bahannya Ya; bahan yang masih dipakai resep tidak bisa diubah ke Tidak (409). Saat kolom ditambahkan (boot migration), bahan yang sudah dipakai resep diberi Ya, sisanya Tidak.
 - **Nama** bahan baku dan bahan setengah jadi tidak boleh sama, agar pilihan resep menu tidak ganda.
 - **Bahan setengah jadi** (`/api/stock-item/semi`; mis. Nasi dari Beras):
-  - Komposisinya untuk 1 resep ada di `stock_semi_item_recipes` dan hanya berisi bahan baku.
-  - "Catat Masak" (`POST /semi/:id/productions`) menyimpan satu baris `stock_semi_item_productions` dan bahan baku terpakainya di `stock_semi_item_production_items`.
-  - Saat Catat Masak, stok bahan baku dipotong sebanyak resep × komposisi. Bahan setengah jadi bertambah sejumlah porsi: berat hasil ÷ `portion_size`, atau dihitung langsung.
-  - `unit_cost` bahan setengah jadi menjadi rata-rata bergerak seperti belanja, dan `yield_quantity` diisi porsi per resep dari masak terakhir.
+  - Komposisinya (`stock_semi_item_recipes`) hanya daftar bahan baku. Form Tambah/Ubah tidak menanyakan jumlah, harga, takaran porsi, atau satuan (sejak 2026-11-02; satuan tetap porsi).
+  - "Catat Masak" (`POST /semi/:id/productions`, `{ items: [{ stockItemId, quantity }], portionQuantity, portionSize?, producedDate?, note? }`) menyimpan satu baris `stock_semi_item_productions` (`batch_quantity` 1) dan bahan baku terpakainya di `stock_semi_item_production_items`.
+  - Saat Catat Masak, stok bahan baku dipotong sebanyak jumlah yang diisi per bahan (hanya bahan dari komposisinya). Jumlah itu disimpan di `stock_semi_item_recipes.quantity` sebagai isian awal Catat Masak berikutnya. Bahan setengah jadi bertambah sejumlah porsi yang dihitung; `portionSize` (Takaran 1 Porsi, gr) yang diisi menjadi `portion_size`, dipakai untuk input gram di resep menu.
+  - `unit_cost` bahan setengah jadi menjadi rata-rata bergerak seperti belanja, dan `yield_quantity` diisi porsi dari masak terakhir.
   - Menu yang memakai bahan setengah jadi memotong porsinya lewat `stock.movements` seperti bahan baku.
   - Bahan setengah jadi tidak bisa dibelanjakan dan tidak punya COGS manual. Hanya catatan masak terakhir yang bisa dibatalkan, selama porsinya masih ada.
   - **Kerugian** (`history_stock_semi_wastes`): porsi yang dibuang beserta nilainya (`stock_value / stock` saat itu). Sumbernya:

@@ -3,9 +3,11 @@
 // see semiItemsSchema.js.
 //
 // Cooking moves stock like a purchase of the semi item paid with raw items:
-// the raw items (stock_raw_items) lose batch x composition at their unit cost,
-// the semi item gains the portions found by weighing (output weight / portion
-// size) and its unit cost becomes the moving average, as in belanja.
+// the raw items (stock_raw_items) lose the quantities used at their unit cost,
+// the semi item gains the portions counted (or weighed: output weight /
+// portion size) and its unit cost becomes the moving average, as in belanja.
+// The composition (stock_semi_item_recipes) lists the bahan baku; its
+// quantities are the latest cooking's, Catat Masak's suggestion.
 const createHttpError = require("http-errors");
 const { pool, withTransaction } = require("../../infrastructure/database/pool");
 const { roundCost, roundCurrency } = require("../../shared/utils/money");
@@ -55,8 +57,9 @@ const mapProduction = (row) => ({
   userName: row.user_name || "",
 });
 
-// Adds to each semi item its composition (one recipe, in each raw item's
-// unit), the cost of one recipe at current prices and its latest cooking.
+// Adds to each semi item its composition (each raw item with the quantity of
+// the latest cooking, in its own unit), that cost at current prices and its
+// latest cooking.
 const attachDetails = async (semiItems) => {
   if (!semiItems.length) return semiItems;
 
@@ -146,8 +149,9 @@ const isRawItemName = async (name) => {
   return rows.length > 0;
 };
 
-// Creates or updates a semi item and replaces its composition. Returns the
-// item id, or null when id is not found.
+// Creates or updates a semi item and replaces its composition. A bahan kept
+// on it keeps its latest quantity unless one is sent; unit and portionSize
+// null keep the item's own. Returns the item id, or null when id is not found.
 const save = (id, { name, category, unit, portionSize, minimumStock, resetDaily, components }) =>
   withTransaction(async (connection) => {
     let semiId = id;
@@ -155,7 +159,8 @@ const save = (id, { name, category, unit, portionSize, minimumStock, resetDaily,
     if (id) {
       const [result] = await connection.query(
         `UPDATE stock_semi_items
-         SET name = ?, category = ?, unit = ?, portion_size = ?, minimum_stock = ?, reset_daily = ?
+         SET name = ?, category = ?, unit = COALESCE(?, unit), portion_size = COALESCE(?, portion_size),
+             minimum_stock = ?, reset_daily = ?
          WHERE id = ?`,
         [name, category, unit, portionSize, minimumStock, resetDaily ? 1 : 0, id]
       );
@@ -164,11 +169,16 @@ const save = (id, { name, category, unit, portionSize, minimumStock, resetDaily,
       const [result] = await connection.query(
         `INSERT INTO stock_semi_items (name, category, unit, minimum_stock, portion_size, reset_daily)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [name, category, unit, minimumStock, portionSize, resetDaily ? 1 : 0]
+        [name, category, unit || "porsi", minimumStock, portionSize || 0, resetDaily ? 1 : 0]
       );
       semiId = result.insertId;
     }
 
+    const [kept] = await connection.query(
+      "SELECT stock_item_id, quantity FROM stock_semi_item_recipes WHERE semi_item_id = ?",
+      [semiId]
+    );
+    const latestQuantity = new Map(kept.map((row) => [row.stock_item_id, Number(row.quantity)]));
     await connection.query("DELETE FROM stock_semi_item_recipes WHERE semi_item_id = ?", [
       semiId,
     ]);
@@ -178,7 +188,7 @@ const save = (id, { name, category, unit, portionSize, minimumStock, resetDaily,
       [components.map((component, index) => [
         semiId,
         component.stockItemId,
-        component.quantity,
+        component.quantity || latestQuantity.get(component.stockItemId) || 0,
         index + 1,
       ])]
     );
@@ -445,13 +455,18 @@ const deleteWaste = (wasteId) =>
     return waste.semi_item_id || 0;
   });
 
-// Records one cooking of batchQuantity recipes. The portions come from
-// outputWeight / portion_size, or portionQuantity when counted directly.
-// producedDate: the business day of a Daily Prep recorded later, refused
-// once that day is closed
+// Records one cooking: items are the bahan baku used ({ stockItemId,
+// quantity }, from the composition). The portions come from outputWeight /
+// portion size, or portionQuantity when counted directly; portionSize > 0
+// becomes the item's portion size. producedDate: the business day of a Daily
+// Prep recorded later, refused once that day is closed
 // (business_day_closings, recaps/dayClosing).
 // Returns the production id, or null when the semi item is not found.
-const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity, note, producedDate = null }, userId) =>
+const recordProduction = (
+  semiId,
+  { items, outputWeight, portionQuantity, portionSize = 0, note, producedDate = null },
+  userId
+) =>
   withTransaction(async (connection) => {
     if (producedDate) {
       const [closed] = await connection.query(
@@ -469,8 +484,7 @@ const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity
     if (!item) return null;
 
     const [components] = await connection.query(
-      `SELECT sr.stock_item_id, sr.quantity AS recipe_quantity,
-              si.name, si.unit, si.stock, si.unit_cost, si.is_unlimited
+      `SELECT sr.stock_item_id, si.name, si.unit, si.stock, si.unit_cost, si.is_unlimited
        FROM stock_semi_item_recipes sr
        JOIN stock_raw_items si ON si.id = sr.stock_item_id
        WHERE sr.semi_item_id = ?
@@ -481,28 +495,35 @@ const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity
     if (!components.length) {
       throw createHttpError(400, `Isi komposisi ${item.name} terlebih dahulu.`);
     }
+    const quantityById = new Map(items.map((used) => [used.stockItemId, used.quantity]));
+    const composed = new Set(components.map((component) => component.stock_item_id));
+    if (items.some((used) => !composed.has(used.stockItemId))) {
+      throw createHttpError(400, `Ada bahan baku yang bukan komposisi ${item.name}. Muat ulang daftar bahan.`);
+    }
 
+    const gramsPerPortion = portionSize > 0 ? portionSize : Number(item.portion_size) || 0;
     let portions = portionQuantity;
     if (outputWeight > 0) {
-      const portionSize = Number(item.portion_size) || 0;
-      if (portionSize <= 0) {
+      if (gramsPerPortion <= 0) {
         throw createHttpError(
           400,
           `Isi takaran 1 porsi ${item.name} dulu, atau isi jumlah porsi langsung.`
         );
       }
-      portions = outputWeight / portionSize;
+      portions = outputWeight / gramsPerPortion;
     }
     portions = roundStock(portions);
     if (portions <= 0) {
       throw createHttpError(400, "Jumlah porsi hasil masak harus lebih dari 0.");
     }
 
-    const usedItems = components.map((component) => {
-      const quantity = roundRecipeQuantity(batchQuantity * Number(component.recipe_quantity));
-      const unitCost = Number(component.unit_cost) || 0;
-      return { ...component, quantity, unitCost, cost: roundCurrency(quantity * unitCost) };
-    });
+    const usedItems = components
+      .filter((component) => quantityById.has(component.stock_item_id))
+      .map((component) => {
+        const quantity = roundRecipeQuantity(quantityById.get(component.stock_item_id));
+        const unitCost = Number(component.unit_cost) || 0;
+        return { ...component, quantity, unitCost, cost: roundCurrency(quantity * unitCost) };
+      });
     const shortages = usedItems.filter(
       (used) => !used.is_unlimited && used.quantity > Number(used.stock)
     );
@@ -559,10 +580,18 @@ const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity
     }
     await connection.query(
       `UPDATE stock_semi_items
-       SET stock = ?, stock_value = ?, unit_cost = ?, yield_quantity = ?
+       SET stock = ?, stock_value = ?, unit_cost = ?, yield_quantity = ?, portion_size = ?
        WHERE id = ?`,
-      [nextStock, nextValue, nextUnitCost, roundRecipeQuantity(portions / batchQuantity), semiId]
+      [nextStock, nextValue, nextUnitCost, portions, gramsPerPortion, semiId]
     );
+    // The quantities used become the next Catat Masak's suggestion.
+    for (const used of usedItems) {
+      await connection.query(
+        `UPDATE stock_semi_item_recipes SET quantity = ?, cost = ROUND(? * ?)
+         WHERE semi_item_id = ? AND stock_item_id = ?`,
+        [used.quantity, used.quantity, used.unitCost, semiId, used.stock_item_id]
+      );
+    }
 
     const [production] = await connection.query(
       `INSERT INTO stock_semi_item_productions
@@ -572,7 +601,7 @@ const recordProduction = (semiId, { batchQuantity, outputWeight, portionQuantity
       [
         semiId,
         item.name,
-        batchQuantity,
+        1,
         outputWeight > 0 ? outputWeight : null,
         portions,
         cost,

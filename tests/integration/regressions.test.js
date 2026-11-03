@@ -436,13 +436,15 @@ describe("regressions", () => {
     // Catat Masak: 5 kg beras, 12.000 gr nasi / 150 gr = 80 portions.
     const cooked = await request("POST", `/api/stock-item/semi/${nasi.id}/productions`, {
       as: "cashier",
-      body: { batchQuantity: 5, outputWeight: 12000 },
+      body: { items: [{ stockItemId: berasId, quantity: 5 }], outputWeight: 12000 },
     });
     assert.equal(cooked.status, 201);
     assert.equal(cooked.body.data.lastProduction.portionQuantity, 80);
     assert.deepEqual(await semiRow(nasi.id), {
-      stock: 80, stockValue: 70000, unitCost: 875, yieldQuantity: 16,
+      stock: 80, stockValue: 70000, unitCost: 875, yieldQuantity: 80,
     });
+    // The beras used is the next Catat Masak's suggestion.
+    assert.deepEqual(cooked.body.data.components.map((c) => [c.quantity, c.cost]), [[5, 70000]]);
     assert.deepEqual(await rawRow(berasId), { stock: 5, stockValue: 70000, unitCost: 14000 });
     assert.equal(await menuHpp(), 875);
 
@@ -469,10 +471,20 @@ describe("regressions", () => {
 
     const tooMuch = await request("POST", `/api/stock-item/semi/${nasi.id}/productions`, {
       as: "cashier",
-      body: { batchQuantity: 10, outputWeight: 24000 },
+      body: { items: [{ stockItemId: berasId, quantity: 10 }], outputWeight: 24000 },
     });
     assert.equal(tooMuch.status, 409);
     assert.match(tooMuch.body.message, /Beras Olahan butuh 10 kg, sisa 5 kg/);
+    // Catat Masak needs the bahan used, and only bahan of its composition.
+    const cook = (body) =>
+      request("POST", `/api/stock-item/semi/${nasi.id}/productions`, { as: "cashier", body });
+    const noItems = await cook({ items: [{ stockItemId: berasId, quantity: 0 }], portionQuantity: 10 });
+    assert.equal(noItems.status, 400);
+    assert.equal(noItems.body.message, "Isi jumlah bahan baku yang dipakai.");
+    const notComposed = await cook({ items: [{ stockItemId: garamId, quantity: 5 }], portionQuantity: 10 });
+    assert.equal(notComposed.status, 400);
+    assert.match(notComposed.body.message, /bukan komposisi Nasi Olahan/);
+    assert.equal((await rawRow(garamId)).stock, 1000);
 
     // Selling uses the nasi portions, not the beras.
     const orderBody = (quantity) => ({
@@ -542,15 +554,17 @@ describe("regressions", () => {
       "SELECT cost FROM stock_semi_item_recipes WHERE semi_item_id = ?",
       [nasi.id]
     );
-    assert.equal(component.cost, 16000);
+    assert.equal(component.cost, 80000, "the latest 5 kg at the new price");
     assert.equal((await semiRow(nasi.id)).unitCost, 875);
 
     // Counted directly: 1 kg, 15 portions. 68.250 + 16.000 over 93 portions.
+    // Its Takaran 1 Porsi becomes the item's portion size.
     const counted = await request("POST", `/api/stock-item/semi/${nasi.id}/productions`, {
       as: "admin",
-      body: { batchQuantity: 1, portionQuantity: 15, note: "dibagi langsung" },
+      body: { items: [{ stockItemId: berasId, quantity: 1 }], portionQuantity: 15, portionSize: 160, note: "dibagi langsung" },
     });
     assert.equal(counted.status, 201);
+    assert.equal(counted.body.data.portionSize, 160);
     assert.deepEqual(await semiRow(nasi.id), {
       stock: 93, stockValue: 84250, unitCost: 906, yieldQuantity: 15,
     });
@@ -559,7 +573,7 @@ describe("regressions", () => {
     const history = await request("GET", `/api/stock-item/semi/${nasi.id}/productions`, { as: "cashier" });
     assert.deepEqual(
       history.body.data.map((p) => [p.batchQuantity, p.outputWeight, p.portionQuantity, p.cost, p.unitCost]),
-      [[1, null, 15, 16000, 1067], [5, 12000, 80, 70000, 875]]
+      [[1, null, 15, 16000, 1067], [1, 12000, 80, 70000, 875]]
     );
     assert.deepEqual(history.body.data[1].items, [{
       stockItemId: berasId, name: "Beras Olahan", quantity: 5, unit: "kg", unitCost: 14000, cost: 70000,
@@ -580,7 +594,7 @@ describe("regressions", () => {
       200
     );
     assert.deepEqual(await semiRow(nasi.id), {
-      stock: 78, stockValue: 68250, unitCost: 875, yieldQuantity: 16,
+      stock: 78, stockValue: 68250, unitCost: 875, yieldQuantity: 80,
     });
     assert.equal((await rawRow(berasId)).stock, 5);
     assert.equal(await menuHpp(), 875);
@@ -637,7 +651,7 @@ describe("regressions", () => {
       200
     );
     assert.deepEqual(await semiRow(nasi.id), {
-      stock: 70, stockValue: 61250, unitCost: 875, yieldQuantity: 16,
+      stock: 70, stockValue: 61250, unitCost: 875, yieldQuantity: 80,
     });
 
     // Closing a past day keeps portions cooked after it (all 70 were cooked
@@ -662,7 +676,7 @@ describe("regressions", () => {
       { semiItemId: nasi.id, name: "Nasi Olahan", quantity: 70, cost: 61250 },
     ]);
     assert.deepEqual(await semiRow(nasi.id), {
-      stock: 0, stockValue: 0, unitCost: 875, yieldQuantity: 16,
+      stock: 0, stockValue: 0, unitCost: 875, yieldQuantity: 80,
     });
     const todayWastes = await request("GET", `/api/stock-item/semi/wastes?from=${todayDate}&to=${todayDate}`, {
       as: "admin",
@@ -676,13 +690,34 @@ describe("regressions", () => {
     });
     assert.deepEqual(todayWastes.body.data.dailyTotals, [{ date: todayDate, cost: 68250, entries: 2 }]);
 
-    // Items that keep (Sambal) can opt out of the daily reset.
+    // Items that keep (Sambal) can opt out of the daily reset. The form lists
+    // the bahan only: no quantity, unit or portion size.
     const kept = await request("POST", "/api/stock-item/semi", {
       as: "admin",
-      body: { name: "Sambal Olahan", resetDaily: false, components: [{ stockItemId: garamId, quantity: 10 }] },
+      body: { name: "Sambal Olahan", resetDaily: false, components: [{ stockItemId: garamId }] },
     });
+    assert.equal(kept.status, 201);
     assert.equal(kept.body.data.resetDaily, false);
     assert.equal(nasi.resetDaily, true);
+    assert.deepEqual([kept.body.data.unit, kept.body.data.portionSize], ["porsi", 0]);
+    assert.deepEqual(kept.body.data.components.map((c) => [c.name, c.quantity]), [["Garam Olahan", 0]]);
+    // Ubah keeps the latest quantities and the portion size.
+    const edited = await request("PUT", `/api/stock-item/semi/${nasi.id}`, {
+      as: "admin",
+      body: { name: "Nasi Olahan", components: [{ stockItemId: berasId }, { stockItemId: garamId }] },
+    });
+    assert.equal(edited.status, 200);
+    assert.deepEqual(edited.body.data.components.map((c) => [c.name, c.quantity]), [
+      ["Beras Olahan", 1],
+      ["Garam Olahan", 0],
+    ]);
+    assert.deepEqual([edited.body.data.unit, edited.body.data.portionSize], ["porsi", 160]);
+    const noBahan = await request("PUT", `/api/stock-item/semi/${nasi.id}`, {
+      as: "admin",
+      body: { name: "Nasi Olahan", components: [] },
+    });
+    assert.equal(noBahan.status, 400);
+    assert.equal(noBahan.body.message, "Pilih minimal satu bahan baku.");
   });
 
   it("posts saldo keluar for a purchase and serves its bukti nota only to logged-in users", async () => {
@@ -1155,7 +1190,7 @@ describe("regressions", () => {
 
     // Daily Prep at the end of the shift: 5 kg beras gave 40 portions, Rp 1.875
     // each. The 2 portions sold before take that cost; 38 are left.
-    const firstPrep = await prep({ batchQuantity: 5, portionQuantity: 40 });
+    const firstPrep = await prep({ items: [{ stockItemId: berasId, quantity: 5 }], portionQuantity: 40 });
     assert.equal(firstPrep.status, 201, JSON.stringify(firstPrep.body));
     const { stock, stockValue, averageCost } = firstPrep.body.data;
     assert.deepEqual({ stock, stockValue, averageCost }, { stock: 38, stockValue: 71250, averageCost: 1875 });
@@ -1168,7 +1203,7 @@ describe("regressions", () => {
     assert.equal(later.body.data.hppStatus, "pending");
     assert.deepEqual((await linesOf(later.body.data.id))[0], ["Nasi Modul", 1875, 1875, true, 3875]);
     // A second cooking that day (1 kg, 10 portions): Rp 90.000 / 50 portions.
-    assert.equal((await prep({ batchQuantity: 1, portionQuantity: 10 })).status, 201);
+    assert.equal((await prep({ items: [{ stockItemId: berasId, quantity: 1 }], portionQuantity: 10 })).status, 201);
     assert.deepEqual((await linesOf(first.body.data.id))[0], ["Nasi Modul", 1800, 1800, true, 3800]);
     assert.deepEqual((await linesOf(later.body.data.id))[0], ["Nasi Modul", 1800, 1800, true, 3800]);
 
@@ -1206,10 +1241,10 @@ describe("regressions", () => {
     const order = await request("GET", `/api/order/${first.body.data.id}`, { as: "cashier" });
     assert.equal(order.body.data.hppStatus, "closed");
     // ...and no Daily Prep can change it any more.
-    const tooLate = await prep({ batchQuantity: 1, portionQuantity: 10 });
+    const tooLate = await prep({ items: [{ stockItemId: berasId, quantity: 1 }], portionQuantity: 10 });
     assert.equal(tooLate.status, 409);
     assert.equal(tooLate.body.message, `Hari ${day} sudah ditutup. HPP hari itu sudah dikunci.`);
-    assert.equal((await prep({ batchQuantity: 1, portionQuantity: 1, producedDate: "2999-01-01" })).status, 400);
+    assert.equal((await prep({ items: [{ stockItemId: berasId, quantity: 1 }], portionQuantity: 1, producedDate: "2999-01-01" })).status, 400);
 
     const quietRecap = await request("POST", "/api/recap/daily", { as: "admin", body: { recapDate: quietDay } });
     assert.deepEqual(quietRecap.body.data.hppClosed, {
@@ -1242,7 +1277,7 @@ describe("regressions", () => {
       (await request("GET", `/api/stock-item/semi/wastes?semiItemId=${nasi.id}`, { as: "cashier" })).body.data.wastes
         .filter((waste) => waste.reason === "Penyesuaian")
         .map((waste) => [waste.quantity, waste.cost]);
-    assert.equal((await prep({ batchQuantity: 1, portionQuantity: 10, producedDate: "2026-03-13" })).status, 201);
+    assert.equal((await prep({ items: [{ stockItemId: berasId, quantity: 1 }], portionQuantity: 10, producedDate: "2026-03-13" })).status, 201);
     const fewer = (await adjust(6)).body.data;
     assert.deepEqual([fewer.stock, fewer.stockValue, fewer.averageCost], [6, 9000, 1500]);
     const back = (await adjust(10)).body.data;
@@ -1318,7 +1353,7 @@ describe("regressions", () => {
     const prep = (producedDate) =>
       request("POST", `/api/stock-item/semi/${nasi.id}/productions`, {
         as: "cashier",
-        body: { batchQuantity: 1, portionQuantity: 10, producedDate },
+        body: { items: [{ stockItemId: raw.body.data.id, quantity: 1 }], portionQuantity: 10, producedDate },
       });
 
     // Sold before the Daily Prep, then cooked: Rp 10.000 / 10 portions.

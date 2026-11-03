@@ -11,41 +11,40 @@ const toNonNegativeNumber = (value) => Math.max(Number(value) || 0, 0);
 const emitStockChanged = (action, semiItemId) =>
   emitRealtimeEvent("stock:changed", { action, semiItemId });
 
-// One recipe of the semi item: raw stock items with quantities in their own
-// unit. Repeated items are summed.
-const normalizeSemiPayload = (body) => {
+// Raw stock items with quantities in their own unit; repeated items are summed.
+const sumByStockItem = (lines) => {
   const quantityByStockItemId = new Map();
 
-  for (const component of Array.isArray(body.components) ? body.components : []) {
-    const stockItemId = Number(component?.stockItemId) || 0;
-    const quantity = roundRecipeQuantity(component?.quantity);
-    if (stockItemId > 0 && quantity > 0) {
-      quantityByStockItemId.set(
-        stockItemId,
-        roundRecipeQuantity((quantityByStockItemId.get(stockItemId) || 0) + quantity)
-      );
-    }
+  for (const line of Array.isArray(lines) ? lines : []) {
+    const stockItemId = Number(line?.stockItemId) || 0;
+    if (stockItemId <= 0) continue;
+    quantityByStockItemId.set(
+      stockItemId,
+      roundRecipeQuantity((quantityByStockItemId.get(stockItemId) || 0) + toNonNegativeNumber(line?.quantity))
+    );
   }
 
-  return {
-    name: String(body.name || "").trim(),
-    category: String(body.category || "").trim() || "Olahan",
-    unit: String(body.unit || "").trim() || "porsi",
-    portionSize: roundRecipeQuantity(toNonNegativeNumber(body.portionSize)),
-    minimumStock: toNonNegativeNumber(body.minimumStock),
-    // Leftover written off at the daily recap (Nasi); off for items that keep.
-    resetDaily: body.resetDaily === undefined ? true : Boolean(body.resetDaily),
-    components: [...quantityByStockItemId].map(([stockItemId, quantity]) => ({
-      stockItemId,
-      quantity,
-    })),
-  };
+  return [...quantityByStockItemId].map(([stockItemId, quantity]) => ({ stockItemId, quantity }));
 };
+
+// The semi item's bahan baku. Their quantities are filled at Catat Masak
+// (a quantity sent here is kept as the next one's suggestion). unit and
+// portionSize left out keep the item's own.
+const normalizeSemiPayload = (body) => ({
+  name: String(body.name || "").trim(),
+  category: String(body.category || "").trim() || "Olahan",
+  unit: String(body.unit || "").trim() || null,
+  portionSize: body.portionSize === undefined ? null : roundRecipeQuantity(toNonNegativeNumber(body.portionSize)),
+  minimumStock: toNonNegativeNumber(body.minimumStock),
+  // Leftover written off at the daily recap (Nasi); off for items that keep.
+  resetDaily: body.resetDaily === undefined ? true : Boolean(body.resetDaily),
+  components: sumByStockItem(body.components),
+});
 
 const validateSemiPayload = async ({ name, components }) => {
   if (!name) return createHttpError(400, "Nama bahan setengah jadi wajib diisi.");
   if (!components.length) {
-    return createHttpError(400, "Isi minimal satu bahan baku beserta takarannya.");
+    return createHttpError(400, "Pilih minimal satu bahan baku.");
   }
 
   const ids = components.map((component) => component.stockItemId);
@@ -130,19 +129,21 @@ const updateSemiStock = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, message: "Stok diperbarui.", data: semiItem });
 });
 
-// "Catat Masak": batchQuantity recipes cooked; the result is weighed
-// (outputWeight, in the portion size's unit) or counted (portionQuantity).
+// "Catat Masak": the bahan baku used (items, each in its own stock unit) and
+// the result, weighed (outputWeight, in the portion size's unit) or counted
+// (portionQuantity). portionSize, when given, becomes the Takaran 1 Porsi.
 const recordProduction = asyncHandler(async (req, res, next) => {
-  const batchQuantity = roundRecipeQuantity(req.body.batchQuantity);
+  const items = sumByStockItem(req.body.items).filter((used) => used.quantity > 0);
   const outputWeight = roundRecipeQuantity(toNonNegativeNumber(req.body.outputWeight));
   const portionQuantity = toNonNegativeNumber(req.body.portionQuantity);
+  const portionSize = roundRecipeQuantity(toNonNegativeNumber(req.body.portionSize));
   const note = String(req.body.note || "").trim().slice(0, 255);
   // Daily Prep of another business day (a shift recorded after midnight);
   // today when not given.
   const producedDate = req.body.producedDate ? dateKey(req.body.producedDate, "Tanggal masak") : null;
 
-  if (batchQuantity <= 0) {
-    return next(createHttpError(400, "Jumlah resep yang dimasak harus lebih dari 0."));
+  if (!items.length) {
+    return next(createHttpError(400, "Isi jumlah bahan baku yang dipakai."));
   }
   if (producedDate && producedDate > todayKey()) {
     return next(createHttpError(400, "Tanggal masak tidak boleh setelah hari ini."));
@@ -154,7 +155,14 @@ const recordProduction = asyncHandler(async (req, res, next) => {
   const semiId = Number(req.params.id);
   const productionId = await SemiItem.recordProduction(
     semiId,
-    { batchQuantity, outputWeight, portionQuantity, note, producedDate: producedDate === todayKey() ? null : producedDate },
+    {
+      items,
+      outputWeight,
+      portionQuantity,
+      portionSize,
+      note,
+      producedDate: producedDate === todayKey() ? null : producedDate,
+    },
     req.user?.id || req.user?._id
   );
   if (!productionId) return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));

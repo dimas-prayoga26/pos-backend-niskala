@@ -1,9 +1,9 @@
 // Bahan setengah jadi (stock_semi_items, e.g. Nasi from Beras, Sambal from
 // Cabai) are counted in portions and cooked from bahan baku (stock_raw_items):
-//   stock_semi_item_recipes            composition of one recipe (batch), in
-//                                      each raw item's stock unit
+//   stock_semi_item_recipes            its bahan baku, with the quantity of the
+//                                      latest cooking in each raw item's unit
 //   stock_semi_item_productions        one row per cooking ("Catat Masak"):
-//                                      the portions found by weighing the result
+//                                      the portions counted (batch_quantity 1)
 //   stock_semi_item_production_items   raw items used by that cooking, with the
 //                                      unit cost at that time
 //   stock_semi_item_menus              portions of a semi item in a menu's
