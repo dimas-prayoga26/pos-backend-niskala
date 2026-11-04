@@ -1,6 +1,6 @@
 # Belanja
 
-UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posting: admin). Menu **Stok** hanya berisi isi gudang: Bahan Baku dan Bahan Setengah Jadi. Barang Lainnya terlihat di menu Belanja. Badge angka di menu Belanja = jumlah draft nota yang menunggu posting.
+UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posting: admin). Menu **Stok** hanya berisi isi gudang: Bahan Baku dan Bahan Olahan. Barang Lainnya terlihat di menu Belanja. Badge angka di menu Belanja = jumlah draft nota yang menunggu posting.
 
 - Satu belanja (nota) memiliki tanggal, satu toko/sumber, sumber pembayaran, catatan, foto bukti nota, dan banyak barang.
 - Urutan per barang: nama (Select2), qty, satuan, harga satuan, jumlah. Jumlah = qty × harga satuan.
@@ -84,7 +84,7 @@ Dulu bernama "Perlengkapan"; tabelnya tetap `stock_supply_*` dan endpoint-nya te
 - Karena tidak masuk HPP, riwayat dan detail barang Lainnya menyebut rata-rata itu **Harga Rata-rata** (Harga Rata-rata Sekarang / Setelah), bukan COGS. Angka yang sama dipakai untuk Nilai Asset.
 - Dibayar dari sumber pembayaran: total dicatat sebagai saldo keluar `supply_purchase`; ubah/hapus item mencatat selisihnya (`supply_purchase_edit` / `supply_purchase_delete`).
 - Bukti nota: `history_stock_supply_purchase_attachments`, endpoint `/api/shopping/supply-purchases/:id/attachments` dan `/api/shopping/supply-purchase-attachments/:id`.
-- Nama barang hanya boleh ada di satu jenis: nama bahan baku/setengah jadi ditolak sebagai barang lainnya, dan sebaliknya.
+- Nama barang hanya boleh ada di satu jenis: nama bahan baku/olahan ditolak sebagai barang lainnya, dan sebaliknya.
 - Riwayat: menu Belanja punya tab **Bahan Baku | Peralatan | Perlengkapan | Promosi | Lain-lain**. Tab kategori memanggil `GET /api/shopping/supply-purchases?category=...` (bentuk data sama dengan riwayat bahan baku) dan memakai kategori barang yang sekarang, jadi barang yang kategorinya diubah pindah tab beserta riwayatnya. Setelah posting, riwayat membuka tab kategori baris pertama nota.
 - Barang Lainnya bukan bahan yang di-restock, jadi tidak ada Minimum, status stok (AMAN/HAMPIR HABIS), atau Bebas Stok; semua barang dihitung qty-nya sesuai belanja (termasuk Lain-lain dan Promosi). Barang dan qty awal masuk lewat belanja (qty awal dicatat sebagai belanja, misalnya dari "Stok Awal Niskala"). Pemakaian barang belum dicatat terpisah.
 - Menu Stok tidak lagi punya tab Lainnya (dihapus 2026-10-30). Endpoint `PUT/DELETE /api/stock-item/supply/:id` dan `PATCH /api/stock-item/supply/:id/stock` masih ada, tetapi belum dipakai UI.
@@ -103,7 +103,7 @@ Dulu bernama "Perlengkapan"; tabelnya tetap `stock_supply_*` dan endpoint-nya te
 
 ## Bahan Resep
 
-Bahan baku baru dari belanja (mis. Aqua, kemasan) tidak otomatis muncul di pilihan resep: kolom **Bahan Resep** di Stok → Bahan Baku defaultnya Tidak untuk bahan dari belanja dan Ya untuk Tambah Stok. Admin menandai Ya bila bahan dipakai di resep menu atau bahan setengah jadi. Detail aturan di `docs/module-boundaries.md`.
+Bahan baku baru dari belanja (mis. Aqua, kemasan) tidak otomatis muncul di pilihan resep: kolom **Bahan Resep** di Stok → Bahan Baku defaultnya Tidak untuk bahan dari belanja dan Ya untuk Tambah Stok. Admin menandai Ya bila bahan dipakai di resep menu atau bahan olahan. Detail aturan di `docs/module-boundaries.md`.
 
 ## Merapikan bahan hasil import rekap
 

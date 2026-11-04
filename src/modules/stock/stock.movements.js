@@ -1,7 +1,7 @@
 // Recipe-driven stock movements. Orders pass recipe lines
 // ({ menuItemId, quantity }); each menu item's recipe rows (menu_item_recipes, quantities
 // in the item's unit) are applied to stock_raw_items (bahan baku) or
-// stock_semi_items (bahan setengah jadi) inside the caller's transaction
+// stock_semi_items (bahan olahan) inside the caller's transaction
 // connection.
 const createHttpError = require("http-errors");
 const { roundCurrency } = require("../../shared/utils/money");
@@ -34,7 +34,7 @@ const buildStockDeductions = async (connection, orderItems = []) => {
   if (!orderItems.length) return new Map();
 
   const menuItemIds = [...new Set(orderItems.map((item) => item.menuItemId))];
-  // Bahan baku lines live in menu_item_recipes, bahan setengah jadi lines in
+  // Bahan baku lines live in menu_item_recipes, bahan olahan lines in
   // stock_semi_item_menus.
   const ingredientRows = await findRecipeLines(connection, menuItemIds);
 

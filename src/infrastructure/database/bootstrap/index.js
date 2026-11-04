@@ -32,6 +32,7 @@ const { ensureHppPendingSchema } = require("./hppPendingSchema");
 const { ensureDayClosingSchema } = require("./dayClosingSchema");
 const { ensureShoppingSchema } = require("./shoppingSchema");
 const { ensureSupplySchema } = require("./supplySchema");
+const { ensureWasteSchema } = require("./wasteSchema");
 
 const connectDB = async () => {
   await serverPool.query(
@@ -150,7 +151,7 @@ const connectDB = async () => {
   await migrateLegacyOrderPlatformMaster();
   await seedMetaDataPlatforms();
 
-  // Bahan baku. Was stock_items until bahan setengah jadi moved to
+  // Bahan baku. Was stock_items until bahan olahan moved to
   // stock_semi_items (2026-10-28); renaming keeps every row and foreign key.
   if ((await tableExists("stock_items")) && !(await tableExists("stock_raw_items"))) {
     await pool.query("RENAME TABLE stock_items TO stock_raw_items");
@@ -199,7 +200,7 @@ const connectDB = async () => {
     [seedStockItems]
   );
 
-  // Bahan setengah jadi (e.g. Nasi cooked from Beras), counted in portions.
+  // Bahan olahan (e.g. Nasi cooked from Beras), counted in portions.
   // Their composition and cooking live in stock_semi_item_* (semiItemsSchema).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS stock_semi_items (
@@ -229,7 +230,7 @@ const connectDB = async () => {
   }
 
   // Recipes: pivot menu_items <-> stock_raw_items, one row per ingredient. Quantities
-  // are in the stock item's unit. Bahan setengah jadi lines of a menu live in
+  // are in the stock item's unit. Bahan olahan lines of a menu live in
   // stock_semi_item_menus (semiItemsSchema).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS menu_item_recipes (
@@ -667,6 +668,7 @@ const bootstrapDatabase = async () => {
   await ensureSupplySchema(pool);
   await ensureNotaSchema(pool);
   await ensureSemiItemsSchema(pool);
+  await ensureWasteSchema(pool);
   await ensureRecipeIngredientSchema(pool);
   await ensureHppPendingSchema(pool);
   await ensureDayClosingSchema(pool);

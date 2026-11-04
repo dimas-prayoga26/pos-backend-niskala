@@ -5,7 +5,7 @@
 const roundRecipeQuantity = (value) =>
   Math.round((Number(value) || 0) * 10000) / 10000;
 
-// An ingredient is a bahan setengah jadi when semiItemId is set, otherwise a
+// An ingredient is a bahan olahan when semiItemId is set, otherwise a
 // bahan baku (stockItemId).
 const normalizeIngredient = (ingredient) => {
   const semiItemId = Number(ingredient?.semiItemId || ingredient?.semi_item_id) || null;

@@ -176,7 +176,7 @@ const packOf = (member, line) =>
   try {
     for (const group of GROUPS) {
       if (recipeNames.has(group.name.toLowerCase()) || otherNames.has(group.name.toLowerCase())) {
-        console.log(`  LEWATI ${group.name}: nama dipakai bahan resep, setengah jadi, atau barang Lainnya`);
+        console.log(`  LEWATI ${group.name}: nama dipakai bahan resep, olahan, atau barang Lainnya`);
         continue;
       }
       // The members that exist (by name), and an active bahan already named like the group.

@@ -1,4 +1,4 @@
-// Bahan setengah jadi (stock_semi_items, e.g. Nasi from Beras, Sambal from
+// Bahan olahan (stock_semi_items, e.g. Nasi from Beras, Sambal from
 // Cabai) are counted in portions and cooked from bahan baku (stock_raw_items):
 //   stock_semi_item_recipes            its bahan baku, with the quantity of the
 //                                      latest cooking in each raw item's unit
@@ -149,7 +149,7 @@ const moveLegacyRows = (db, legacy, hasPreparedColumn) =>
     }
   });
 
-// Moves bahan setengah jadi out of the legacy layout, then drops the legacy
+// Moves bahan olahan out of the legacy layout, then drops the legacy
 // tables and stock_raw_items columns, which are empty by then.
 const migrateLegacyPreparedItems = async (db) => {
   const existingTables = await findTables(db, Object.values(LEGACY_TABLES).flat());
@@ -243,7 +243,7 @@ const ensureSemiItemsSchema = async (db) => {
       FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
 
-  // Portions of a semi item per menu, the bahan setengah jadi side of menu_item_recipes.
+  // Portions of a semi item per menu, the bahan olahan side of menu_item_recipes.
   // sort_order shares one sequence with the menu's menu_item_recipes rows.
   await db.query(`CREATE TABLE IF NOT EXISTS stock_semi_item_menus (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -271,7 +271,7 @@ const ensureSemiItemsSchema = async (db) => {
 
   // Portions thrown away (leftover at closing, spoiled, spilled, a lower
   // stock count) with their value at that time: the kerugian of bahan
-  // setengah jadi. waste_date is the business day the loss belongs to.
+  // olahan. waste_date is the business day the loss belongs to.
   await db.query(`CREATE TABLE IF NOT EXISTS history_stock_semi_wastes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     semi_item_id INT UNSIGNED NULL,

@@ -3,7 +3,7 @@
 // Asia/Jakarta), or earlier when its daily recap is saved. Closing:
 // - locks the HPP of the day's notas (Modul 2, orders/order.hpp): bahan olahan
 //   take the day's cooking cost, or keep the one they were sold with;
-// - writes off the leftover of daily bahan setengah jadi (Nasi), once.
+// - writes off the leftover of daily bahan olahan (Nasi), once.
 // Notas of a day already closed that still wait (an online order booked on a
 // past day) are locked at the next run.
 const logger = require("../../shared/logger");
@@ -82,7 +82,7 @@ const startDayClosing = (db) => {
       const closedOrders = result.hppClosed.closedOrders + result.lateOrders;
       if (result.firstClose || closedOrders) {
         logger.info(
-          `Hari ${result.day} ditutup otomatis: HPP ${closedOrders} nota dikunci, ${result.writtenOff.length} bahan setengah jadi direset.`
+          `Hari ${result.day} ditutup otomatis: HPP ${closedOrders} nota dikunci, ${result.writtenOff.length} bahan olahan direset.`
         );
       }
       if (closedOrders) emitRealtimeEvent("orders:changed", { action: "hpp-closed" });

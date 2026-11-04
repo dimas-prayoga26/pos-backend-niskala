@@ -1,4 +1,4 @@
-// Bahan setengah jadi (stock_semi_items, e.g. Nasi from Beras): composition,
+// Bahan olahan (stock_semi_items, e.g. Nasi from Beras): composition,
 // cooking ("Catat Masak"), write-offs (kerugian) and their history. Tables:
 // see semiItemsSchema.js.
 //
@@ -15,6 +15,7 @@ const { roundRecipeQuantity } = require("../menu/menu.options");
 const { refreshMenuCosts } = require("../menu/menu.costs");
 const { getStockStatus } = require("./stock.repository");
 const { allocateBatchCosts, dayOf } = require("../orders/order.hpp");
+const { photoFileNames, removePhotoFiles, savePhotos, withPhotoFiles, withPhotos } = require("./wastes");
 
 const roundStock = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
@@ -140,7 +141,7 @@ const findActiveRawIds = async (ids) => {
   return rows.map((row) => row.id);
 };
 
-// Names must be unique across bahan baku and bahan setengah jadi.
+// Names must be unique across bahan baku and bahan olahan.
 const isRawItemName = async (name) => {
   const [rows] = await pool.query(
     "SELECT id FROM stock_raw_items WHERE name = ? LIMIT 1",
@@ -241,7 +242,8 @@ const today = () => {
 // Writes off quantity portions of a locked semi item row: its stock and
 // stock_value drop at the exact unit cost (stock_value / stock) and one
 // history_stock_semi_wastes row keeps the loss. A negative quantity (a
-// recount above the stock) adds the portions back at that cost.
+// recount above the stock) adds the portions back at that cost. Returns the
+// write-off's id and cost.
 const writeOff = async (connection, item, { quantity, reason, note, wasteDate, userId }) => {
   const stock = Number(item.stock) || 0;
   const value = Number(item.stock_value) || 0;
@@ -255,7 +257,7 @@ const writeOff = async (connection, item, { quantity, reason, note, wasteDate, u
     "UPDATE stock_semi_items SET stock = ?, stock_value = ? WHERE id = ?",
     [roundStock(stock - portions), Math.max(roundCurrency(value - cost), 0), item.id]
   );
-  await connection.query(
+  const [result] = await connection.query(
     `INSERT INTO history_stock_semi_wastes
       (semi_item_id, item_name, waste_date, quantity, unit, unit_cost, cost, reason, note, user_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -273,7 +275,7 @@ const writeOff = async (connection, item, { quantity, reason, note, wasteDate, u
     ]
   );
 
-  return cost;
+  return { id: result.insertId, cost };
 };
 
 // Manual count of the portions left, kept as a "Penyesuaian" at the exact
@@ -297,27 +299,30 @@ const updateStock = (id, stock, userId) =>
     return true;
   }).then((updated) => (updated ? findById(id) : null));
 
-// Portions thrown away during the day (spoiled, spilled, ...). Returns false
-// when the item is not found.
-const recordWaste = (semiId, { quantity, reason, note }, userId) =>
-  withTransaction(async (connection) => {
-    const [[item]] = await connection.query(
-      "SELECT * FROM stock_semi_items WHERE id = ? FOR UPDATE",
-      [semiId]
-    );
-    if (!item) return false;
-
-    const available = Number(item.stock) || 0;
-    if (quantity > available) {
-      throw createHttpError(
-        409,
-        `Stok ${item.name} tinggal ${formatQuantity(Math.max(available, 0), item.unit)}.`
+// Portions thrown away during the day (spoiled, dropped, ...), with their
+// bukti foto. Returns false when the item is not found.
+const recordWaste = (semiId, { quantity, reason, note, photos }, userId) =>
+  withPhotoFiles((written) =>
+    withTransaction(async (connection) => {
+      const [[item]] = await connection.query(
+        "SELECT * FROM stock_semi_items WHERE id = ? FOR UPDATE",
+        [semiId]
       );
-    }
+      if (!item) return false;
 
-    await writeOff(connection, item, { quantity, reason, note, userId });
-    return true;
-  });
+      const available = Number(item.stock) || 0;
+      if (quantity > available) {
+        throw createHttpError(
+          409,
+          `Stok ${item.name} tinggal ${formatQuantity(Math.max(available, 0), item.unit)}.`
+        );
+      }
+
+      const { id } = await writeOff(connection, item, { quantity, reason, note, userId });
+      await savePhotos(connection, "semi", id, photos, userId, written);
+      return true;
+    })
+  );
 
 // Closing of a business day (saving its daily recap): the leftover of every
 // reset_daily semi item is written off as "Sisa akhir hari", so the next day
@@ -349,7 +354,7 @@ const closeDay = async (connection, { date, userId }) => {
     const leftover = roundStock(Number(item.stock) - Number(later.portions));
     if (leftover <= 0) continue;
 
-    const cost = await writeOff(connection, item, {
+    const { cost } = await writeOff(connection, item, {
       quantity: leftover,
       reason: "Sisa akhir hari",
       wasteDate: date,
@@ -414,7 +419,7 @@ const listWastes = async ({ from, to, semiItemId, limit = 100 } = {}) => {
   );
 
   return {
-    wastes: rows.map(mapWaste),
+    wastes: await withPhotos("semi", rows.map(mapWaste)),
     dailyTotals: totals.map((row) => ({
       date: row.waste_date,
       cost: Number(row.cost || 0),
@@ -424,10 +429,10 @@ const listWastes = async ({ from, to, semiItemId, limit = 100 } = {}) => {
 };
 
 // Undoes the latest write-off of an item (a typo): its portions and value go
-// back to stock. Returns the semi item id (0 when it was deleted), or null
-// when the write-off is not found.
-const deleteWaste = (wasteId) =>
-  withTransaction(async (connection) => {
+// back to stock and its photos are removed. Returns the semi item id (0 when
+// it was deleted), or null when the write-off is not found.
+const deleteWaste = async (wasteId) => {
+  const deleted = await withTransaction(async (connection) => {
     const [[waste]] = await connection.query(
       "SELECT * FROM history_stock_semi_wastes WHERE id = ? FOR UPDATE",
       [wasteId]
@@ -451,9 +456,15 @@ const deleteWaste = (wasteId) =>
       );
     }
 
+    const files = await photoFileNames(connection, "semi", wasteId);
     await connection.query("DELETE FROM history_stock_semi_wastes WHERE id = ?", [wasteId]);
-    return waste.semi_item_id || 0;
+    return { semiItemId: waste.semi_item_id || 0, files };
   });
+  if (!deleted) return null;
+
+  await removePhotoFiles(deleted.files);
+  return deleted.semiItemId;
+};
 
 // Records one cooking: items are the bahan baku used ({ stockItemId,
 // quantity }, from the composition). The portions come from outputWeight /

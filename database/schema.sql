@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS stock_raw_items (
   stock_value DECIMAL(14,2) NOT NULL DEFAULT 0,
   supplier VARCHAR(150),
   is_unlimited BOOLEAN NOT NULL DEFAULT FALSE,
-  -- Bahan Resep: offered in the recipe editors (menu, bahan setengah jadi).
+  -- Bahan Resep: offered in the recipe editors (menu, bahan olahan).
   -- A bahan first bought through belanja starts off; Tambah Stok starts on.
   is_recipe_ingredient BOOLEAN NOT NULL DEFAULT TRUE,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS stock_raw_items (
   INDEX idx_stock_raw_items_is_active (is_active)
 );
 
--- Bahan setengah jadi (e.g. Nasi from Beras), counted in portions and cooked
+-- Bahan olahan (e.g. Nasi from Beras), counted in portions and cooked
 -- from bahan baku ("Catat Masak"), never bought.
 CREATE TABLE IF NOT EXISTS stock_semi_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -383,7 +383,7 @@ CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_attachments (
 );
 
 -- Recipes: pivot menu_items <-> stock_raw_items, one row per ingredient. Quantities
--- are in the stock item's unit. Bahan setengah jadi lines of a menu are in
+-- are in the stock item's unit. Bahan olahan lines of a menu are in
 -- stock_semi_item_menus.
 CREATE TABLE IF NOT EXISTS menu_item_recipes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -425,7 +425,7 @@ JOIN menu_items mi ON mi.id = r.menu_item_id
 JOIN stock_raw_items si ON si.id = r.stock_item_id
 ORDER BY mi.name, r.sort_order, r.id;
 
--- Portions of a bahan setengah jadi in a menu's recipe (the semi side of
+-- Portions of a bahan olahan in a menu's recipe (the semi side of
 -- recipes). sort_order shares one sequence with the menu's recipes rows.
 CREATE TABLE IF NOT EXISTS stock_semi_item_menus (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -448,7 +448,7 @@ CREATE TABLE IF NOT EXISTS stock_semi_item_menus (
     ON DELETE RESTRICT
 );
 
--- Composition of one recipe (batch) of a bahan setengah jadi, in each bahan
+-- Composition of one recipe (batch) of a bahan olahan, in each bahan
 -- baku's unit.
 CREATE TABLE IF NOT EXISTS stock_semi_item_recipes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -496,7 +496,7 @@ CREATE TABLE IF NOT EXISTS stock_semi_item_productions (
     ON DELETE SET NULL
 );
 
--- Portions of a bahan setengah jadi thrown away, with their value at that
+-- Portions of a bahan olahan thrown away, with their value at that
 -- time (kerugian). reason: Sisa akhir hari (written off by the daily recap),
 -- Penyesuaian (lower stock count), Basi, Tumpah or Lainnya. waste_date is the
 -- business day the loss belongs to.
@@ -667,7 +667,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 -- never touch it; names and units are copied so history stays readable.
 -- One row per closed business day: automatically at 05:00 the next morning
 -- (recaps/dayClosing) or by saving its daily recap. Closing locks the HPP of
--- the day's notas and writes off the leftover of daily bahan setengah jadi once.
+-- the day's notas and writes off the leftover of daily bahan olahan once.
 CREATE TABLE IF NOT EXISTS business_day_closings (
   business_date DATE NOT NULL PRIMARY KEY,
   source VARCHAR(10) NOT NULL,
@@ -678,7 +678,7 @@ CREATE TABLE IF NOT EXISTS business_day_closings (
 CREATE TABLE IF NOT EXISTS order_item_costs (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_item_id INT UNSIGNED NOT NULL,
-  -- The bahan baku or bahan setengah jadi sold (NULL once deleted).
+  -- The bahan baku or bahan olahan sold (NULL once deleted).
   stock_item_id INT UNSIGNED NULL,
   semi_item_id INT UNSIGNED NULL,
   stock_item_name VARCHAR(150) NOT NULL,

@@ -54,11 +54,11 @@ const writeItemLog = async (connection, { line, action, oldData, newData, user }
   );
 };
 
-// A new name may not be a bahan setengah jadi or perlengkapan.
+// A new name may not be a bahan olahan or perlengkapan.
 const checkNewItem = async (connection, { itemName }) => {
   const name = clean(itemName, 150, "Nama barang");
   const [semiRows] = await connection.query("SELECT id FROM stock_semi_items WHERE name = ?", [name]);
-  if (semiRows.length) throw createError(400, `${name} adalah bahan setengah jadi, stoknya dari Catat Masak. Belanjakan bahan bakunya.`);
+  if (semiRows.length) throw createError(400, `${name} adalah bahan olahan, stoknya dari Catat Masak. Belanjakan bahan bakunya.`);
   const [supplyRows] = await connection.query("SELECT id FROM stock_supply_items WHERE name = ?", [name]);
   if (supplyRows.length) throw createError(400, `${name} sudah tercatat sebagai barang Lainnya. Pilih Jenis Belanja Lainnya.`);
   const [[existing]] = await connection.query("SELECT is_active FROM stock_raw_items WHERE name = ?", [name]);
@@ -89,7 +89,7 @@ const RAW_NOTA = {
   // The unit is set by the first posted purchase.
   createItem: async (connection, line) => {
     await checkNewItem(connection, { itemName: line.item_name });
-    // Tambah Belanja lists only Bahan Resep and is the only way to add a bahan
+    // Tambah Belanja Bahan lists only Bahan Resep and is the only way to add a bahan
     // baku (Tambah Stok is gone), so a new one is a Bahan Resep too.
     await connection.query(`INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock, is_recipe_ingredient)
       VALUES (?, 'Umum', '', 0, 0, TRUE) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [line.item_name]);

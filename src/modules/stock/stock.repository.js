@@ -1,4 +1,4 @@
-// Bahan baku (stock_raw_items). Bahan setengah jadi: semi.repository.
+// Bahan baku (stock_raw_items). Bahan olahan: semi.repository.
 const createHttpError = require("http-errors");
 const { pool, withTransaction } = require("../../infrastructure/database/pool");
 const { refreshMenuCosts } = require("../menu/menu.costs");
@@ -39,7 +39,7 @@ const mapStockItem = (row) => {
     stockValue: Number(row.stock_value || 0),
     supplier: row.supplier || "",
     isUnlimited: Boolean(row.is_unlimited),
-    // Bahan Resep: offered in the recipe editors (menu, bahan setengah jadi).
+    // Bahan Resep: offered in the recipe editors (menu, bahan olahan).
     isRecipeIngredient: Boolean(row.is_recipe_ingredient),
     status: getStockStatus(row),
     isActive: Boolean(row.is_active),
@@ -68,7 +68,7 @@ const findById = async (id) => {
   return mapStockItem(rows[0]);
 };
 
-// Names must be unique across bahan baku and bahan setengah jadi, so a menu
+// Names must be unique across bahan baku and bahan olahan, so a menu
 // recipe never offers two items with the same name.
 const isSemiItemName = async (name) => {
   const [rows] = await pool.query(

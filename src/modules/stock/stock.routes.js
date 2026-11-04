@@ -32,6 +32,14 @@ const {
   updateSupplyItem,
   updateSupplyStock,
 } = require("./supply.controller");
+const {
+  deleteRawWaste,
+  getWastePhoto,
+  getWastes: getAllWastes,
+  recordRawWaste,
+} = require("./waste.controller");
+// Buang sends its bukti foto as multipart, like bukti nota.
+const { receivePurchaseReceipts } = require("../shopping/shopping.upload");
 
 const router = express.Router();
 const adminOnly = requireRole("admin", "Only admin can manage stock items!");
@@ -44,7 +52,7 @@ router.put("/supply/:id", authenticate, adminOnly, requireNumericId(), updateSup
 router.delete("/supply/:id", authenticate, adminOnly, requireNumericId(), deleteSupplyItem);
 router.patch("/supply/:id/stock", authenticate, requireNumericId(), staffOnly, updateSupplyStock);
 
-// Bahan setengah jadi (stock_semi_items) and their cooking ("Catat Masak").
+// Bahan olahan (stock_semi_items) and their cooking ("Catat Masak").
 router.get("/semi", authenticate, getSemiItems);
 router.post("/semi", authenticate, adminOnly, addSemiItem);
 router.delete(
@@ -63,12 +71,25 @@ router.delete(
   requireNumericId({ param: "wasteId" }),
   deleteWaste
 );
-router.post("/semi/:id/wastes", authenticate, requireNumericId(), staffOnly, recordWaste);
+router.post("/semi/:id/wastes", authenticate, requireNumericId(), staffOnly, receivePurchaseReceipts, recordWaste);
 router.put("/semi/:id", authenticate, adminOnly, requireNumericId(), updateSemiItem);
 router.delete("/semi/:id", authenticate, adminOnly, requireNumericId(), deleteSemiItem);
 router.patch("/semi/:id/stock", authenticate, requireNumericId(), staffOnly, updateSemiStock);
 router.get("/semi/:id/productions", authenticate, requireNumericId(), getProductions);
 router.post("/semi/:id/productions", authenticate, requireNumericId(), staffOnly, recordProduction);
+
+// Buang (Modul 3): Riwayat Kerugian of bahan baku and bahan olahan,
+// bukti foto, and bahan baku thrown away (history_stock_raw_wastes).
+router.get("/wastes", authenticate, getAllWastes);
+router.get("/waste-photos/:kind/:id", authenticate, requireNumericId(), getWastePhoto);
+router.delete(
+  "/wastes/:wasteId",
+  authenticate,
+  adminOnly,
+  requireNumericId({ param: "wasteId" }),
+  deleteRawWaste
+);
+router.post("/:id/wastes", authenticate, requireNumericId(), staffOnly, receivePurchaseReceipts, recordRawWaste);
 
 // Bahan baku (stock_raw_items).
 router.get("/", authenticate, getStockItems);
