@@ -1,5 +1,5 @@
-// Recipe lines of menus: bahan baku rows (menu_item_recipes -> stock_raw_items) and
-// bahan setengah jadi rows (stock_semi_item_menus -> stock_semi_items), in each
+// Recipe lines of menus: bahan baku rows (recipes -> stock_raw_items) and
+// bahan olahan rows (stock_semi_item_menus -> stock_semi_items), in each
 // menu's line order. Two queries instead of a UNION, so tables created with
 // different collations (older tables vs. the database default) still combine.
 const findRecipeLines = async (connection, menuItemIds) => {

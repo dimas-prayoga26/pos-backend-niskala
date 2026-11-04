@@ -6,7 +6,7 @@
 //   history_stock_supply_purchases (+ _items)  belanja perlengkapan; the same
 //                                              nota as belanja bahan baku
 //   history_stock_supply_purchase_attachments  bukti nota photos
-// Purchases are created from the same "Tambah Belanja" form (Jenis Belanja:
+// Purchases are created from the same "Tambah Belanja Bahan" form (Jenis Belanja:
 // Lainnya). See SHOPPING.md.
 const ensureSupplySchema = async (db) => {
   await db.query(`CREATE TABLE IF NOT EXISTS stock_supply_items (

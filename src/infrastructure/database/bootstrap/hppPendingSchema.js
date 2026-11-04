@@ -1,9 +1,9 @@
 // Modul 2, Penjualan & COGS: the HPP of a nota (orders.hpp_status) is
-// "pending" while a bahan olahan line (a bahan setengah jadi such as Nasi,
+// "pending" while a bahan olahan line (such as Nasi,
 // order_item_costs.is_pending) waits for the cost of the day's cooking, and
 // "closed" once the day is closed (hpp_closed_at). Orders sold before keep the
 // HPP frozen at their sale: they start closed. Each line says what it is
-// (hpp_type: standar = bahan baku, olahan = bahan setengah jadi) and where its
+// (hpp_type: standar = bahan baku, olahan = bahan olahan) and where its
 // cost comes from (hpp_source: penjualan = the cost at the sale, dapur = the
 // day's Daily Prep); a locked olahan line from penjualan is a fallback.
 const columnsOf = async (db, table) => {

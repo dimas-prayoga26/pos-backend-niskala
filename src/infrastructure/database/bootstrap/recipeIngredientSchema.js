@@ -1,5 +1,5 @@
 // stock_raw_items.is_recipe_ingredient ("Bahan Resep"): whether a bahan baku
-// is offered in the recipe editors (menu recipes and bahan setengah jadi).
+// is offered in the recipe editors (menu recipes and bahan olahan).
 // When the column is added, the bahan a recipe already uses are bahan resep and
 // the rest (Aqua galon, kemasan, ...) are not. Runs after the recipe tables
 // exist (menu_item_recipes, stock_semi_item_recipes).

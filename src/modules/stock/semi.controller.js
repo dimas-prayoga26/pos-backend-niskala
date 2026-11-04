@@ -1,10 +1,11 @@
-// Bahan setengah jadi (stock_semi_items): CRUD, stock count and "Catat Masak".
+// Bahan olahan (stock_semi_items): CRUD, stock count and "Catat Masak".
 const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
 const { roundRecipeQuantity } = require("../menu/menu.options");
 const { dateKey, todayKey } = require("../../shared/utils/validate");
 const SemiItem = require("./semi.repository");
+const { readWasteInput } = require("./wastes");
 
 const toNonNegativeNumber = (value) => Math.max(Number(value) || 0, 0);
 
@@ -42,7 +43,7 @@ const normalizeSemiPayload = (body) => ({
 });
 
 const validateSemiPayload = async ({ name, components }) => {
-  if (!name) return createHttpError(400, "Nama bahan setengah jadi wajib diisi.");
+  if (!name) return createHttpError(400, "Nama bahan olahan wajib diisi.");
   if (!components.length) {
     return createHttpError(400, "Pilih minimal satu bahan baku.");
   }
@@ -82,12 +83,12 @@ const saveSemiItem = (isUpdate) =>
       throw error;
     }
 
-    if (!savedId) return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));
+    if (!savedId) return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
 
     emitStockChanged(isUpdate ? "semi-item-updated" : "semi-item-created", savedId);
     res.status(isUpdate ? 200 : 201).json({
       success: true,
-      message: isUpdate ? "Bahan setengah jadi diperbarui." : "Bahan setengah jadi ditambahkan.",
+      message: isUpdate ? "Bahan olahan diperbarui." : "Bahan olahan ditambahkan.",
       data: await SemiItem.findById(savedId),
     });
   });
@@ -109,11 +110,11 @@ const deleteSemiItem = asyncHandler(async (req, res, next) => {
   }
 
   if (!(await SemiItem.remove(id))) {
-    return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));
+    return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
   }
 
   emitStockChanged("semi-item-deleted", id);
-  res.status(200).json({ success: true, message: "Bahan setengah jadi dihapus." });
+  res.status(200).json({ success: true, message: "Bahan olahan dihapus." });
 });
 
 const updateSemiStock = asyncHandler(async (req, res, next) => {
@@ -123,7 +124,7 @@ const updateSemiStock = asyncHandler(async (req, res, next) => {
     req.user?.id || req.user?._id
   );
 
-  if (!semiItem) return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));
+  if (!semiItem) return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
 
   emitStockChanged("semi-stock-updated", semiItem.id);
   res.status(200).json({ success: true, message: "Stok diperbarui.", data: semiItem });
@@ -165,7 +166,7 @@ const recordProduction = asyncHandler(async (req, res, next) => {
     },
     req.user?.id || req.user?._id
   );
-  if (!productionId) return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));
+  if (!productionId) return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
 
   emitStockChanged("semi-item-produced", semiId);
   res.status(201).json({
@@ -190,29 +191,11 @@ const deleteProduction = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, message: "Catatan masak dibatalkan." });
 });
 
-// Reasons a cashier picks for portions thrown away during the day. The
-// system adds "Sisa akhir hari" (daily recap) and "Penyesuaian" (stock count).
-const WASTE_REASONS = ["Basi", "Tumpah", "Lainnya"];
-
+// Portions thrown away during the day (Buang), with their bukti foto.
 const recordWaste = asyncHandler(async (req, res, next) => {
-  const quantity = Math.round(toNonNegativeNumber(req.body.quantity) * 100) / 100;
-  const reason = String(req.body.reason || "").trim();
-  const note = String(req.body.note || "").trim().slice(0, 255);
-
-  if (quantity <= 0) {
-    return next(createHttpError(400, "Jumlah porsi yang dibuang harus lebih dari 0."));
-  }
-  if (!WASTE_REASONS.includes(reason)) {
-    return next(createHttpError(400, `Alasan harus salah satu dari: ${WASTE_REASONS.join(", ")}.`));
-  }
-
   const semiId = Number(req.params.id);
-  const recorded = await SemiItem.recordWaste(
-    semiId,
-    { quantity, reason, note },
-    req.user?.id || req.user?._id
-  );
-  if (!recorded) return next(createHttpError(404, "Bahan setengah jadi tidak ditemukan."));
+  const recorded = await SemiItem.recordWaste(semiId, readWasteInput(req), req.user?.id || req.user?._id);
+  if (!recorded) return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
 
   emitStockChanged("semi-item-wasted", semiId);
   res.status(201).json({

@@ -1,5 +1,5 @@
 // Modul 2, Penjualan & COGS. On a nota, the bahan baku lines (barang standar)
-// get their HPP at the sale. The bahan setengah jadi lines (bahan olahan:
+// get their HPP at the sale. The bahan olahan lines (
 // Nasi, sambal, ...) are sold with a Pending Flag (order_item_costs.is_pending)
 // at the latest cost per portion, because the real one depends on how many
 // portions the kitchen got out of the day's cooking. Each cooking recorded for

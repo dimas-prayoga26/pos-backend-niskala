@@ -23,7 +23,7 @@ const findAll = async (periodType) => {
 
 // A daily recap closes the day (if the automatic closing at 00:00 has not
 // yet, see dayClosing): orders on that date become read-only, their HPP is
-// locked (Modul 2) and the leftover of daily bahan setengah jadi (Nasi) is
+// locked (Modul 2) and the leftover of daily bahan olahan (Nasi) is
 // written off as kerugian, in the same transaction.
 const createDaily = async (format, payload) => {
   if (await Recap.dailyRecapExistsForDate(payload.recapDate)) {

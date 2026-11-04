@@ -33,7 +33,7 @@ const snapshotItem = row => ({
   stockValueAfter: Number(row.stock_value_after || 0),
 });
 
-// A name is either bahan baku/setengah jadi or barang lainnya, never both.
+// A name is either bahan baku/olahan or barang lainnya, never both.
 const checkNewItem = async (connection, { itemName }) => {
   const name = clean(itemName, 150, "Nama barang");
   const [rawRows] = await connection.query(

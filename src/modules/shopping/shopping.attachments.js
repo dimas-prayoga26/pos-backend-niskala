@@ -137,5 +137,6 @@ module.exports = {
   RECEIPT_TARGETS,
   attachmentUrl,
   createAttachmentService,
+  displayName,
   detectImageType,
 };

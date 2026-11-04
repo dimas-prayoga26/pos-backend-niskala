@@ -23,6 +23,16 @@ let server;
 let db;
 const cookies = {};
 
+// A Buang as multipart: its fields and photos (bukti foto).
+const wasteForm = (fields, photos = 1) => {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) form.append(key, String(value));
+  for (let index = 0; index < photos; index += 1) {
+    form.append("files", new Blob([TINY_PNG], { type: "image/png" }), `buang-${index + 1}.png`);
+  }
+  return form;
+};
+
 const request = async (method, urlPath, { as, body } = {}) => {
   const headers = {};
   if (as) headers.Cookie = cookies[as];
@@ -326,7 +336,95 @@ describe("regressions", () => {
     assert.equal(cogs.body.data.stockValue, 0, "the dialog preview shows Rp 0 as well");
   });
 
-  it("cooks bahan setengah jadi from bahan baku and sells their portions", async () => {
+  it("Modul 3: throws bahan baku away with a bukti foto and lists the kerugian of both kinds", async () => {
+    const created = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Susu Buang", category: "Bahan", unit: "ml", stock: 1000 },
+    });
+    const id = created.body.data.id;
+    await request("PATCH", `/api/stock-item/${id}/cogs`, { as: "admin", body: { averageCost: 20 } });
+    const rawRow = async () => {
+      const [[row]] = await db.query("SELECT stock, stock_value FROM stock_raw_items WHERE id = ?", [id]);
+      return [Number(row.stock), Number(row.stock_value)];
+    };
+    const buang = (as, body) => request("POST", `/api/stock-item/${id}/wastes`, { as, body });
+
+    // Kasir must attach a real photo; nothing leaves stock until then.
+    assert.equal((await buang("cashier", { quantity: 250, reason: "Basi" })).status, 400);
+    const fake = new FormData();
+    fake.append("quantity", "250");
+    fake.append("reason", "Basi");
+    fake.append("files", new Blob(["not an image"], { type: "image/jpeg" }), "susu.jpg");
+    assert.equal((await buang("cashier", fake)).status, 400);
+    assert.equal((await buang("cashier", wasteForm({ quantity: 250, reason: "Tumpah" }))).status, 400);
+    assert.deepEqual(await rawRow(), [1000, 20000]);
+
+    // 250 ml basi at Rp 20 per ml: Rp 5.000 leaves the stock value.
+    const spoiled = await buang("cashier", wasteForm({ quantity: 250, reason: "Basi", note: "kulkas mati" }, 2));
+    assert.equal(spoiled.status, 201);
+    assert.deepEqual(await rawRow(), [750, 15000]);
+    // Admins may skip the photo; more than the stock is refused.
+    assert.equal((await buang("admin", { quantity: 751, reason: "Expired" })).status, 409);
+    assert.equal((await buang("admin", { quantity: 50, reason: "Jatuh" })).status, 201);
+    assert.deepEqual(await rawRow(), [700, 14000]);
+
+    // Bahan baku whose stock is not counted cannot be thrown away.
+    const unlimited = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Air Galon Bebas", category: "Bahan", unit: "ml", stock: 0, isUnlimited: true },
+    });
+    const freeWaste = await request("POST", `/api/stock-item/${unlimited.body.data.id}/wastes`, {
+      as: "admin",
+      body: { quantity: 1, reason: "Basi" },
+    });
+    assert.equal(freeWaste.status, 400);
+
+    // Riwayat Kerugian: bahan baku and bahan olahan together, newest
+    // first, with the day's total over both kinds.
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    const history = (await request("GET", `/api/stock-item/wastes?from=${today}&to=${today}`, { as: "cashier" })).body.data;
+    const susu = history.wastes.filter((waste) => waste.kind === "raw" && waste.itemId === id);
+    assert.deepEqual(
+      susu.map((waste) => [waste.quantity, waste.unit, waste.cost, waste.reason, waste.note, waste.photos.length]),
+      [[50, "ml", 1000, "Jatuh", "", 0], [250, "ml", 5000, "Basi", "kulkas mati", 2]]
+    );
+    assert.equal(
+      history.dailyTotals.find((day) => day.date === today).cost,
+      history.wastes.reduce((total, waste) => total + waste.cost, 0)
+    );
+    // Each tab's Riwayat Kerugian lists its own kind only.
+    const ofKind = async (kind) =>
+      (await request("GET", `/api/stock-item/wastes?kind=${kind}`, { as: "cashier" })).body.data;
+    const rawOnly = await ofKind("raw");
+    assert.ok(rawOnly.wastes.length >= 2 && rawOnly.wastes.every((waste) => waste.kind === "raw"));
+    assert.equal(
+      rawOnly.dailyTotals.find((day) => day.date === today).cost,
+      rawOnly.wastes.filter((waste) => waste.wasteDate === today).reduce((total, waste) => total + waste.cost, 0)
+    );
+    assert.ok((await ofKind("semi")).wastes.every((waste) => waste.kind === "semi"));
+    assert.equal((await request("GET", "/api/stock-item/wastes?kind=lainnya", { as: "cashier" })).status, 400);
+
+    // Bukti foto: logged-in users only.
+    const [photo] = susu[1].photos;
+    assert.equal((await fetch(`${server.baseUrl}${photo.url}`)).status, 401);
+    const served = await fetch(`${server.baseUrl}${photo.url}`, { headers: { Cookie: cookies.cashier } });
+    assert.equal(served.status, 200);
+    assert.equal(served.headers.get("content-type"), "image/png");
+    assert.deepEqual(Buffer.from(await served.arrayBuffer()), TINY_PNG);
+    assert.equal((await request("GET", "/api/stock-item/waste-photos/lainnya/1", { as: "cashier" })).status, 404);
+
+    // Undo: admins, latest write-off of the item only; its photos go too.
+    const undo = (as, wasteId) => request("DELETE", `/api/stock-item/wastes/${wasteId}`, { as });
+    assert.equal((await undo("admin", susu[1].id)).status, 409);
+    assert.equal((await undo("cashier", susu[0].id)).status, 403);
+    assert.equal((await undo("admin", susu[0].id)).status, 200);
+    assert.deepEqual(await rawRow(), [750, 15000]);
+    assert.equal((await undo("admin", susu[1].id)).status, 200);
+    assert.deepEqual(await rawRow(), [1000, 20000]);
+    assert.equal((await request("GET", photo.url, { as: "cashier" })).status, 404);
+  });
+
+  it("cooks bahan olahan from bahan baku and sells their portions", async () => {
     const addRaw = async (name, unit, stock, averageCost) => {
       const created = await request("POST", "/api/stock-item", {
         as: "admin",
@@ -536,10 +634,10 @@ describe("regressions", () => {
       },
     });
     assert.equal(purchase.status, 400);
-    assert.match(purchase.body.message, /bahan setengah jadi/);
+    assert.match(purchase.body.message, /bahan olahan/);
     const deleteBeras = await request("DELETE", `/api/stock-item/${berasId}`, { as: "admin" });
     assert.equal(deleteBeras.status, 409);
-    assert.match(deleteBeras.body.message, /bahan setengah jadi: Nasi Olahan/);
+    assert.match(deleteBeras.body.message, /bahan olahan: Nasi Olahan/);
     const deleteNasi = await request("DELETE", `/api/stock-item/semi/${nasi.id}`, { as: "admin" });
     assert.equal(deleteNasi.status, 409);
     assert.match(deleteNasi.body.message, /resep menu: Nasi Ayam Olahan/);
@@ -615,17 +713,23 @@ describe("regressions", () => {
         .body.data.wastes.map((w) => [w.quantity, w.cost, w.reason]);
     assert.deepEqual(await wasteRows(), [[8, 7000, "Penyesuaian"]]);
 
-    // Thrown away during the day: 5 spoiled portions at Rp 875.
+    // Thrown away during the day: 5 spoiled portions at Rp 875. Kasir must
+    // attach a photo of them.
+    const noPhoto = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
+      as: "cashier",
+      body: { quantity: 5, reason: "Basi" },
+    });
+    assert.equal(noPhoto.status, 400);
     const spoiled = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
       as: "cashier",
-      body: { quantity: 5, reason: "Basi", note: "kena hujan" },
+      body: wasteForm({ quantity: 5, reason: "Basi", note: "kena hujan" }),
     });
     assert.equal(spoiled.status, 201);
     assert.deepEqual([spoiled.body.data.stock, spoiled.body.data.stockValue], [65, 56875]);
     assert.deepEqual(await wasteRows(), [[5, 4375, "Basi"], [8, 7000, "Penyesuaian"]]);
     const tooMany = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
-      as: "cashier",
-      body: { quantity: 66, reason: "Tumpah" },
+      as: "admin",
+      body: { quantity: 66, reason: "Jatuh" },
     });
     assert.equal(tooMany.status, 409);
     const badReason = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
@@ -646,6 +750,8 @@ describe("regressions", () => {
       (await request("DELETE", `/api/stock-item/semi/wastes/${latestWaste.id}`, { as: "cashier" })).status,
       403
     );
+    const [photo] = latestWaste.photos;
+    assert.equal((await request("GET", photo.url, { as: "cashier" })).status, 200);
     assert.equal(
       (await request("DELETE", `/api/stock-item/semi/wastes/${latestWaste.id}`, { as: "admin" })).status,
       200
@@ -653,6 +759,7 @@ describe("regressions", () => {
     assert.deepEqual(await semiRow(nasi.id), {
       stock: 70, stockValue: 61250, unitCost: 875, yieldQuantity: 80,
     });
+    assert.equal((await request("GET", photo.url, { as: "cashier" })).status, 404, "its photo goes with it");
 
     // Closing a past day keeps portions cooked after it (all 70 were cooked
     // today); closing today writes the leftover off and Nasi starts from 0.
@@ -1295,7 +1402,7 @@ describe("regressions", () => {
     const found = (await adjust(4)).body.data;
     assert.deepEqual([found.stock, found.stockValue, found.averageCost], [4, 6000, 1500]);
 
-    // Adding the columns types the lines already sold (olahan: a bahan setengah jadi).
+    // Adding the columns types the lines already sold (olahan: a bahan olahan).
     await db.query("ALTER TABLE order_item_costs DROP COLUMN hpp_source, DROP COLUMN hpp_type");
     await restartServer();
     assert.deepEqual(await typesOf(first.body.data.id), [

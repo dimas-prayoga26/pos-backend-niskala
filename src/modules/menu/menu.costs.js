@@ -2,7 +2,7 @@
 // owner's COGS sheet:
 //   menu_item_recipes.cost                  = quantity x bahan baku unit_cost
 //                                   (stock_raw_items, whole rupiah)
-//   stock_semi_item_menus.cost    = quantity x bahan setengah jadi unit_cost
+//   stock_semi_item_menus.cost    = quantity x bahan olahan unit_cost
 //                                   (stock_semi_items) for a menu's semi lines
 //   stock_semi_item_recipes.cost  = quantity x bahan baku unit_cost for a semi
 //                                   item's composition

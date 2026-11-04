@@ -27,7 +27,7 @@ const validateSupplyPayload = async ({ name, category, unit }) => {
     return createHttpError(400, `Kategori harus ${SupplyItem.SUPPLY_CATEGORIES.join(", ")}.`);
   }
   if ((await SupplyItem.isRawItemName(name)) || (await isSemiItemName(name))) {
-    return createHttpError(409, `${name} sudah dipakai di bahan baku atau bahan setengah jadi. Pilih nama lain.`);
+    return createHttpError(409, `${name} sudah dipakai di bahan baku atau bahan olahan. Pilih nama lain.`);
   }
   return null;
 };

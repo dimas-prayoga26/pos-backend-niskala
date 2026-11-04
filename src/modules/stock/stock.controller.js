@@ -32,7 +32,7 @@ const validateStockPayload = async ({ name, category, unit }) => {
   }
 
   if (await StockItem.isSemiItemName(name)) {
-    return createHttpError(409, `${name} sudah dipakai di bahan setengah jadi. Pilih nama lain.`);
+    return createHttpError(409, `${name} sudah dipakai di bahan olahan. Pilih nama lain.`);
   }
 
   if (await isSupplyItemName(name)) {
@@ -191,7 +191,7 @@ const deleteStockItem = asyncHandler(async (req, res, next) => {
     return next(
       createHttpError(
         409,
-        `Bahan masih dipakai di bahan setengah jadi: ${semiItemNames.join(", ")}. Hapus dari komposisinya terlebih dahulu.`
+        `Bahan masih dipakai di bahan olahan: ${semiItemNames.join(", ")}. Hapus dari komposisinya terlebih dahulu.`
       )
     );
   }
