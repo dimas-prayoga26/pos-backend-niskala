@@ -9,7 +9,6 @@ const {
   updateStockCogs,
   updateStockItem,
   updateStockRecipeUse,
-  updateStockQuantity,
   updateStockUnit,
 } = require("./stock.controller");
 const {
@@ -23,7 +22,6 @@ const {
   recordProduction,
   recordWaste,
   updateSemiItem,
-  updateSemiStock,
 } = require("./semi.controller");
 const {
   addSupplyItem,
@@ -38,7 +36,6 @@ const {
   getWastes: getAllWastes,
   recordRawWaste,
 } = require("./waste.controller");
-const { deleteOpname, getOpnames, getOrderUsage, recordOpname } = require("./opname.controller");
 // Buang sends its bukti foto as multipart, like bukti nota.
 const { receivePurchaseReceipts } = require("../shopping/shopping.upload");
 
@@ -75,7 +72,6 @@ router.delete(
 router.post("/semi/:id/wastes", authenticate, requireNumericId(), staffOnly, receivePurchaseReceipts, recordWaste);
 router.put("/semi/:id", authenticate, adminOnly, requireNumericId(), updateSemiItem);
 router.delete("/semi/:id", authenticate, adminOnly, requireNumericId(), deleteSemiItem);
-router.patch("/semi/:id/stock", authenticate, requireNumericId(), staffOnly, updateSemiStock);
 router.get("/semi/:id/productions", authenticate, requireNumericId(), getProductions);
 router.post("/semi/:id/productions", authenticate, requireNumericId(), staffOnly, recordProduction);
 
@@ -92,19 +88,6 @@ router.delete(
 );
 router.post("/:id/wastes", authenticate, requireNumericId(), staffOnly, receivePurchaseReceipts, recordRawWaste);
 
-// Stock Opname (Modul 3): physical counts of bahan baku and bahan olahan,
-// the selisih kept as Kehilangan Persediaan.
-router.get("/opnames", authenticate, getOpnames);
-router.get("/opnames/usage", authenticate, getOrderUsage);
-router.post("/opnames", authenticate, staffOnly, recordOpname);
-router.delete(
-  "/opnames/:kind/:opnameId",
-  authenticate,
-  adminOnly,
-  requireNumericId({ param: "opnameId" }),
-  deleteOpname
-);
-
 // Bahan baku (stock_raw_items).
 router.get("/", authenticate, getStockItems);
 router.post("/", authenticate, adminOnly, addStockItem);
@@ -113,6 +96,5 @@ router.delete("/:id", authenticate, adminOnly, requireNumericId(), deleteStockIt
 router.patch("/:id/cogs", authenticate, adminOnly, requireNumericId(), updateStockCogs);
 router.patch("/:id/recipe-use", authenticate, adminOnly, requireNumericId(), updateStockRecipeUse);
 router.patch("/:id/unit", authenticate, adminOnly, requireNumericId(), updateStockUnit);
-router.patch("/:id/stock", authenticate, requireNumericId(), staffOnly, updateStockQuantity);
 
 module.exports = router;

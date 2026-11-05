@@ -11,6 +11,11 @@ const getSuppliers = asyncHandler(async (req, res) => {
   res.json({ success: true, data: await shopping.suppliers() });
 });
 
+// Merk for the lines of Tambah Belanja; new ones are created with the nota.
+const getMerks = asyncHandler(async (req, res) => {
+  res.json({ success: true, data: await shopping.merks() });
+});
+
 // The summary cards of the Belanja page for ?from=&to=.
 const getShoppingSummary = asyncHandler(async (req, res) => {
   res.json({ success: true, data: await shoppingSummary.summary(req.query) });
@@ -140,6 +145,7 @@ module.exports = {
   getSupplyPurchaseDrafts: supply.listDrafts,
   getSupplyPurchaseNotas: supply.listNotas,
   getSupplyPurchases: supply.list,
+  getMerks,
   getShoppingSummary,
   getSuppliers,
   updatePurchaseDraft: raw.updateDraft,

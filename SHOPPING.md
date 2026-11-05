@@ -111,6 +111,13 @@ Bahan baku baru dari belanja (mis. Aqua, kemasan) tidak otomatis muncul di pilih
 
 Di demo/production, setelah `npm run import:rekap`: backup dulu, lalu `npm run rekap:rapikan:check` (cek rencana) dan `npm run rekap:rapikan`.
 
+## Merk
+
+- Setiap barang di form Tambah Belanja (Bahan Baku dan Lainnya) punya pilihan **Merk** (opsional, cari atau buat). Merk baru dibuat di tabel **merk** saat nota disimpan, termasuk saat disimpan sebagai draft. Nama yang sama dengan huruf besar/kecil berbeda dianggap merk yang sama.
+- Baris belanja menyimpan `merk_id` (`history_stock_raw_purchase_items`, `history_stock_supply_purchase_items`). Admin bisa mengganti atau menghapus merk baris yang sudah diposting lewat Edit.
+- Setelah barang dipilih, dropdown Merk menampilkan grup **Pernah dibeli** (merk yang pernah diposting untuk barang itu) di atas **Merk lain**. Tidak ada tabel pivot: `GET /api/shopping/merks` mengembalikan `rawItemIds` dan `supplyItemIds` tiap merk, diambil dari baris belanja yang sudah diposting.
+- COGS tetap satu rata-rata bergerak per barang, gabungan semua merk. Merk tampil di Per Struk, kolom Merk di Per Item, dan di riwayat barang, jadi terlihat merk mana yang menggeser COGS. Pencarian riwayat juga mencari nama merk.
+
 ## Pengaturan Suplier
 
 Pengaturan memiliki menu Platform, Suplier, dan Sumber Pembayaran. Admin dapat menambah atau mengubah nama suplier melalui tombol Simpan. Nama duplikat ditolak. Mengubah nama master tidak mengganti nama pada riwayat belanja yang sudah tersimpan. Pilihan Select2 di form belanja tetap sementara sampai Simpan Belanjaan diklik.

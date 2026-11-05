@@ -86,9 +86,19 @@ const stockQuantityOf = ({ quantity, unit: lineUnit, packSize, packUnit }, stock
 // with more than 2 decimals does not change it (19.000 ml for Rp 8.000).
 const totalOf = item =>
   item?.total == null || item.total === "" ? {} : { total: number(item.total, 0, 999999999999.99, 2, "Harga total") };
+// Merk (optional): an existing merkId or a new merkName; nothing when both
+// are blank, so the payload hash of a line without merk stays as before.
+const merkOf = item => {
+  const hasId = item?.merkId != null && item.merkId !== "";
+  const hasName = item?.merkName != null && String(item.merkName).trim() !== "";
+  if (hasId && hasName) throw createError(400, "Merk: pilih ID atau nama baru.");
+  if (hasId) return { merkId: number(item.merkId, 1, 4294967295, 0, "Merk") };
+  return hasName ? { merkName: clean(item.merkName, 150, "Merk") } : {};
+};
 // unitRequired false: a line without unit takes its item's unit (Lainnya).
 const normalizeLine = (item, idKey, { unitRequired = true } = {}) => ({
   ...reference(item?.[idKey], item?.itemName, idKey, "itemName", "Barang"),
+  ...merkOf(item),
   quantity: number(item?.quantity, 0.001, 999999999, 3, "Qty"),
   ...(unitRequired || item?.unit ? { unit: unit(item?.unit) } : {}),
   ...packOf(item),
@@ -105,7 +115,13 @@ const normalizeSupplyPurchase = (body, options) => normalizeNota(body, item => {
   }
   return { ...line, category: item.category };
 }, options);
-// packSize in a patch is in the stock unit; null or "" drops it, absent keeps it.
+// packSize in a patch is in the stock unit; null or "" drops it, absent keeps
+// it. The merk the same way: merkId or merkName sets it, both blank drop it.
+const merkPatchOf = body => {
+  if (!body || !("merkId" in body || "merkName" in body)) return {};
+  const merk = merkOf(body);
+  return { merk: merk.merkId || merk.merkName ? merk : null };
+};
 const normalizeItemPatch = (body, { unitRequired = true } = {}) => ({
   quantity: number(body?.quantity, 0.001, 999999999, 3, "Qty"),
   ...(unitRequired || body?.unit ? { unit: unit(body?.unit) } : {}),
@@ -114,6 +130,7 @@ const normalizeItemPatch = (body, { unitRequired = true } = {}) => ({
     : {}),
   unitPrice: number(body?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
   ...totalOf(body),
+  ...merkPatchOf(body),
 });
 
 module.exports = {

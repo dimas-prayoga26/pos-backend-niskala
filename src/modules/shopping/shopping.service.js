@@ -9,7 +9,7 @@ const { refreshMenuCosts } = require("../menu/menu.costs");
 const { convertUnitIn } = require("../stock/stock.repository");
 const { REFERENCE_TYPES } = require("../paymentSources/paymentSource.ledger");
 const { RECEIPT_TARGETS, attachmentUrl } = require("./shopping.attachments");
-const { actor, createNotaEngine, dateRange, itemFilter } = require("./shopping.nota");
+const { actor, createNotaEngine, dateRange, itemFilter, merkFields } = require("./shopping.nota");
 const { clean, normalizePurchase, number } = require("./shopping.validation");
 
 const parseJson = value => {
@@ -89,7 +89,7 @@ const RAW_NOTA = {
   // The unit is set by the first posted purchase.
   createItem: async (connection, line) => {
     await checkNewItem(connection, { itemName: line.item_name });
-    // Tambah Belanja Bahan lists only Bahan Resep and is the only way to add a bahan
+    // Tambah Belanja lists only Bahan Resep and is the only way to add a bahan
     // baku (Tambah Stok is gone), so a new one is a Bahan Resep too.
     await connection.query(`INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock, is_recipe_ingredient)
       VALUES (?, 'Umum', '', 0, 0, TRUE) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`, [line.item_name]);
@@ -105,6 +105,31 @@ const RAW_NOTA = {
 const createShoppingService = (db, { receiptDir } = {}) => {
   const nota = createNotaEngine(db, { ...RAW_NOTA, receiptDir });
   const suppliers = async () => (await db.query("SELECT id, name FROM suplier ORDER BY name"))[0];
+  // Merk of both kinds of belanja, for the Merk of each line in Tambah Belanja.
+  // rawItemIds / supplyItemIds: the barang each merk was bought for (posted
+  // notas), so the form offers a barang's own merk first.
+  const merks = async () => {
+    const [[rows], [bought]] = await Promise.all([
+      db.query("SELECT id, name FROM merk ORDER BY name"),
+      db.query(
+        `SELECT DISTINCT 'raw' AS kind, i.merk_id, i.stock_item_id AS item_id
+           FROM history_stock_raw_purchase_items i
+           JOIN history_stock_raw_purchases p ON p.id = i.purchase_id AND p.status = 'posted'
+          WHERE i.merk_id IS NOT NULL AND i.stock_item_id IS NOT NULL
+         UNION
+         SELECT DISTINCT 'supply', i.merk_id, i.supply_item_id
+           FROM history_stock_supply_purchase_items i
+           JOIN history_stock_supply_purchases p ON p.id = i.purchase_id AND p.status = 'posted'
+          WHERE i.merk_id IS NOT NULL AND i.supply_item_id IS NOT NULL
+         ORDER BY item_id`
+      ),
+    ]);
+    const byMerk = new Map(rows.map(row => [row.id, { id: row.id, name: row.name, rawItemIds: [], supplyItemIds: [] }]));
+    bought.forEach(({ kind, merk_id: merkId, item_id: itemId }) => {
+      byMerk.get(merkId)?.[kind === "raw" ? "rawItemIds" : "supplyItemIds"].push(itemId);
+    });
+    return [...byMerk.values()];
+  };
   const saveSupplier = async ({ id, name }) => {
     name = clean(name, 150, "Nama suplier");
     try {
@@ -132,7 +157,7 @@ const createShoppingService = (db, { receiptDir } = {}) => {
     const params = [keyword, keyword, ...(stockItemId ? [stockItemId] : []), ...period.params];
     // Drafts are listed separately (listDrafts) until they are posted.
     const where = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR EXISTS (SELECT 1 FROM history_stock_raw_purchase_items i WHERE i.purchase_id = p.id AND i.item_name LIKE ?))${stockItemId ? " AND EXISTS (SELECT 1 FROM history_stock_raw_purchase_items fi WHERE fi.purchase_id = p.id AND fi.stock_item_id = ?)" : ""}${period.sql}`;
-    const itemWhere = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR i.item_name LIKE ?)${stockItemId ? " AND i.stock_item_id = ?" : ""}${period.sql}`;
+    const itemWhere = `WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR i.item_name LIKE ? OR m.name LIKE ?)${stockItemId ? " AND i.stock_item_id = ?" : ""}${period.sql}`;
     const [[count]] = await db.query(`SELECT COUNT(*) AS total FROM history_stock_raw_purchases p ${where}`, params);
     const [rows] = await db.query(`SELECT p.* FROM history_stock_raw_purchases p ${where} ORDER BY p.purchase_date DESC, p.id DESC LIMIT 10 OFFSET ?`, [...params, (page-1)*10]);
     if (rows.length) {
@@ -149,13 +174,15 @@ const createShoppingService = (db, { receiptDir } = {}) => {
          si.stock,
          si.unit AS current_unit,
          si.unit_cost,
-         si.stock_value
+         si.stock_value,
+         m.name AS merk_name
        FROM history_stock_raw_purchase_items i
        JOIN history_stock_raw_purchases p ON p.id = i.purchase_id
        LEFT JOIN stock_raw_items si ON si.id = i.stock_item_id
+       LEFT JOIN merk m ON m.id = i.merk_id
        ${itemWhere}
        ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
-      params
+      [keyword, keyword, keyword, ...(stockItemId ? [stockItemId] : []), ...period.params]
     );
     const attachmentsByPurchase = new Map();
     const purchaseIds = [...new Set([...rows.map(row => row.id), ...itemRows.map(row => row.purchase_id)])];
@@ -202,6 +229,7 @@ const createShoppingService = (db, { receiptDir } = {}) => {
           id: row.id,
           purchaseId: row.purchase_id,
           itemName: row.item_name,
+          ...merkFields(row),
           purchaseDate: row.purchase_date,
           supplierName: row.suplier_name,
           paymentMethod: row.payment_method,
@@ -269,6 +297,7 @@ const createShoppingService = (db, { receiptDir } = {}) => {
   };
   return {
     suppliers,
+    merks,
     saveSupplier,
     save: nota.create,
     updateDraft: nota.updateDraft,

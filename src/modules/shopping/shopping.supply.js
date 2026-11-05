@@ -9,7 +9,7 @@ const createError = require("http-errors");
 const { pool } = require("../../infrastructure/database/pool");
 const { REFERENCE_TYPES } = require("../paymentSources/paymentSource.ledger");
 const { RECEIPT_TARGETS } = require("./shopping.attachments");
-const { createNotaEngine, dateRange, itemFilter } = require("./shopping.nota");
+const { createNotaEngine, dateRange, itemFilter, merkFields } = require("./shopping.nota");
 const { DEFAULT_SUPPLY_UNIT, SUPPLY_CATEGORIES } = require("../stock/supply.repository");
 const { clean, normalizeSupplyPurchase } = require("./shopping.validation");
 
@@ -106,15 +106,17 @@ const createSupplyShoppingService = (db, { receiptDir } = {}) => {
     }
     const [rows] = await db.query(
       `SELECT i.*, p.purchase_date, p.suplier_name, p.payment_method, p.note,
-              s.stock, s.unit AS current_unit, s.unit_cost, s.stock_value, s.category AS current_category
+              s.stock, s.unit AS current_unit, s.unit_cost, s.stock_value, s.category AS current_category,
+              m.name AS merk_name
        FROM history_stock_supply_purchase_items i
        JOIN history_stock_supply_purchases p ON p.id = i.purchase_id
        LEFT JOIN stock_supply_items s ON s.id = i.supply_item_id
-       WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR i.item_name LIKE ? OR i.category LIKE ?)
+       LEFT JOIN merk m ON m.id = i.merk_id
+       WHERE p.status = 'posted' AND (p.suplier_name LIKE ? OR i.item_name LIKE ? OR i.category LIKE ? OR m.name LIKE ?)
          ${category ? "AND COALESCE(s.category, i.category) = ?" : ""}
          ${supplyItemId ? "AND i.supply_item_id = ?" : ""}${period.sql}
        ORDER BY i.item_name ASC, p.purchase_date DESC, p.id DESC, i.id DESC`,
-      [keyword, keyword, keyword, ...(category ? [category] : []), ...(supplyItemId ? [supplyItemId] : []), ...period.params]
+      [keyword, keyword, keyword, keyword, ...(category ? [category] : []), ...(supplyItemId ? [supplyItemId] : []), ...period.params]
     );
     const attachmentsByPurchase = new Map();
     const purchaseIds = [...new Set(rows.map(row => row.purchase_id))];
@@ -157,6 +159,7 @@ const createSupplyShoppingService = (db, { receiptDir } = {}) => {
       group.purchaseCount += 1;
       group.histories.push({
         ...snapshotItem(row),
+        ...merkFields(row),
         costTotal: Number(row.cost_total ?? row.total),
         purchaseDate: row.purchase_date,
         supplierName: row.suplier_name,

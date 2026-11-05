@@ -2,7 +2,6 @@ const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
 const { isDuplicateEntryError } = require("../../shared/utils/dbErrors");
-const Opname = require("./opname.repository");
 const StockItem = require("./stock.repository");
 const { isSupplyItemName } = require("./supply.repository");
 
@@ -84,25 +83,6 @@ const updateStockItem = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Stock item updated!",
-    data: stockItem,
-  });
-});
-
-// Manual stock count, kept as a Stock Opname (its selisih is Kehilangan
-// Persediaan). Bebas Stok is refused.
-const updateStockQuantity = asyncHandler(async (req, res, next) => {
-  const id = Number(req.params.id);
-  if (!(await StockItem.findById(id))) {
-    return next(createHttpError(404, "Stock item not found!"));
-  }
-
-  await Opname.setCountedStock("raw", id, toNonNegativeNumber(req.body.stock), req.user?.id || req.user?._id);
-  const stockItem = await StockItem.findById(id);
-
-  emitStockChanged("stock-quantity-updated", stockItem.id);
-  res.status(200).json({
-    success: true,
-    message: "Stock updated!",
     data: stockItem,
   });
 });
@@ -216,6 +196,5 @@ module.exports = {
   updateStockCogs,
   updateStockRecipeUse,
   updateStockItem,
-  updateStockQuantity,
   updateStockUnit,
 };

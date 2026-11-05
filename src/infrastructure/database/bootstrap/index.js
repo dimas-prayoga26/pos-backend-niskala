@@ -33,7 +33,7 @@ const { ensureDayClosingSchema } = require("./dayClosingSchema");
 const { ensureShoppingSchema } = require("./shoppingSchema");
 const { ensureSupplySchema } = require("./supplySchema");
 const { ensureWasteSchema } = require("./wasteSchema");
-const { ensureOpnameSchema } = require("./opnameSchema");
+const { ensureMerkSchema } = require("./merkSchema");
 
 const connectDB = async () => {
   await serverPool.query(
@@ -668,9 +668,9 @@ const bootstrapDatabase = async () => {
   await ensurePaymentSourcesSchema(pool);
   await ensureSupplySchema(pool);
   await ensureNotaSchema(pool);
+  await ensureMerkSchema(pool);
   await ensureSemiItemsSchema(pool);
   await ensureWasteSchema(pool);
-  await ensureOpnameSchema(pool);
   await ensureRecipeIngredientSchema(pool);
   await ensureHppPendingSchema(pool);
   await ensureDayClosingSchema(pool);

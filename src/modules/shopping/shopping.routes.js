@@ -14,6 +14,7 @@ const {
   deleteSupplyPurchaseAttachment,
   deleteSupplyPurchaseDraft,
   deleteSupplyPurchaseItem,
+  getMerks,
   getPurchaseAttachment,
   getPurchaseDrafts,
   getPurchaseNotas,
@@ -40,6 +41,7 @@ const staffOnly = requireRole(["admin", "cashier"], "Hanya admin atau kasir yang
 
 router.use(authenticate);
 router.get("/suppliers", getSuppliers);
+router.get("/merks", getMerks);
 // Summary cards of the Belanja page (?from=&to=).
 router.get("/summary", getShoppingSummary);
 router.post("/suppliers", adminOnly, createSupplier);

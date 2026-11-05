@@ -142,11 +142,21 @@ CREATE TABLE IF NOT EXISTS history_stock_raw_purchases (
     ON DELETE SET NULL
 );
 
+-- Merk of a purchase line (bahan baku and lainnya): the same barang may be
+-- bought in another merk later. Created from Tambah Belanja.
+CREATE TABLE IF NOT EXISTS merk (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   purchase_id INT UNSIGNED NOT NULL,
   stock_item_id INT UNSIGNED NULL,
   item_name VARCHAR(150) NOT NULL,
+  merk_id INT UNSIGNED NULL,
   quantity DECIMAL(12,3) NOT NULL,
   unit VARCHAR(30) NOT NULL,
   -- Isi per kemasan: 1 dus (unit) holds pack_size of stock_unit (24 botol).
@@ -163,6 +173,9 @@ CREATE TABLE IF NOT EXISTS history_stock_raw_purchase_items (
     ON DELETE CASCADE,
   CONSTRAINT fk_stock_purchase_items_stock_item
     FOREIGN KEY (stock_item_id) REFERENCES stock_raw_items(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_raw_purchase_items_merk
+    FOREIGN KEY (merk_id) REFERENCES merk(id)
     ON DELETE SET NULL
 );
 
@@ -341,6 +354,7 @@ CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_items (
   purchase_id INT UNSIGNED NOT NULL,
   supply_item_id INT UNSIGNED NULL,
   item_name VARCHAR(150) NOT NULL,
+  merk_id INT UNSIGNED NULL,
   category VARCHAR(30) NOT NULL,
   quantity DECIMAL(12,3) NOT NULL,
   unit VARCHAR(30) NOT NULL,
@@ -359,6 +373,9 @@ CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_items (
     ON DELETE CASCADE,
   CONSTRAINT fk_supply_purchase_items_supply_item
     FOREIGN KEY (supply_item_id) REFERENCES stock_supply_items(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_supply_purchase_items_merk
+    FOREIGN KEY (merk_id) REFERENCES merk(id)
     ON DELETE SET NULL
 );
 
@@ -519,35 +536,6 @@ CREATE TABLE IF NOT EXISTS history_stock_semi_wastes (
     FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
     ON DELETE SET NULL,
   CONSTRAINT fk_history_stock_semi_wastes_user
-    FOREIGN KEY (user_id) REFERENCES users(id)
-    ON DELETE SET NULL
-);
-
--- Stock Opname: physical counts that differed from the system stock, one row
--- per bahan. difference = system_stock - actual_stock (> 0 kurang, < 0 lebih);
--- cost is the stock value it took away (< 0 for a selisih lebih), the
--- Kehilangan Persediaan. Bahan baku: history_stock_raw_opnames, the same
--- shape with stock_item_id (see bootstrap/opnameSchema.js).
-CREATE TABLE IF NOT EXISTS history_stock_semi_opnames (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  semi_item_id INT UNSIGNED NULL,
-  item_name VARCHAR(150) NOT NULL,
-  opname_date DATE NOT NULL,
-  system_stock DECIMAL(12,2) NOT NULL,
-  actual_stock DECIMAL(12,2) NOT NULL,
-  difference DECIMAL(12,2) NOT NULL,
-  unit VARCHAR(30) NOT NULL,
-  unit_cost INT NOT NULL DEFAULT 0,
-  cost DECIMAL(14,2) NOT NULL DEFAULT 0,
-  note VARCHAR(255) NULL,
-  user_id INT UNSIGNED NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_history_stock_semi_opnames_date (opname_date),
-  INDEX idx_history_stock_semi_opnames_item (semi_item_id, opname_date),
-  CONSTRAINT fk_history_stock_semi_opnames_item
-    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
-    ON DELETE SET NULL,
-  CONSTRAINT fk_history_stock_semi_opnames_user
     FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE SET NULL
 );
