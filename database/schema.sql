@@ -523,6 +523,35 @@ CREATE TABLE IF NOT EXISTS history_stock_semi_wastes (
     ON DELETE SET NULL
 );
 
+-- Stock Opname: physical counts that differed from the system stock, one row
+-- per bahan. difference = system_stock - actual_stock (> 0 kurang, < 0 lebih);
+-- cost is the stock value it took away (< 0 for a selisih lebih), the
+-- Kehilangan Persediaan. Bahan baku: history_stock_raw_opnames, the same
+-- shape with stock_item_id (see bootstrap/opnameSchema.js).
+CREATE TABLE IF NOT EXISTS history_stock_semi_opnames (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  semi_item_id INT UNSIGNED NULL,
+  item_name VARCHAR(150) NOT NULL,
+  opname_date DATE NOT NULL,
+  system_stock DECIMAL(12,2) NOT NULL,
+  actual_stock DECIMAL(12,2) NOT NULL,
+  difference DECIMAL(12,2) NOT NULL,
+  unit VARCHAR(30) NOT NULL,
+  unit_cost INT NOT NULL DEFAULT 0,
+  cost DECIMAL(14,2) NOT NULL DEFAULT 0,
+  note VARCHAR(255) NULL,
+  user_id INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_history_stock_semi_opnames_date (opname_date),
+  INDEX idx_history_stock_semi_opnames_item (semi_item_id, opname_date),
+  CONSTRAINT fk_history_stock_semi_opnames_item
+    FOREIGN KEY (semi_item_id) REFERENCES stock_semi_items(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_history_stock_semi_opnames_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
 -- Bahan baku a cooking used, frozen at that time's unit cost.
 CREATE TABLE IF NOT EXISTS stock_semi_item_production_items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

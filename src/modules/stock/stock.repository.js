@@ -157,17 +157,6 @@ const update = async (
   return updated ? findById(id) : null;
 };
 
-const updateStock = async (id, stock) => {
-  const [result] = await pool.query(
-    `UPDATE stock_raw_items SET stock_value = ${RESCALED_STOCK_VALUE}, stock = ? WHERE id = ?`,
-    [stock, stock, stock, id]
-  );
-
-  if (!result.affectedRows) return null;
-
-  return findById(id);
-};
-
 const updateCogs = async (id, { averageCost = 0, supplier }) => {
   const updated = await withTransaction(async (connection) => {
     const [result] = await connection.query(
@@ -344,5 +333,4 @@ module.exports = {
   setRecipeIngredient,
   update,
   updateCogs,
-  updateStock,
 };

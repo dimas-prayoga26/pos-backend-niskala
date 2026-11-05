@@ -27,7 +27,7 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
 | users | `/api/user` | `users` | – | – |
 | categories | `/api/category` | `categories` | – | `menu:changed` |
 | menu | `/api/menu-item` | `menu_items`, `menu_item_prices` (harga, harga online, HPP, gross profit; satu baris per menu), `menu_item_recipes` (pivot menu ↔ bahan baku), VIEW `recipe_details` (resep + nama menu/bahan + average cost + cost, baca-saja); menulis juga `stock_semi_item_menus` (baris bahan olahan di resep menu) | `categories`, `stock_raw_items`, `stock_semi_items` (nama bahan) | `menu:changed` |
-| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items`, `stock_semi_item_menus`, `history_stock_semi_wastes` (bahan olahan, `/api/stock-item/semi`); `stock_supply_items` (perlengkapan, `/api/stock-item/supply`) | `menu_item_recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
+| stock | `/api/stock-item` | `stock_raw_items` (bahan baku); `stock_semi_items`, `stock_semi_item_recipes`, `stock_semi_item_productions`, `stock_semi_item_production_items`, `stock_semi_item_menus`, `history_stock_semi_wastes` (bahan olahan, `/api/stock-item/semi`); `history_stock_raw_wastes`, `history_stock_raw_opnames`, `history_stock_semi_opnames` (Buang dan Stock Opname); `stock_supply_items` (perlengkapan, `/api/stock-item/supply`) | `menu_item_recipes` (resep, di `stock.movements`; bahan yang masih dipakai resep tidak bisa dihapus) | `stock:changed` |
 | shopping | `/api/shopping` | `suplier`, `history_stock_raw_purchases`, `history_stock_raw_purchase_items`, `history_stock_raw_purchase_item_logs`, `history_stock_raw_purchase_attachments` (bukti nota; file di `storage/purchase-receipts`); `history_stock_supply_purchases`, `history_stock_supply_purchase_items`, `history_stock_supply_purchase_attachments` (belanja perlengkapan, `/api/shopping/supply-purchases`); menulis juga `stock_supply_items` | `meta_data_payment_source` (sumber aktif) | `shopping:changed`, `stock:changed` |
 | paymentSources | `/api/payment-source` | `meta_data_payment_source` (saldo), `history_payment_source_mutations` (saldo masuk/keluar) | `users` (nama pencatat) | `shopping:changed` |
 | platforms | `/api/order-platform` | `meta_data_platform` | – | `platforms:changed` |
@@ -72,12 +72,19 @@ Tidak ada dependensi sirkular. Modul lain hanya bergantung pada `shared/` dan `i
   - `unit_cost` bahan olahan menjadi rata-rata bergerak seperti belanja, dan `yield_quantity` diisi porsi dari masak terakhir.
   - Menu yang memakai bahan olahan memotong porsinya lewat `stock.movements` seperti bahan baku.
   - Bahan olahan tidak bisa dibelanjakan dan tidak punya COGS manual. Hanya catatan masak terakhir yang bisa dibatalkan, selama porsinya masih ada.
-  - **Kerugian** (`history_stock_semi_wastes`): porsi yang dibuang beserta nilainya (`stock_value / stock` saat itu). Sumbernya:
-    - "Buang" (`POST /semi/:id/wastes`, alasan Basi/Tumpah/Lainnya);
-    - "Sesuaikan" ke angka yang lebih kecil (alasan Penyesuaian);
+  - **Kerugian** (`history_stock_semi_wastes`, Biaya Wastage): porsi yang dibuang beserta nilainya (`stock_value / stock` saat itu). Sumbernya:
+    - "Buang" (`POST /semi/:id/wastes`, alasan Basi/Jatuh/Gosong/Expired/Lainnya);
     - Rekap Harian (alasan Sisa akhir hari).
+    - Baris lama beralasan Penyesuaian berasal dari Sesuaikan (sudah dihapus). Hitungan stok sekarang lewat Stock Opname.
   - Bahan dengan `reset_daily` (mis. Nasi) dimulai dari 0 setiap hari. Saat rekap harian disimpan (`recap.service`, satu transaksi), sisanya dibuang. Porsi dari masak setelah tanggal rekap tetap disimpan, sehingga rekap yang disimpan besok pagi tidak ikut membuang nasi baru.
   - Admin bisa membatalkan catatan buang terakhir per bahan; porsinya kembali ke stok.
+- **Stock Opname** (Modul 3, `opname.repository.js`, tabel dari `opnameSchema.js`): hitung fisik bahan baku dan bahan olahan.
+  - `POST /opnames` (`{ kind: "raw" | "semi", counts: [{ itemId, actualStock }], note? }`, admin atau kasir) mengubah stok tiap bahan yang dihitung menjadi angka fisiknya. Bahan baku yang ikut hanya Bahan Resep; Bukan Resep dan Bebas Stok ditolak.
+  - `PATCH /:id/stock` dan `PATCH /semi/:id/stock` (ubah stok langsung, tidak dipakai UI) juga dicatat sebagai Stock Opname dengan catatan "Ubah stok". Jadi tidak ada jalan lain mengubah stok bahan tanpa tercatat.
+  - Selisih (`difference` = sistem − fisik) keluar dari `stock_value` dengan `stock_value / stock`, atau `unit_cost` jika stok sistem 0 atau minus. Selisih disimpan satu baris per bahan di `history_stock_raw_opnames` / `history_stock_semi_opnames`. Hitungan yang sama dengan sistem tidak disimpan.
+  - `cost` adalah **Kehilangan Persediaan** (pos tersendiri di Metrik, di luar HPP dan Biaya Wastage). Stok lebih menjadi `cost` negatif, nilainya kembali ke stok dan mengurangi kehilangan.
+  - `GET /opnames/usage?kind=raw|semi` mengembalikan `usage: [{ itemId, quantity }]`, yaitu jumlah yang dipakai pesanan hari ini (`order_item_costs.quantity` × porsi terjual) sejak hitungan terakhir bahan itu hari ini. Ini kolom Terpakai di form Stock Opname.
+  - `GET /opnames` (`kind`, `from`, `to`) mengembalikan baris terbaru dan `dailyTotals`. Admin bisa membatalkan hitungan terakhir per bahan (`DELETE /opnames/:kind/:id`), selisih dan nilainya kembali ke stok.
 - **Modul 2, Penjualan & COGS** (`orders/order.hpp.js`, kolom dari `hppPendingSchema.js`):
   - Saat kasir menjual, baris bahan baku (barang standar) langsung mendapat HPP. Baris bahan olahan (bahan olahan: Nasi, sambal) diberi **Pending Flag** (`order_item_costs.is_pending`) dengan HPP per porsi terakhir. Nota dengan baris pending berstatus `orders.hpp_status = 'pending'`; nota lain langsung `closed` (`hpp_closed_at`).
   - Tiap baris `order_item_costs` mencatat **`hpp_type`** (`standar` = bahan baku, `olahan` = bahan olahan) dan **`hpp_source`** (`penjualan` = HPP saat dijual; `dapur` = HPP dari Daily Prep hari itu). Baris olahan yang sudah dikunci dengan `penjualan` berarti fallback. Saat kolom ditambahkan (boot migration), baris dengan `semi_item_id` diberi `olahan`.

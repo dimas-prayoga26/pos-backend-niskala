@@ -13,8 +13,8 @@ const { pool } = require("../../infrastructure/database/pool");
 const { isAdmin } = require("../../shared/middleware/authorize");
 const { detectImageType, displayName } = require("../shopping/shopping.attachments");
 
-// Reasons staff pick. The system adds "Sisa akhir hari" (daily recap) and
-// "Penyesuaian" (stock count); older rows may also say "Tumpah".
+// Reasons staff pick. The system adds "Sisa akhir hari" (daily recap); older
+// rows may also say "Tumpah" or "Penyesuaian" (counts, now Stock Opname).
 const WASTE_REASONS = ["Basi", "Jatuh", "Gosong", "Expired", "Lainnya"];
 
 const PHOTO_TABLES = {
