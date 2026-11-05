@@ -42,6 +42,17 @@ const getOrderById = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, data: order });
 });
 
+// HPP rincian of one sold item (Rekap): its bahan and what they cost.
+const getOrderItemCosts = asyncHandler(async (req, res, next) => {
+  const costs = await orderService.findItemCosts(req.params.itemId);
+
+  if (!costs) {
+    return next(createHttpError(404, "Item pesanan tidak ditemukan."));
+  }
+
+  res.status(200).json({ success: true, data: costs });
+});
+
 const updateOrder = asyncHandler(async (req, res, next) => {
   const { orderStatus } = req.body;
 
@@ -126,6 +137,7 @@ module.exports = {
   addOrder,
   deleteOrder,
   getOrderById,
+  getOrderItemCosts,
   getOrders,
   updateCateringPaymentStatus,
   updateOrder,

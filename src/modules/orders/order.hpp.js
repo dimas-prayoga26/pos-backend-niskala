@@ -1,14 +1,15 @@
 // Modul 2, Penjualan & COGS. On a nota, the bahan baku lines (barang standar)
-// get their HPP at the sale. The bahan olahan lines (
-// Nasi, sambal, ...) are sold with a Pending Flag (order_item_costs.is_pending)
-// at the latest cost per portion, because the real one depends on how many
-// portions the kitchen got out of the day's cooking. Each cooking recorded for
-// the day (Catat Masak, the Daily Prep) spreads its cost per portion (cost of
-// the day's cookings / their portions) to the day's pending lines; the daily
-// recap then closes the day: lines without a cooking that day keep the cost
-// they were sold with (fallback), every line is locked and the notas become
-// "closed". The HPP stays a snapshot on the nota (order_item_costs,
-// order_items.hpp_cost): later prices never change it.
+// get their HPP at the sale. A bahan olahan line (Nasi, sambal, ...) whose
+// stock covers the sale (not below 0 after it) is final at once too: the
+// day's cooking cost per portion (cost of the day's cookings / their
+// portions), else the stock's cost per portion. One sold short of stock
+// (before the Daily Prep) gets a Pending Flag (order_item_costs.is_pending):
+// the next cooking (Catat Masak) gives it the day's cost per portion, and
+// settles it once the stock is back at 0 or above. The daily recap (or 00:00)
+// closes the day: lines still pending keep the cost they have (fallback),
+// every line is locked and the notas become "closed". The HPP stays a
+// snapshot on the nota (order_item_costs, order_items.hpp_cost): later prices
+// never change it.
 const { roundCost } = require("../../shared/utils/money");
 
 const HPP_PENDING = "pending";
@@ -30,20 +31,29 @@ const dayCostsOf = async (connection, date, semiItemIds) => {
   );
 };
 
+// Bahan olahan (ids) whose stock covers what was sold: not below 0.
+const coveredSemiIds = async (connection, semiItemIds) => {
+  if (!semiItemIds.length) return [];
+  const [rows] = await connection.query("SELECT id FROM stock_semi_items WHERE id IN (?) AND stock >= 0", [semiItemIds]);
+  return rows.map((row) => Number(row.id));
+};
+
 // Spreads the cooking cost of a business day (YYYY-MM-DD) to its pending
-// lines, of some semi items or one order only. close: the day is over, so the
-// lines without a cooking keep their cost (fallback), all are locked and the
-// day's notas are closed. Runs in the caller's transaction. Returns per semi
-// item the portions sold, the cost per portion and where it came from
-// ("dapur" or "fallback"), and how many notas were closed.
-const allocateBatchCosts = async (connection, { date, semiItemIds = null, orderId = null, close = false }) => {
+// lines, of some semi items or one order only. finalize: their stock covers
+// them, so the lines are settled and a nota without pending lines left is
+// closed. close: the day is over, so the lines without a cooking keep their
+// cost (fallback), all are locked and the day's notas are closed. Runs in the
+// caller's transaction. Returns per semi item the portions sold, the cost per
+// portion and where it came from ("dapur" or "fallback"), and how many notas
+// were closed.
+const allocateBatchCosts = async (connection, { date, semiItemIds = null, orderId = null, close = false, finalize = false }) => {
   const filters = [
     ...(semiItemIds ? ["c.semi_item_id IN (?)"] : []),
     ...(orderId ? ["o.id = ?"] : []),
   ];
   const [lines] = await connection.query(
     `SELECT c.id, c.order_item_id, c.semi_item_id, c.stock_item_name, c.quantity, c.unit, c.unit_cost,
-            oi.quantity AS sold, ss.unit_cost AS current_cost
+            oi.order_id, oi.quantity AS sold, ss.unit_cost AS current_cost
      FROM order_item_costs c
      JOIN order_items oi ON oi.id = c.order_item_id
      JOIN orders o ON o.id = oi.order_id
@@ -63,7 +73,7 @@ const allocateBatchCosts = async (connection, { date, semiItemIds = null, orderI
     const perPortion = dayCost ?? (Number(line.unit_cost) || Number(line.current_cost) || 0);
     await connection.query(
       "UPDATE order_item_costs SET unit_cost = ?, cost = ?, hpp_source = ?, is_pending = ? WHERE id = ?",
-      [roundCost(perPortion), roundCost(Number(line.quantity) * perPortion), dayCost == null ? "penjualan" : "dapur", !close, line.id]
+      [roundCost(perPortion), roundCost(Number(line.quantity) * perPortion), dayCost == null ? "penjualan" : "dapur", !(close || finalize), line.id]
     );
 
     const key = line.semi_item_id || line.stock_item_name;
@@ -104,6 +114,18 @@ const allocateBatchCosts = async (connection, { date, semiItemIds = null, orderI
       [HPP_CLOSED, HPP_PENDING, date]
     );
     closedOrders = result.affectedRows;
+  } else if (finalize && lines.length) {
+    const [result] = await connection.query(
+      `UPDATE orders o SET hpp_status = ?, hpp_closed_at = NOW()
+       WHERE o.id IN (?) AND o.hpp_status = ?
+         AND NOT EXISTS (
+           SELECT 1 FROM order_items oi
+           JOIN order_item_costs c ON c.order_item_id = oi.id
+           WHERE oi.order_id = o.id AND c.is_pending = TRUE
+         )`,
+      [HPP_CLOSED, [...new Set(lines.map((line) => line.order_id))], HPP_PENDING]
+    );
+    closedOrders = result.affectedRows;
   }
 
   return { closedOrders, items: [...items.values()] };
@@ -118,4 +140,4 @@ const dayOf = async (connection, table, id, column) => {
   return row?.day || null;
 };
 
-module.exports = { HPP_CLOSED, HPP_PENDING, allocateBatchCosts, dayOf };
+module.exports = { HPP_CLOSED, HPP_PENDING, allocateBatchCosts, coveredSemiIds, dayOf };

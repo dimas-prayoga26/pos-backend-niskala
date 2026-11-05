@@ -62,7 +62,9 @@ const mapOrder = (row, items = []) => {
   };
 };
 
-const mapItem = (row) => ({
+// hppOlahan: the part of hpp_cost (per portion) from bahan olahan lines
+// (order_item_costs.hpp_type 'olahan'); the rest is HPP standar.
+const mapItem = (row, hppOlahan = 0) => ({
   id: row.item_key || row.id,
   _id: row.id,
   menuItemId: row.menu_item_id,
@@ -73,6 +75,7 @@ const mapItem = (row) => ({
   pricePerQuantity: Number(row.price_per_quantity),
   hppCost: Number(row.hpp_cost || 0),
   hpp: Number(row.hpp_cost || 0),
+  hppOlahan: Number(hppOlahan || 0),
   price: Number(row.price),
   addOns: row.addOns || [],
 });
@@ -84,6 +87,15 @@ const findItemsByOrderIds = async (orderIds) => {
     `SELECT * FROM order_items WHERE order_id IN (?) ORDER BY id ASC`,
     [orderIds]
   );
+  const [olahanRows] = await pool.query(
+    `SELECT c.order_item_id, SUM(c.cost) AS cost
+     FROM order_item_costs c
+     JOIN order_items oi ON oi.id = c.order_item_id
+     WHERE oi.order_id IN (?) AND c.hpp_type = 'olahan'
+     GROUP BY c.order_item_id`,
+    [orderIds]
+  );
+  const olahanByItemId = new Map(olahanRows.map((row) => [row.order_item_id, Number(row.cost)]));
   const itemsByOrderId = new Map();
 
   rows.forEach((row) => {
@@ -91,7 +103,7 @@ const findItemsByOrderIds = async (orderIds) => {
       itemsByOrderId.set(row.order_id, []);
     }
     itemsByOrderId.get(row.order_id).push(
-      mapItem(row)
+      mapItem(row, olahanByItemId.get(row.id))
     );
   });
 
@@ -284,6 +296,59 @@ const insertOrderItemCosts = async (connection, orderItemId, costs = []) => {
   );
 };
 
+// The HPP of one sold item, bahan by bahan (order_item_costs), for the
+// rincian of a menu in the Rekap: per portion as frozen at the sale, and for
+// every portion sold. null when the item does not exist.
+const findItemCosts = async (orderItemId) => {
+  const [[item]] = await pool.query(
+    `SELECT oi.id, oi.order_id, oi.name, oi.variant, oi.quantity, oi.hpp_cost, o.order_date, o.hpp_status
+     FROM order_items oi
+     JOIN orders o ON o.id = oi.order_id
+     WHERE oi.id = ?`,
+    [orderItemId]
+  );
+  if (!item) return null;
+
+  const [lines] = await pool.query(
+    `SELECT id, stock_item_id, semi_item_id, stock_item_name, quantity, unit, unit_cost, cost,
+            hpp_type, hpp_source, is_pending
+     FROM order_item_costs
+     WHERE order_item_id = ?
+     ORDER BY id`,
+    [orderItemId]
+  );
+  const sold = Number(item.quantity) || 0;
+  const hppCost = Number(item.hpp_cost || 0);
+  const round = (value, digits) => Math.round(value * 10 ** digits) / 10 ** digits;
+
+  return {
+    id: item.id,
+    orderId: item.order_id,
+    orderDate: item.order_date,
+    name: item.name,
+    variant: item.variant || "",
+    quantity: sold,
+    hppCost,
+    totalCost: round(hppCost * sold, 2),
+    hppStatus: item.hpp_status || "closed",
+    lines: lines.map((line) => ({
+      id: line.id,
+      stockItemId: line.stock_item_id,
+      semiItemId: line.semi_item_id,
+      name: line.stock_item_name,
+      hppType: line.hpp_type,
+      source: line.hpp_source,
+      isPending: Boolean(line.is_pending),
+      quantity: Number(line.quantity),
+      unit: line.unit,
+      unitCost: Number(line.unit_cost),
+      cost: Number(line.cost),
+      totalQuantity: round(Number(line.quantity) * sold, 3),
+      totalCost: round(Number(line.cost) * sold, 2),
+    })),
+  };
+};
+
 // A nota with a bahan olahan line waits for the Daily Prep; any other has its
 // final HPP at the sale.
 const setHppStatus = (connection, id, hppStatus) =>
@@ -374,6 +439,7 @@ module.exports = {
   deleteOrder,
   findAll,
   findById,
+  findItemCosts,
   findItemsForStockRestore,
   insertCateringDetails,
   insertOrder,

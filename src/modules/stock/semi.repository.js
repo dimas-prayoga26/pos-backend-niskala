@@ -616,10 +616,12 @@ const recordProduction = (
       ])]
     );
     await refreshMenuCosts(connection, { semiItemIds: [semiId] });
-    // Daily Prep: the day's pending notas take its cost per portion.
+    // Daily Prep: the day's pending notas take its cost per portion, and are
+    // settled once the stock covers them again.
     await allocateBatchCosts(connection, {
       date: await dayOf(connection, "stock_semi_item_productions", production.insertId, "produced_at"),
       semiItemIds: [semiId],
+      finalize: nextStock >= 0,
     });
 
     return production.insertId;

@@ -17,7 +17,7 @@ const {
 } = require("./order.recapLock");
 const Order = require("./order.repository");
 const { findMenuItemSnapshot, findPlatformSnapshot } = require("./order.snapshots");
-const { HPP_CLOSED, HPP_PENDING, allocateBatchCosts, dayOf } = require("./order.hpp");
+const { HPP_CLOSED, HPP_PENDING, allocateBatchCosts, coveredSemiIds, dayOf } = require("./order.hpp");
 const { normalizeOrderDateInput } = require("./order.validation");
 
 const CLOSED_DAY_MESSAGE =
@@ -130,7 +130,7 @@ const create = async (orderData) => {
       );
     }
 
-    let hasBatchLines = false;
+    const batchIds = new Set();
     for (const item of items) {
       const menuItemSnapshot = await findMenuItemSnapshot(
         connection,
@@ -142,17 +142,26 @@ const create = async (orderData) => {
         menuItemSnapshot,
       });
       await Order.insertOrderItemCosts(connection, orderItemId, menuItemSnapshot.costs);
-      hasBatchLines ||= menuItemSnapshot.costs.some((line) => line.isPending);
+      menuItemSnapshot.costs
+        .filter((line) => line.isPending && line.semiItemId)
+        .forEach((line) => batchIds.add(Number(line.semiItemId)));
     }
 
-    // Modul 2: barang standar have their final HPP now; bahan olahan wait for
-    // the Daily Prep and take the day's cooking cost already recorded, if any.
-    await Order.setHppStatus(connection, orderId, hasBatchLines ? HPP_PENDING : HPP_CLOSED);
-    if (hasBatchLines) {
-      await allocateBatchCosts(connection, {
-        date: await dayOf(connection, "orders", orderId, "order_date"),
-        orderId,
-      });
+    // Modul 2: barang standar have their final HPP now, and so do bahan
+    // olahan whose stock covers the sale (the day's cooking cost, else the
+    // stock's). Those sold short of stock wait for the Daily Prep (Pending Flag).
+    const semiIds = [...batchIds];
+    const covered = await coveredSemiIds(connection, semiIds);
+    const waiting = semiIds.filter((id) => !covered.includes(id));
+    await Order.setHppStatus(connection, orderId, waiting.length ? HPP_PENDING : HPP_CLOSED);
+    if (semiIds.length) {
+      const date = await dayOf(connection, "orders", orderId, "order_date");
+      if (covered.length) {
+        await allocateBatchCosts(connection, { date, orderId, semiItemIds: covered, finalize: true });
+      }
+      if (waiting.length) {
+        await allocateBatchCosts(connection, { date, orderId, semiItemIds: waiting });
+      }
     }
 
     await connection.commit();
@@ -231,6 +240,7 @@ module.exports = {
   create,
   findAll: Order.findAll,
   findById: Order.findById,
+  findItemCosts: Order.findItemCosts,
   remove,
   updateCateringPaidStatus,
   updateStatus,
