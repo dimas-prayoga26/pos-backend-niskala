@@ -7,6 +7,7 @@ const {
   addOrder,
   deleteOrder,
   getOrderById,
+  getOrderItemCosts,
   getOrders,
   updateCateringPaymentStatus,
   updateOrder,
@@ -44,6 +45,12 @@ router.patch(
   validId,
   requireRole(staff, "Only admin or cashier can add catering payment!"),
   addCateringPayment
+);
+router.get(
+  "/items/:itemId/costs",
+  authenticate,
+  requireNumericId({ param: "itemId" }),
+  getOrderItemCosts
 );
 router.get("/:id", authenticate, validId, getOrderById);
 router.put(

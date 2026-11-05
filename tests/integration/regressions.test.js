@@ -295,6 +295,26 @@ describe("regressions", () => {
     const [[recipe]] = await db.query("SELECT cost FROM menu_item_recipes WHERE menu_item_id = ?", [menuItemId]);
     assert.equal(recipe.cost, 2500);
     assert.deepEqual(await soldCosts(), atSale);
+
+    // The Rekap shows the same rincian: per portion, and for both portions sold.
+    const [[sold]] = await db.query("SELECT id FROM order_items WHERE order_id = ?", [order.body.data.id]);
+    for (const as of ["admin", "cashier"]) {
+      const rincian = await request("GET", `/api/order/items/${sold.id}/costs`, { as });
+      assert.equal(rincian.status, 200, JSON.stringify(rincian.body));
+      const { lines, ...item } = rincian.body.data;
+      assert.deepEqual(
+        { name: item.name, quantity: item.quantity, hppCost: item.hppCost, totalCost: item.totalCost, hppStatus: item.hppStatus },
+        { name: "Latte Snapshot", quantity: 2, hppCost: 2000, totalCost: 4000, hppStatus: "closed" }
+      );
+      assert.deepEqual(
+        lines.map(({ name, hppType, quantity, unit, unitCost, cost, totalQuantity, totalCost }) => ({
+          name, hppType, quantity, unit, unitCost, cost, totalQuantity, totalCost,
+        })),
+        [{ name: "Susu Snapshot", hppType: "standar", quantity: 100, unit: "ml", unitCost: 20, cost: 2000, totalQuantity: 200, totalCost: 4000 }]
+      );
+    }
+    assert.equal((await request("GET", "/api/order/items/999999/costs", { as: "admin" })).status, 404);
+    assert.equal((await request("GET", "/api/order/items/abc/costs", { as: "admin" })).status, 404);
   });
 
   it("stores whole-rupiah average costs but keeps the exact stock value", async () => {
@@ -1439,39 +1459,46 @@ describe("regressions", () => {
     assert.notEqual(telurOnly.body.data.hppClosedAt, null);
 
     // Daily Prep at the end of the shift: 5 kg beras gave 40 portions, Rp 1.875
-    // each. The 2 portions sold before take that cost; 38 are left.
+    // each. The 2 portions sold before take that cost and, now that the stock
+    // covers them (38 left), are settled: the nota is no longer pending.
     const firstPrep = await prep({ items: [{ stockItemId: berasId, quantity: 5 }], portionQuantity: 40 });
     assert.equal(firstPrep.status, 201, JSON.stringify(firstPrep.body));
     const { stock, stockValue, averageCost } = firstPrep.body.data;
     assert.deepEqual({ stock, stockValue, averageCost }, { stock: 38, stockValue: 71250, averageCost: 1875 });
     assert.deepEqual(await linesOf(first.body.data.id), [
-      ["Nasi Modul", 1875, 1875, true, 3875],
+      ["Nasi Modul", 1875, 1875, false, 3875],
       ["Telur Modul", 2000, 2000, false, 3875],
     ]);
-    // Sold after it: the day's cost at once, pending until the recap.
+    assert.deepEqual(await statusOf(first.body.data.id), ["closed", true]);
+    // Sold with Nasi in stock: the day's cost at once, no Pending Flag.
     const later = await sell(day, nasiTelur, "Nasi Telur Modul", 1);
-    assert.equal(later.body.data.hppStatus, "pending");
-    assert.deepEqual((await linesOf(later.body.data.id))[0], ["Nasi Modul", 1875, 1875, true, 3875]);
-    // A second cooking that day (1 kg, 10 portions): Rp 90.000 / 50 portions.
+    assert.equal(later.body.data.hppStatus, "closed");
+    assert.deepEqual((await linesOf(later.body.data.id))[0], ["Nasi Modul", 1875, 1875, false, 3875]);
+    // A second cooking that day (1 kg, 10 portions) leaves settled lines as they are.
     assert.equal((await prep({ items: [{ stockItemId: berasId, quantity: 1 }], portionQuantity: 10 })).status, 201);
-    assert.deepEqual((await linesOf(first.body.data.id))[0], ["Nasi Modul", 1800, 1800, true, 3800]);
-    assert.deepEqual((await linesOf(later.body.data.id))[0], ["Nasi Modul", 1800, 1800, true, 3800]);
+    assert.deepEqual((await linesOf(first.body.data.id))[0], ["Nasi Modul", 1875, 1875, false, 3875]);
+    assert.deepEqual((await linesOf(later.body.data.id))[0], ["Nasi Modul", 1875, 1875, false, 3875]);
+    // Metrik splits the HPP: the Nasi part (olahan) per portion, the rest standar.
+    const splitOf = async (orderId) =>
+      (await request("GET", `/api/order/${orderId}`, { as: "admin" })).body.data.items.map((item) => [item.hppCost, item.hppOlahan]);
+    assert.deepEqual(await splitOf(first.body.data.id), [[3875, 1875]]);
+    assert.deepEqual(await splitOf(telurOnly.body.data.id), [[2000, 0]]);
+    const listed = (await request("GET", "/api/order", { as: "admin" })).body.data.find((order) => order.id === first.body.data.id);
+    assert.deepEqual(listed.items.map((item) => item.hppOlahan), [1875]);
 
-    // A day without Daily Prep: the Nasi keeps the cost it was sold with.
+    // A day without Daily Prep, Nasi still in stock: final at once, at the cost it was sold with.
     const quiet = await sell(quietDay, nasiTelur, "Nasi Telur Modul", 1);
+    assert.equal(quiet.body.data.hppStatus, "closed");
     const [quietNasi] = await linesOf(quiet.body.data.id);
-    assert.equal(quietNasi[3], true);
+    assert.equal(quietNasi[3], false);
 
-    // The daily recap locks the day: the notas are closed, nothing pending.
+    // The daily recap locks the day; nothing was left pending.
     const recap = await request("POST", "/api/recap/daily", { as: "admin", body: { recapDate: day } });
     assert.equal(recap.status, 201);
-    assert.deepEqual(recap.body.data.hppClosed, {
-      closedOrders: 2,
-      items: [{ semiItemId: nasi.id, name: "Nasi Modul", unit: "porsi", portions: 3, unitCost: 1800, source: "dapur" }],
-    });
+    assert.deepEqual(recap.body.data.hppClosed, { closedOrders: 0, items: [] });
     assert.deepEqual(await linesOf(first.body.data.id), [
-      ["Nasi Modul", 1800, 1800, false, 3800],
-      ["Telur Modul", 2000, 2000, false, 3800],
+      ["Nasi Modul", 1875, 1875, false, 3875],
+      ["Telur Modul", 2000, 2000, false, 3875],
     ]);
     assert.deepEqual(await statusOf(first.body.data.id), ["closed", true]);
     assert.deepEqual(await statusOf(later.body.data.id), ["closed", true]);
@@ -1497,10 +1524,7 @@ describe("regressions", () => {
     assert.equal((await prep({ items: [{ stockItemId: berasId, quantity: 1 }], portionQuantity: 1, producedDate: "2999-01-01" })).status, 400);
 
     const quietRecap = await request("POST", "/api/recap/daily", { as: "admin", body: { recapDate: quietDay } });
-    assert.deepEqual(quietRecap.body.data.hppClosed, {
-      closedOrders: 1,
-      items: [{ semiItemId: nasi.id, name: "Nasi Modul", unit: "porsi", portions: 1, unitCost: quietNasi[1], source: "fallback" }],
-    });
+    assert.deepEqual(quietRecap.body.data.hppClosed, { closedOrders: 0, items: [] });
     assert.deepEqual(await linesOf(quiet.body.data.id), [
       ["Nasi Modul", quietNasi[1], quietNasi[2], false, quietNasi[4]],
       ["Telur Modul", 2000, 2000, false, quietNasi[4]],
@@ -1509,14 +1533,18 @@ describe("regressions", () => {
     // No Daily Prep that day: the olahan line kept its cost at the sale (fallback).
     assert.deepEqual((await typesOf(quiet.body.data.id))[0], ["Nasi Modul", "olahan", "penjualan"]);
 
-    // Sold with no Nasi cooked (stock below 0): the next day starts from 0.
+    // Sold with no Nasi cooked (stock below 0): pending until the recap locks
+    // it at the cost it was sold with; the next day starts from 0.
     const semiStock = async () => Number((await db.query("SELECT stock FROM stock_semi_items WHERE id = ?", [nasi.id]))[0][0].stock);
     assert.equal(await semiStock(), 0, "the day's leftover was written off");
     const short = await sell("2026-03-12", nasiTelur, "Nasi Telur Modul", 3);
     assert.equal(short.status, 201);
+    assert.equal(short.body.data.hppStatus, "pending");
     assert.equal(await semiStock(), -3);
     const shortRecap = await request("POST", "/api/recap/daily", { as: "admin", body: { recapDate: "2026-03-12" } });
     assert.deepEqual(shortRecap.body.data.writtenOff, []);
+    assert.equal(shortRecap.body.data.hppClosed.closedOrders, 1);
+    assert.deepEqual(await statusOf(short.body.data.id), ["closed", true]);
     assert.equal(await semiStock(), 0);
 
     // Adding the columns types the lines already sold (olahan: a bahan olahan).
@@ -1580,12 +1608,14 @@ describe("regressions", () => {
         body: { items: [{ stockItemId: raw.body.data.id, quantity: 1 }], portionQuantity: 10, producedDate },
       });
 
-    // Sold before the Daily Prep, then cooked: Rp 10.000 / 10 portions.
+    // Sold before the Daily Prep (pending), then cooked: Rp 10.000 / 10
+    // portions, and the stock covers them again, so they are settled.
     const sold = await sell(day, 3);
+    assert.equal((await hppOf(sold))[2], true);
     assert.equal((await prep(day)).status, 201);
-    assert.deepEqual(await hppOf(sold), ["pending", 1000, true]);
-    // An online order booked on an older day.
-    const late = await sell("2026-05-10", 1);
+    assert.deepEqual(await hppOf(sold), ["closed", 1000, false]);
+    // An online order booked on an older day, more than the 7 portions left.
+    const late = await sell("2026-05-10", 9);
     assert.deepEqual(await hppOf(late), ["pending", 1000, true]);
 
     // 20 May, 23:30: the 20th is still open.
@@ -1593,19 +1623,20 @@ describe("regressions", () => {
     assert.equal(early.day, "2026-05-19");
     assert.equal(early.lateOrders, 1, "the older day's nota is locked");
     assert.deepEqual(await hppOf(late), ["closed", 1000, false]);
-    assert.deepEqual(await hppOf(sold), ["pending", 1000, true]);
     assert.equal((await prep(day)).status, 201, "the 20th still takes Daily Prep");
-    assert.deepEqual(await hppOf(sold), ["pending", 1000, true]);
+    // Sold with Nasi in stock: final at once.
+    const ready = await sell(day, 1);
+    assert.deepEqual(await hppOf(ready), ["closed", 1000, false]);
 
-    // 21 May, 00:00: the 20th closes. Its leftover (10 + 10 cooked - 3 - 1 sold) is reset.
+    // 21 May, 00:00: the 20th closes, nothing pending. Its leftover is reset:
+    // closing the 19th set the Nasi below 0 back to 0, then 10 cooked - 1 sold.
     const closing = await autoCloseDays(db, { now: new Date("2026-05-21T00:00:00+07:00") });
     assert.equal(closing.day, day);
     assert.equal(closing.firstClose, true);
-    assert.equal(closing.hppClosed.closedOrders, 1);
-    assert.deepEqual(await hppOf(sold), ["closed", 1000, false]);
+    assert.equal(closing.hppClosed.closedOrders, 0);
     assert.deepEqual(
       closing.writtenOff.filter((item) => item.name === "Nasi Tutup").map((item) => [item.quantity, item.cost]),
-      [[16, 16000]]
+      [[9, 9000]]
     );
     const [[row]] = await db.query("SELECT source FROM business_day_closings WHERE business_date = ?", [day]);
     assert.equal(row.source, "auto");
