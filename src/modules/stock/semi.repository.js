@@ -241,8 +241,7 @@ const today = () => {
 
 // Writes off quantity portions of a locked semi item row: its stock and
 // stock_value drop at the exact unit cost (stock_value / stock) and one
-// history_stock_semi_wastes row keeps the loss. A negative quantity (a
-// recount above the stock) adds the portions back at that cost. Returns the
+// history_stock_semi_wastes row keeps the loss (Biaya Wastage). Returns the
 // write-off's id and cost.
 const writeOff = async (connection, item, { quantity, reason, note, wasteDate, userId }) => {
   const stock = Number(item.stock) || 0;
@@ -278,26 +277,6 @@ const writeOff = async (connection, item, { quantity, reason, note, wasteDate, u
   return { id: result.insertId, cost };
 };
 
-// Manual count of the portions left, kept as a "Penyesuaian" at the exact
-// cost per portion (stock_value / stock, else the latest one): a lower count
-// is kerugian, a higher one a selisih lebih (negative quantity and cost) that
-// lowers the day's kerugian. The cost per portion never changes, so a count
-// and its correction (150 -> 100 -> 150) cancel out.
-const updateStock = (id, stock, userId) =>
-  withTransaction(async (connection) => {
-    const [[item]] = await connection.query(
-      "SELECT * FROM stock_semi_items WHERE id = ? FOR UPDATE",
-      [id]
-    );
-    if (!item) return false;
-
-    const missing = roundStock(Number(item.stock) - stock);
-    if (missing !== 0) {
-      await writeOff(connection, item, { quantity: missing, reason: "Penyesuaian", userId });
-    }
-
-    return true;
-  }).then((updated) => (updated ? findById(id) : null));
 
 // Portions thrown away during the day (spoiled, dropped, ...), with their
 // bukti foto. Returns false when the item is not found.
@@ -785,5 +764,4 @@ module.exports = {
   recordWaste,
   remove,
   save,
-  updateStock,
 };

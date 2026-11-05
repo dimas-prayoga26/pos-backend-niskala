@@ -4,6 +4,7 @@ const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
 const { roundRecipeQuantity } = require("../menu/menu.options");
 const { dateKey, todayKey } = require("../../shared/utils/validate");
+const Opname = require("./opname.repository");
 const SemiItem = require("./semi.repository");
 const { readWasteInput } = require("./wastes");
 
@@ -117,14 +118,14 @@ const deleteSemiItem = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, message: "Bahan olahan dihapus." });
 });
 
+// Portions counted by hand, kept as a Stock Opname (its selisih is
+// Kehilangan Persediaan, not Biaya Wastage).
 const updateSemiStock = asyncHandler(async (req, res, next) => {
-  const semiItem = await SemiItem.updateStock(
-    Number(req.params.id),
-    toNonNegativeNumber(req.body.stock),
-    req.user?.id || req.user?._id
-  );
+  const id = Number(req.params.id);
+  if (!(await SemiItem.findById(id))) return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
 
-  if (!semiItem) return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
+  await Opname.setCountedStock("semi", id, toNonNegativeNumber(req.body.stock), req.user?.id || req.user?._id);
+  const semiItem = await SemiItem.findById(id);
 
   emitStockChanged("semi-stock-updated", semiItem.id);
   res.status(200).json({ success: true, message: "Stok diperbarui.", data: semiItem });

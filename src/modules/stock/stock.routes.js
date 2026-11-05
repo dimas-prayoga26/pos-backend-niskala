@@ -38,6 +38,7 @@ const {
   getWastes: getAllWastes,
   recordRawWaste,
 } = require("./waste.controller");
+const { deleteOpname, getOpnames, getOrderUsage, recordOpname } = require("./opname.controller");
 // Buang sends its bukti foto as multipart, like bukti nota.
 const { receivePurchaseReceipts } = require("../shopping/shopping.upload");
 
@@ -90,6 +91,19 @@ router.delete(
   deleteRawWaste
 );
 router.post("/:id/wastes", authenticate, requireNumericId(), staffOnly, receivePurchaseReceipts, recordRawWaste);
+
+// Stock Opname (Modul 3): physical counts of bahan baku and bahan olahan,
+// the selisih kept as Kehilangan Persediaan.
+router.get("/opnames", authenticate, getOpnames);
+router.get("/opnames/usage", authenticate, getOrderUsage);
+router.post("/opnames", authenticate, staffOnly, recordOpname);
+router.delete(
+  "/opnames/:kind/:opnameId",
+  authenticate,
+  adminOnly,
+  requireNumericId({ param: "opnameId" }),
+  deleteOpname
+);
 
 // Bahan baku (stock_raw_items).
 router.get("/", authenticate, getStockItems);
