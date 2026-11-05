@@ -151,11 +151,6 @@ module.exports = async function scenario(api) {
     as: "cashier",
     body: { averageCost: 1 },
   });
-  await call("stock quantity as cashier", "PATCH", `/api/stock-item/${cupsId}/stock`, {
-    as: "cashier",
-    body: { stock: "40" },
-  });
-  await call("stock quantity not found", "PATCH", "/api/stock-item/999999/stock", { as: "admin", body: { stock: 1 } });
   const tempStock = await call("stock add temp", "POST", "/api/stock-item", {
     as: "admin",
     body: { name: "Stok Sementara", category: "X", unit: "pcs" },

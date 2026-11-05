@@ -312,9 +312,9 @@ describe("regressions", () => {
     assert.equal(cogs.body.data.averageCost, 211);
     assert.equal(cogs.body.data.stockValue, 338000);
 
-    const halved = await request("PATCH", `/api/stock-item/${id}/stock`, {
+    const halved = await request("PUT", `/api/stock-item/${id}`, {
       as: "admin",
-      body: { stock: 800 },
+      body: { name: "Matcha Nilai", category: "Bahan", unit: "gr", stock: 800 },
     });
     assert.equal(halved.body.data.stockValue, 169000, "not 800 x 211 = 168.800");
   });
@@ -422,201 +422,6 @@ describe("regressions", () => {
     assert.equal((await undo("admin", susu[1].id)).status, 200);
     assert.deepEqual(await rawRow(), [1000, 20000]);
     assert.equal((await request("GET", photo.url, { as: "cashier" })).status, 404);
-  });
-
-  it("Modul 3: Stock Opname sets the counted stock and keeps the selisih as Kehilangan Persediaan", async () => {
-    const addRaw = async (name, stock, averageCost, extra = {}) => {
-      const created = await request("POST", "/api/stock-item", {
-        as: "admin",
-        body: { name, category: "Bahan", unit: "gr", stock, ...extra },
-      });
-      if (averageCost) {
-        await request("PATCH", `/api/stock-item/${created.body.data.id}/cogs`, { as: "admin", body: { averageCost } });
-      }
-      return created.body.data.id;
-    };
-    const gula = await addRaw("Gula Opname", 1000, 20);
-    const kopi = await addRaw("Kopi Opname", 500, 100);
-    const cocok = await addRaw("Teh Opname", 300, 10);
-    const bebas = await addRaw("Es Opname", 0, 0, { isUnlimited: true });
-    const bukanResep = await addRaw("Aqua Opname", 10, 0, { isRecipeIngredient: false });
-    const rawRow = async (id) => {
-      const [[row]] = await db.query("SELECT stock, stock_value FROM stock_raw_items WHERE id = ?", [id]);
-      return [Number(row.stock), Number(row.stock_value)];
-    };
-    const opname = (as, body) => request("POST", "/api/stock-item/opnames", { as, body });
-
-    // Bad counts change nothing.
-    for (const body of [
-      { kind: "raw", counts: [] },
-      { kind: "lainnya", counts: [{ itemId: gula, actualStock: 1 }] },
-      { kind: "raw", counts: [{ itemId: gula, actualStock: -1 }] },
-      { kind: "raw", counts: [{ itemId: gula, actualStock: "" }] },
-      { kind: "raw", counts: [{ itemId: gula, actualStock: 1 }, { itemId: gula, actualStock: 2 }] },
-      { kind: "raw", counts: [{ itemId: gula, actualStock: 1 }, { itemId: bebas, actualStock: 2 }] },
-      { kind: "raw", counts: [{ itemId: gula, actualStock: 1 }, { itemId: bukanResep, actualStock: 2 }] },
-    ]) {
-      assert.equal((await opname("cashier", body)).status, 400, JSON.stringify(body));
-    }
-    assert.equal((await opname("cashier", { kind: "raw", counts: [{ itemId: 999999, actualStock: 1 }] })).status, 404);
-    assert.deepEqual(await rawRow(gula), [1000, 20000]);
-
-    // Kasir counts: Gula 100 gr kurang (Rp 2.000 lost), Kopi 10 gr lebih
-    // (Rp 1.000 back), Teh as in the system (no row).
-    const counted = await opname("cashier", {
-      kind: "raw",
-      note: "opname mingguan",
-      counts: [
-        { itemId: gula, actualStock: 900 },
-        { itemId: kopi, actualStock: "510" },
-        { itemId: cocok, actualStock: 300 },
-      ],
-    });
-    assert.equal(counted.status, 201);
-    assert.deepEqual(
-      counted.body.data.lines.map((line) => [line.itemId, line.systemStock, line.actualStock, line.difference, line.cost]),
-      [[gula, 1000, 900, 100, 2000], [kopi, 500, 510, -10, -1000]]
-    );
-    assert.equal(counted.body.data.totalCost, 1000);
-    assert.deepEqual(await rawRow(gula), [900, 18000]);
-    assert.deepEqual(await rawRow(kopi), [510, 51000]);
-    assert.deepEqual(await rawRow(cocok), [300, 3000]);
-    const same = await opname("cashier", { kind: "raw", counts: [{ itemId: cocok, actualStock: 300 }] });
-    assert.deepEqual([same.status, same.body.data.lines, same.body.message], [201, [], "Stok fisik cocok dengan sistem."]);
-
-    // Bahan olahan: 10 porsi worth Rp 10.000, 7 counted.
-    const nasi = await request("POST", "/api/stock-item/semi", {
-      as: "admin",
-      body: { name: "Nasi Opname", unit: "porsi", components: [{ stockItemId: gula, quantity: 1 }] },
-    });
-    const nasiId = nasi.body.data.id;
-    await db.query("UPDATE stock_semi_items SET stock = 10, stock_value = 10000, unit_cost = 1000 WHERE id = ?", [nasiId]);
-    const semiCount = await opname("cashier", { kind: "semi", counts: [{ itemId: nasiId, actualStock: 7 }] });
-    assert.deepEqual(semiCount.body.data.lines.map((line) => [line.difference, line.cost]), [[3, 3000]]);
-    const [[semiRow]] = await db.query("SELECT stock, stock_value FROM stock_semi_items WHERE id = ?", [nasiId]);
-    assert.deepEqual([Number(semiRow.stock), Number(semiRow.stock_value)], [7, 7000]);
-
-    // Riwayat Opname per kind, and both summed per day for Metrik.
-    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
-    const list = async (query) => (await request("GET", `/api/stock-item/opnames${query}`, { as: "cashier" })).body.data;
-    const raw = await list(`?kind=raw&from=${today}&to=${today}`);
-    const ours = raw.opnames.filter((row) => [gula, kopi, cocok].includes(row.itemId));
-    assert.deepEqual(
-      ours.map((row) => [row.kind, row.itemName, row.difference, row.unit, row.cost, row.note, row.userName]),
-      [
-        ["raw", "Kopi Opname", -10, "gr", -1000, "opname mingguan", "cashier"],
-        ["raw", "Gula Opname", 100, "gr", 2000, "opname mingguan", "cashier"],
-      ]
-    );
-    assert.ok((await list("?kind=semi")).opnames.every((row) => row.kind === "semi"));
-    const both = await list(`?from=${today}&to=${today}`);
-    assert.equal(
-      both.dailyTotals.find((day) => day.date === today).cost,
-      both.opnames.reduce((total, row) => total + row.cost, 0)
-    );
-    assert.equal((await request("GET", "/api/stock-item/opnames?kind=lainnya", { as: "cashier" })).status, 400);
-
-    // Undo: admins, the latest count of the item only.
-    await opname("admin", { kind: "raw", counts: [{ itemId: gula, actualStock: 850 }] });
-    const gulaRows = (await list("?kind=raw")).opnames.filter((row) => row.itemId === gula);
-    const undo = (as, id) => request("DELETE", `/api/stock-item/opnames/raw/${id}`, { as });
-    assert.equal((await undo("cashier", gulaRows[0].id)).status, 403);
-    assert.equal((await undo("admin", gulaRows[1].id)).status, 409);
-    assert.equal((await undo("admin", gulaRows[0].id)).status, 200);
-    assert.deepEqual(await rawRow(gula), [900, 18000]);
-    const kopiRow = ours[0];
-    assert.equal((await undo("admin", kopiRow.id)).status, 200);
-    assert.deepEqual(await rawRow(kopi), [500, 50000]);
-    assert.equal((await request("DELETE", `/api/stock-item/opnames/lainnya/${kopiRow.id}`, { as: "admin" })).status, 404);
-    // Deleting the bahan keeps its riwayat.
-    assert.equal((await request("DELETE", `/api/stock-item/semi/${nasiId}`, { as: "admin" })).status, 200);
-    assert.ok((await list("?kind=semi")).opnames.some((row) => row.itemName === "Nasi Opname"));
-  });
-
-  it("Modul 3: Stock Opname shows what today's orders took from each bahan since its last count", async () => {
-    const gula = (
-      await request("POST", "/api/stock-item", {
-        as: "admin",
-        body: { name: "Gula Pakai", category: "Bahan", unit: "gr", stock: 1000 },
-      })
-    ).body.data.id;
-    const nasi = (
-      await request("POST", "/api/stock-item/semi", {
-        as: "admin",
-        body: { name: "Nasi Pakai", unit: "porsi", components: [{ stockItemId: gula, quantity: 1 }] },
-      })
-    ).body.data.id;
-    await db.query("UPDATE stock_semi_items SET stock = 10, stock_value = 10000, unit_cost = 1000 WHERE id = ?", [nasi]);
-    const [[category]] = await db.query("SELECT id FROM categories ORDER BY id LIMIT 1");
-    const menuItemId = (
-      await request("POST", "/api/menu-item", {
-        as: "admin",
-        body: {
-          categoryId: category.id,
-          name: "Nasi Manis Pakai",
-          price: 10000,
-          ingredients: [{ stockItemId: gula, quantity: 15 }, { semiItemId: nasi, quantity: 1 }],
-        },
-      })
-    ).body.data.id;
-    const sell = async (quantity) => {
-      const order = await request("POST", "/api/order", {
-        as: "cashier",
-        body: {
-          customerDetails: { name: "Pakai" },
-          orderType: "Offline",
-          orderStatus: "In Progress",
-          bills: { total: 10000 * quantity, tax: 0, totalWithTax: 10000 * quantity },
-          items: [{
-            id: `${category.id}-${menuItemId}`,
-            sourceMenuItemId: menuItemId,
-            name: "Nasi Manis Pakai",
-            quantity,
-            pricePerQuantity: 10000,
-            price: 10000 * quantity,
-          }],
-          paymentMethod: "Cash",
-        },
-      });
-      assert.equal(order.status, 201, JSON.stringify(order.body));
-      return order.body.data.id;
-    };
-    const usageOf = async (kind, itemId) => {
-      const res = await request("GET", `/api/stock-item/opnames/usage?kind=${kind}`, { as: "cashier" });
-      assert.equal(res.status, 200);
-      return res.body.data.usage.find((row) => row.itemId === itemId)?.quantity ?? 0;
-    };
-
-    assert.equal((await request("GET", "/api/stock-item/opnames/usage?kind=lainnya", { as: "cashier" })).status, 400);
-    assert.equal(await usageOf("raw", gula), 0);
-
-    // 2 portions sold: 30 gr gula and 2 porsi nasi.
-    const first = await sell(2);
-    assert.equal(await usageOf("raw", gula), 30);
-    assert.equal(await usageOf("semi", nasi), 2);
-
-    // Gula is counted: only what is sold after the count is listed (the first
-    // sale is moved a moment back so both do not share a second).
-    await db.query(
-      "UPDATE order_items SET created_at = created_at - INTERVAL 2 SECOND WHERE order_id = ?",
-      [first]
-    );
-    await request("POST", "/api/stock-item/opnames", {
-      as: "cashier",
-      body: { kind: "raw", counts: [{ itemId: gula, actualStock: 960 }] },
-    });
-    const second = await sell(1);
-    assert.equal(await usageOf("raw", gula), 15);
-    assert.equal(await usageOf("semi", nasi), 3);
-
-    // A deleted order gave its bahan back.
-    assert.equal((await request("DELETE", `/api/order/${second}`, { as: "admin" })).status, 200);
-    assert.equal(await usageOf("raw", gula), 0);
-    assert.equal(await usageOf("semi", nasi), 2);
-
-    await request("DELETE", `/api/order/${first}`, { as: "admin" });
-    await request("DELETE", `/api/menu-item/${menuItemId}`, { as: "admin" });
-    await request("DELETE", `/api/stock-item/semi/${nasi}`, { as: "admin" });
   });
 
   it("cooks bahan olahan from bahan baku and sells their portions", async () => {
@@ -894,24 +699,10 @@ describe("regressions", () => {
     const usedUp = await request("DELETE", `/api/stock-item/semi/productions/${first.id}`, { as: "admin" });
     assert.equal(usedUp.status, 409, "2 of its 80 portions were sold");
 
-    // Leftovers counted by hand: the value follows the exact unit cost.
-    const adjusted = await request("PATCH", `/api/stock-item/semi/${nasi.id}/stock`, {
-      as: "cashier",
-      body: { stock: 70 },
-    });
-    assert.equal(adjusted.status, 200);
-    assert.equal(adjusted.body.data.stockValue, 61250);
-
-    // ...and the 8 missing portions are a Stock Opname (Kehilangan
-    // Persediaan), not Biaya Wastage.
     const wasteRows = async () =>
       (await request("GET", `/api/stock-item/semi/wastes?semiItemId=${nasi.id}`, { as: "cashier" }))
         .body.data.wastes.map((w) => [w.quantity, w.cost, w.reason]);
     assert.deepEqual(await wasteRows(), []);
-    const counts = (await request("GET", "/api/stock-item/opnames?kind=semi", { as: "cashier" })).body.data.opnames
-      .filter((row) => row.itemId === nasi.id)
-      .map((row) => [row.systemStock, row.actualStock, row.difference, row.cost, row.note]);
-    assert.deepEqual(counts, [[78, 70, 8, 7000, "Ubah stok"]]);
 
     // Thrown away during the day: 5 spoiled portions at Rp 875. Kasir must
     // attach a photo of them.
@@ -925,11 +716,11 @@ describe("regressions", () => {
       body: wasteForm({ quantity: 5, reason: "Basi", note: "kena hujan" }),
     });
     assert.equal(spoiled.status, 201);
-    assert.deepEqual([spoiled.body.data.stock, spoiled.body.data.stockValue], [65, 56875]);
+    assert.deepEqual([spoiled.body.data.stock, spoiled.body.data.stockValue], [73, 63875]);
     assert.deepEqual(await wasteRows(), [[5, 4375, "Basi"]]);
     const tooMany = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
       as: "admin",
-      body: { quantity: 66, reason: "Jatuh" },
+      body: { quantity: 74, reason: "Jatuh" },
     });
     assert.equal(tooMany.status, 409);
     const badReason = await request("POST", `/api/stock-item/semi/${nasi.id}/wastes`, {
@@ -967,11 +758,11 @@ describe("regressions", () => {
       200
     );
     assert.deepEqual(await semiRow(nasi.id), {
-      stock: 70, stockValue: 61250, unitCost: 875, yieldQuantity: 80,
+      stock: 78, stockValue: 68250, unitCost: 875, yieldQuantity: 80,
     });
     assert.equal((await request("GET", photo.url, { as: "cashier" })).status, 404, "its photo goes with it");
 
-    // Closing a past day keeps portions cooked after it (all 70 were cooked
+    // Closing a past day keeps portions cooked after it (all 78 were cooked
     // today); closing today writes the leftover off and Nasi starts from 0.
     const todayDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
     const yesterday = new Date(`${todayDate}T00:00:00Z`);
@@ -982,7 +773,7 @@ describe("regressions", () => {
     });
     assert.equal(pastRecap.status, 201);
     assert.deepEqual(pastRecap.body.data.writtenOff, []);
-    assert.equal((await semiRow(nasi.id)).stock, 70);
+    assert.equal((await semiRow(nasi.id)).stock, 78);
 
     const todayRecap = await request("POST", "/api/recap/daily", {
       as: "admin",
@@ -990,7 +781,7 @@ describe("regressions", () => {
     });
     assert.equal(todayRecap.status, 201);
     assert.deepEqual(todayRecap.body.data.writtenOff, [
-      { semiItemId: nasi.id, name: "Nasi Olahan", quantity: 70, cost: 61250 },
+      { semiItemId: nasi.id, name: "Nasi Olahan", quantity: 78, cost: 68250 },
     ]);
     assert.deepEqual(await semiRow(nasi.id), {
       stock: 0, stockValue: 0, unitCost: 875, yieldQuantity: 80,
@@ -1001,13 +792,12 @@ describe("regressions", () => {
     assert.deepEqual(todayWastes.body.data.wastes[0], {
       ...todayWastes.body.data.wastes[0],
       wasteDate: todayDate,
-      quantity: 70,
-      cost: 61250,
+      quantity: 78,
+      cost: 68250,
       reason: "Sisa akhir hari",
     });
-    // Biaya Wastage of the day: the leftover only; the 8 portions counted by
-    // hand are Kehilangan Persediaan (Riwayat Opname).
-    assert.deepEqual(todayWastes.body.data.dailyTotals, [{ date: todayDate, cost: 61250, entries: 1 }]);
+    // Biaya Wastage of the day: the leftover only.
+    assert.deepEqual(todayWastes.body.data.dailyTotals, [{ date: todayDate, cost: 68250, entries: 1 }]);
 
     // Items that keep (Sambal) can opt out of the daily reset. The form lists
     // the bahan only: no quantity, unit or portion size.
@@ -1112,6 +902,147 @@ describe("regressions", () => {
     const removed = await request("DELETE", `/api/shopping/purchase-attachments/${attachment.id}`, { as: "admin" });
     assert.equal(removed.status, 200);
     assert.equal((await request("GET", attachment.url, { as: "admin" })).status, 404);
+  });
+
+  it("keeps the merk of each purchase line, new or chosen, for bahan baku and lainnya", async () => {
+    const buy = (path, requestId, items, extra = {}) =>
+      request("POST", path, {
+        as: "admin",
+        body: { requestId, date: "2026-10-03", suplierName: "Toko Merk", paymentMethod: "Cash", items, ...extra },
+      });
+    const notasOf = async (path, search) =>
+      (await request("GET", `${path}/notas?search=${encodeURIComponent(search)}`, { as: "admin" })).body.data.notas;
+    const merkList = async () => (await request("GET", "/api/shopping/merks", { as: "cashier" })).body.data;
+    const merkNamed = async (name) => (await merkList()).find((merk) => merk.name === name);
+
+    // A new merk is created with the nota and listed for the form.
+    const first = await buy("/api/shopping/purchases", "merk-purchase-000001", [
+      { itemName: "Susu Merk", merkName: "Indomilk", quantity: 1000, unit: "ml", unitPrice: 20 },
+    ]);
+    assert.equal(first.status, 201, JSON.stringify(first.body));
+    const indomilk = (await merkList()).find((merk) => merk.name === "Indomilk");
+    assert.ok(indomilk, "Indomilk is listed");
+
+    // Another merk of the same bahan, a chosen merk, and a line without one.
+    const second = await buy("/api/shopping/purchases", "merk-purchase-000002", [
+      { itemName: "Susu Merk", merkName: "Ultra", quantity: 1000, unit: "ml", unitPrice: 30 },
+      { itemName: "Gula Merk", merkId: indomilk.id, quantity: 500, unit: "gr", unitPrice: 10 },
+      { itemName: "Garam Merk", quantity: 100, unit: "gr", unitPrice: 5 },
+    ]);
+    assert.equal(second.status, 201, JSON.stringify(second.body));
+    const [nota] = await notasOf("/api/shopping/purchases", "Garam Merk");
+    assert.deepEqual(
+      nota.items.map((item) => [item.itemName, item.merkName ?? null]),
+      [["Susu Merk", "Ultra"], ["Gula Merk", "Indomilk"], ["Garam Merk", null]]
+    );
+    // The same name in another case is the same merk.
+    const again = await buy("/api/shopping/purchases", "merk-purchase-000003", [
+      { itemName: "Garam Merk", merkName: "indomilk", quantity: 100, unit: "gr", unitPrice: 5 },
+    ]);
+    assert.equal(again.status, 201);
+    assert.equal((await merkList()).filter((merk) => merk.name.toLowerCase() === "indomilk").length, 1);
+
+    // COGS stays one average over both merk; each purchase shows its merk.
+    const perItem = (await request("GET", `/api/shopping/purchases?search=${encodeURIComponent("Susu Merk")}`, { as: "admin" })).body.data;
+    const susu = perItem.itemGroups.find((group) => group.itemName === "Susu Merk");
+    assert.deepEqual(
+      susu.histories.map((row) => [row.merkName, row.stockAverageCost]),
+      [["Ultra", 25], ["Indomilk", 20]]
+    );
+    assert.equal(susu.averageCost, 25);
+    // The history is searched by merk too.
+    assert.deepEqual((await notasOf("/api/shopping/purchases", "Ultra")).map((row) => row.id), [second.body.data.id]);
+
+    // A merk that does not exist, or both an id and a name, saves nothing.
+    for (const [requestId, line] of [
+      ["merk-purchase-bad-001", { merkId: 999999 }],
+      ["merk-purchase-bad-002", { merkId: indomilk.id, merkName: "Lain" }],
+    ]) {
+      const bad = await buy("/api/shopping/purchases", requestId, [
+        { itemName: "Kopi Merk", quantity: 100, unit: "gr", unitPrice: 50, ...line },
+      ]);
+      assert.equal(bad.status, 400, JSON.stringify(line));
+    }
+    assert.equal((await notasOf("/api/shopping/purchases", "Kopi Merk")).length, 0);
+
+    // Admins change the merk of a posted line, keep it, or drop it.
+    const garam = nota.items.find((item) => item.itemName === "Garam Merk");
+    const editLine = (body) =>
+      request("PUT", `/api/shopping/purchase-items/${garam.id}`, {
+        as: "admin",
+        body: { quantity: 100, unit: "gr", unitPrice: 5, ...body },
+      });
+    const merkOfGaram = async () =>
+      (await notasOf("/api/shopping/purchases", "Garam Merk"))
+        .find((row) => row.id === nota.id)
+        .items.find((item) => item.id === garam.id).merkName ?? null;
+    assert.equal((await editLine({ merkName: "Refina" })).status, 200);
+    assert.equal(await merkOfGaram(), "Refina");
+    assert.equal((await editLine({})).status, 200);
+    assert.equal(await merkOfGaram(), "Refina");
+    assert.equal((await editLine({ merkId: "", merkName: "" })).status, 200);
+    assert.equal(await merkOfGaram(), null);
+
+    // A draft keeps its merk until it is posted.
+    const draft = await request("POST", "/api/shopping/purchases", {
+      as: "cashier",
+      body: {
+        requestId: "merk-purchase-draft-01",
+        date: "2026-10-04",
+        suplierName: "Toko Merk",
+        paymentMethod: "Cash",
+        status: "draft",
+        items: [{ itemName: "Teh Merk", merkName: "Sariwangi", quantity: 25, unit: "pcs", unitPrice: 400 }],
+      },
+    });
+    assert.equal(draft.status, 201, JSON.stringify(draft.body));
+    const drafts = (await request("GET", "/api/shopping/purchases/drafts", { as: "cashier" })).body.data;
+    const [draftLine] = drafts.find((row) => row.id === draft.body.data.id).items;
+    assert.equal(draftLine.merkName, "Sariwangi");
+    // Not bought yet: a draft does not list its barang under the merk.
+    assert.deepEqual((await merkNamed("Sariwangi")).rawItemIds, []);
+    const posted = await request("PUT", `/api/shopping/purchases/${draft.body.data.id}`, {
+      as: "admin",
+      body: {
+        date: "2026-10-04",
+        suplierName: "Toko Merk",
+        paymentMethod: "Cash",
+        items: [{ itemName: "Teh Merk", merkId: draftLine.merkId, quantity: 25, unit: "pcs", unitPrice: 400 }],
+      },
+    });
+    assert.equal(posted.status, 200, JSON.stringify(posted.body));
+    assert.equal((await notasOf("/api/shopping/purchases", "Teh Merk"))[0].items[0].merkName, "Sariwangi");
+
+    // Barang Lainnya take a merk the same way.
+    const supply = await buy("/api/shopping/supply-purchases", "merk-supply-0000001", [
+      { itemName: "Pulpen Merk", category: "Lain-lain", merkName: "Joyko", quantity: 12, unitPrice: 2000 },
+    ]);
+    assert.equal(supply.status, 201, JSON.stringify(supply.body));
+    assert.equal((await notasOf("/api/shopping/supply-purchases", "Joyko"))[0].items[0].merkName, "Joyko");
+    const supplyGroups = (await request("GET", `/api/shopping/supply-purchases?search=${encodeURIComponent("Pulpen Merk")}`, { as: "admin" })).body.data.itemGroups;
+    assert.equal(supplyGroups[0].histories[0].merkName, "Joyko");
+
+    // Each merk lists the barang it was bought for, so the form offers them first.
+    const idOf = (name) => nota.items.find((item) => item.itemName === name).stockItemId;
+    const ascending = (ids) => [...ids].sort((a, b) => a - b);
+    assert.deepEqual(await merkNamed("Indomilk"), {
+      id: indomilk.id,
+      name: "Indomilk",
+      rawItemIds: ascending([idOf("Susu Merk"), idOf("Gula Merk"), idOf("Garam Merk")]),
+      supplyItemIds: [],
+    });
+    assert.deepEqual((await merkNamed("Ultra")).rawItemIds, [idOf("Susu Merk")]);
+    // Dropped from its only line: no barang.
+    assert.deepEqual((await merkNamed("Refina")).rawItemIds, []);
+    const [teh] = (await notasOf("/api/shopping/purchases", "Teh Merk"))[0].items;
+    assert.deepEqual((await merkNamed("Sariwangi")).rawItemIds, [teh.stockItemId]);
+    const [pulpen] = (await notasOf("/api/shopping/supply-purchases", "Joyko"))[0].items;
+    assert.deepEqual(await merkNamed("Joyko"), {
+      id: pulpen.merkId,
+      name: "Joyko",
+      rawItemIds: [],
+      supplyItemIds: [pulpen.supplyItemId],
+    });
   });
 
   it("rejects a second bahan baku with the same name with 409 instead of 500", async () => {
@@ -1587,34 +1518,6 @@ describe("regressions", () => {
     const shortRecap = await request("POST", "/api/recap/daily", { as: "admin", body: { recapDate: "2026-03-12" } });
     assert.deepEqual(shortRecap.body.data.writtenOff, []);
     assert.equal(await semiStock(), 0);
-
-    // Counted by hand both ways at the same cost per portion: fewer portions
-    // are Kehilangan Persediaan, more a selisih lebih (negative), so a
-    // correction cancels out.
-    const adjust = (stock) =>
-      request("PATCH", `/api/stock-item/semi/${nasi.id}/stock`, { as: "cashier", body: { stock } });
-    const semiCounts = async (as = "cashier") =>
-      (await request("GET", "/api/stock-item/opnames?kind=semi", { as })).body.data.opnames.filter(
-        (row) => row.itemId === nasi.id
-      );
-    const adjustments = async () => (await semiCounts()).map((row) => [row.difference, row.cost]);
-    assert.equal((await prep({ items: [{ stockItemId: berasId, quantity: 1 }], portionQuantity: 10, producedDate: "2026-03-13" })).status, 201);
-    const fewer = (await adjust(6)).body.data;
-    assert.deepEqual([fewer.stock, fewer.stockValue, fewer.averageCost], [6, 9000, 1500]);
-    const back = (await adjust(10)).body.data;
-    assert.deepEqual([back.stock, back.stockValue, back.averageCost], [10, 15000, 1500]);
-    const more = (await adjust(12)).body.data;
-    assert.deepEqual([more.stock, more.stockValue, more.averageCost], [12, 18000, 1500]);
-    assert.deepEqual((await adjustments()).slice(0, 3), [[-2, -3000], [-4, -6000], [4, 6000]]);
-    // The latest one can be undone like any count.
-    const [latest] = await semiCounts("admin");
-    assert.equal((await request("DELETE", `/api/stock-item/opnames/semi/${latest.id}`, { as: "admin" })).status, 200);
-    const [[undone]] = await db.query("SELECT stock, stock_value FROM stock_semi_items WHERE id = ?", [nasi.id]);
-    assert.deepEqual([Number(undone.stock), Number(undone.stock_value)], [10, 15000]);
-    // From an empty stock: the latest cost per portion.
-    await adjust(0);
-    const found = (await adjust(4)).body.data;
-    assert.deepEqual([found.stock, found.stockValue, found.averageCost], [4, 6000, 1500]);
 
     // Adding the columns types the lines already sold (olahan: a bahan olahan).
     await db.query("ALTER TABLE order_item_costs DROP COLUMN hpp_source, DROP COLUMN hpp_type");

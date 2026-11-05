@@ -12,6 +12,7 @@ const { ensureSemiItemsSchema } = require("../../src/infrastructure/database/boo
 const { ensureShoppingSchema } = require("../../src/infrastructure/database/bootstrap/shoppingSchema");
 const { ensureSupplySchema } = require("../../src/infrastructure/database/bootstrap/supplySchema");
 const { ensureNotaSchema } = require("../../src/infrastructure/database/bootstrap/notaSchema");
+const { ensureMerkSchema } = require("../../src/infrastructure/database/bootstrap/merkSchema");
 const { ensureRecipeIngredientSchema } = require("../../src/infrastructure/database/bootstrap/recipeIngredientSchema");
 const { createPaymentSourceService } = require("../../src/modules/paymentSources/paymentSource.service");
 const { RECEIPT_TARGETS, createAttachmentService } = require("../../src/modules/shopping/shopping.attachments");
@@ -53,6 +54,8 @@ let testPool, created = false, receiptDir;
   await ensureSupplySchema(testPool);
   await ensureNotaSchema(testPool);
   await ensureNotaSchema(testPool);
+  await ensureMerkSchema(testPool);
+  await ensureMerkSchema(testPool);
   await ensureSemiItemsSchema(testPool);
   await ensureSemiItemsSchema(testPool);
   await ensureRecipeIngredientSchema(testPool);

@@ -23,6 +23,9 @@ const { convertQuantity, normalizeItemPatch, round3, stockQuantityOf } = require
 
 const NOTA_PAGE_SIZE = 10;
 
+// The merk of a line read with "m.name AS merk_name"; none without merk.
+const merkFields = row => (row.merk_id ? { merkId: row.merk_id, merkName: row.merk_name || "" } : {});
+
 // The optional ?itemId= of a history list: one barang, or none ("").
 const itemFilter = value => {
   if (value === undefined || value === null || value === "") return null;
@@ -60,6 +63,19 @@ const findOrCreateSupplier = async (connection, name) => {
   name = clean(name, 150, "Toko/sumber");
   await connection.query("INSERT INTO suplier (name) VALUES (?) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)", [name]);
   return (await connection.query("SELECT id, name FROM suplier WHERE name = ?", [name]))[0][0];
+};
+
+// The merk of a line (merkId or a new merkName, see shopping.validation), or
+// null: a new name is created inside the purchase transaction.
+const merkIdOf = async (connection, line) => {
+  if (line?.merkName) {
+    await connection.query("INSERT INTO merk (name) VALUES (?) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)", [line.merkName]);
+    return (await connection.query("SELECT id FROM merk WHERE name = ?", [line.merkName]))[0][0].id;
+  }
+  if (!line?.merkId) return null;
+  const [[merk]] = await connection.query("SELECT id FROM merk WHERE id = ?", [line.merkId]);
+  if (!merk) throw createError(400, "Merk tidak ditemukan. Muat ulang form.");
+  return merk.id;
 };
 
 // Editing or deleting a line changes what the nota cost: amount > 0 returns
@@ -166,12 +182,13 @@ const createNotaEngine = (db, cfg) => {
         : null;
       await connection.query(
         `INSERT INTO ${cfg.items}
-          (purchase_id, ${cfg.itemFk}, item_name, ${cfg.lineCategory ? "category, " : ""}quantity, unit, pack_size, unit_price, total, cost_total, stock_quantity, stock_unit)
-         VALUES (?, ?, ?, ${cfg.lineCategory ? "?, " : ""}?, ?, ?, ?, ?, ?, ?, ?)`,
+          (purchase_id, ${cfg.itemFk}, item_name, merk_id, ${cfg.lineCategory ? "category, " : ""}quantity, unit, pack_size, unit_price, total, cost_total, stock_quantity, stock_unit)
+         VALUES (?, ?, ?, ?, ${cfg.lineCategory ? "?, " : ""}?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           purchaseId,
           stock ? stock.id : null,
           stock ? stock.name : item.itemName,
+          await merkIdOf(connection, item),
           ...category,
           item.quantity,
           item.unit,
@@ -438,6 +455,8 @@ const createNotaEngine = (db, cfg) => {
           pack_size: packSize,
           stock_quantity: stockQuantityOf({ quantity: edit.quantity, unit: lineUnit, packSize }, stockUnit),
           stock_unit: stockUnit,
+          // The merk stays unless the patch sets or drops it.
+          merk_id: "merk" in edit ? await merkIdOf(connection, edit.merk) : target.merk_id,
         };
       }
       const nextLines = lines
@@ -477,10 +496,10 @@ const createNotaEngine = (db, cfg) => {
           await connection.query(
             `UPDATE ${cfg.items}
              SET quantity = ?, unit = ?, pack_size = ?, unit_price = ?, total = ?, cost_total = ?,
-                 stock_quantity = ?, stock_unit = ?, stock_unit_cost = ?, stock_value_after = ?
+                 stock_quantity = ?, stock_unit = ?, stock_unit_cost = ?, stock_value_after = ?, merk_id = ?
              WHERE id = ?`,
             [line.quantity, line.unit, line.pack_size, line.unit_price, line.total, totals.costTotals[index],
-              line.stock_quantity, line.stock_unit, state.averageCost, state.stockValue, line.id]
+              line.stock_quantity, line.stock_unit, state.averageCost, state.stockValue, line.merk_id, line.id]
           );
         } else if (Number(line.cost_total) !== totals.costTotals[index]) {
           await connection.query(`UPDATE ${cfg.items} SET cost_total = ? WHERE id = ?`, [totals.costTotals[index], line.id]);
@@ -527,9 +546,10 @@ const createNotaEngine = (db, cfg) => {
     const ids = headers.map(header => header.id);
     const placeholders = ids.map(() => "?").join(",");
     const [lines] = await db.query(
-      `SELECT i.*${cfg.lineCategory ? ", COALESCE(s.category, i.category) AS current_category" : ""}
+      `SELECT i.*, m.name AS merk_name${cfg.lineCategory ? ", COALESCE(s.category, i.category) AS current_category" : ""}
        FROM ${cfg.items} i
        LEFT JOIN ${cfg.stockTable} s ON s.id = i.${cfg.itemFk}
+       LEFT JOIN merk m ON m.id = i.merk_id
        WHERE i.purchase_id IN (${placeholders}) ORDER BY i.id`,
       ids
     );
@@ -564,6 +584,7 @@ const createNotaEngine = (db, cfg) => {
           id: line.id,
           [cfg.itemIdKey]: line[cfg.itemFk],
           itemName: line.item_name,
+          ...merkFields(line),
           ...(cfg.lineCategory && { category: posted ? line.current_category : line.category }),
           quantity: Number(line.quantity),
           unit: line.unit,
@@ -612,12 +633,12 @@ const createNotaEngine = (db, cfg) => {
     const keyword = `%${String(search).slice(0, 150)}%`;
     const where = `p.status = 'posted'
        AND (p.suplier_name LIKE ? OR EXISTS (
-         SELECT 1 FROM ${cfg.items} si WHERE si.purchase_id = p.id
-           AND (si.item_name LIKE ?${cfg.lineCategory ? " OR si.category LIKE ?" : ""})))
+         SELECT 1 FROM ${cfg.items} si LEFT JOIN merk sm ON sm.id = si.merk_id WHERE si.purchase_id = p.id
+           AND (si.item_name LIKE ? OR sm.name LIKE ?${cfg.lineCategory ? " OR si.category LIKE ?" : ""})))
        ${category ? `AND EXISTS (
          SELECT 1 FROM ${cfg.items} ci LEFT JOIN ${cfg.stockTable} cs ON cs.id = ci.${cfg.itemFk}
          WHERE ci.purchase_id = p.id AND COALESCE(cs.category, ci.category) = ?)` : ""}${period.sql}`;
-    const params = [keyword, keyword, ...(cfg.lineCategory ? [keyword] : []), ...(category ? [category] : []), ...period.params];
+    const params = [keyword, keyword, keyword, ...(cfg.lineCategory ? [keyword] : []), ...(category ? [category] : []), ...period.params];
     const [[count]] = await db.query(
       `SELECT COUNT(*) AS total, COALESCE(SUM(p.total), 0) AS spending FROM ${cfg.purchases} p WHERE ${where}`,
       params
@@ -651,4 +672,4 @@ const createNotaEngine = (db, cfg) => {
   };
 };
 
-module.exports = { actor, createNotaEngine, dateRange, findOrCreateSupplier, itemFilter, postPurchaseDifference };
+module.exports = { actor, createNotaEngine, dateRange, findOrCreateSupplier, itemFilter, merkFields, postPurchaseDifference };
