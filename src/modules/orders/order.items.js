@@ -25,11 +25,20 @@ const getSourceMenuItemId = (item) => {
   return null;
 };
 
+// bundleChoices: the menus picked for one package (already checked).
+const pickedBundleChoices = (item) => {
+  const choices = (item.bundleChoices || []).filter(
+    (choice) => Number(choice.menuItemId) > 0 && Number(choice.quantity) > 0
+  );
+  return choices.length ? { bundleChoices: choices } : {};
+};
+
 const normalizeOrderItemsForStock = (items = []) =>
   items
     .map((item) => ({
       menuItemId: getSourceMenuItemId(item),
       quantity: Math.max(Number(item.quantity) || 0, 0),
+      ...pickedBundleChoices(item),
     }))
     .filter((item) => item.menuItemId && item.quantity > 0);
 

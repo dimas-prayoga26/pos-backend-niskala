@@ -85,12 +85,25 @@ const updateCategory = asyncHandler(async (req, res, next) => {
 
   if (validationError) return next(validationError);
 
+  const isBundle = parseBundleFlag(req.body);
+  if (isBundle) {
+    const choiceBundleNames = await Category.findChoiceBundleNames(req.params.id);
+    if (choiceBundleNames.length) {
+      return next(
+        createHttpError(
+          400,
+          `Category ini jadi pilihan di paket ${choiceBundleNames.join(", ")}, jadi tidak bisa dijadikan Kategori Promo.`
+        )
+      );
+    }
+  }
+
   const category = await Category.update(req.params.id, {
     name,
     icon,
     taxRate,
     isActive,
-    isBundle: parseBundleFlag(req.body),
+    isBundle,
   });
 
   if (!category) {

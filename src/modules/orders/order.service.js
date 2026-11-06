@@ -1,6 +1,7 @@
 // Order lifecycle. Creating or deleting an order moves ingredient stock in the
 // same transaction; orders on a date that has a daily recap are read-only.
 const { pool } = require("../../infrastructure/database/pool");
+const { resolveOrderBundleChoices } = require("../menu/menu.bundles");
 const {
   deductIngredientStock,
   restoreIngredientStock,
@@ -61,7 +62,7 @@ const create = async (orderData) => {
       orderDate,
       orderStatus,
       bills,
-      items = [],
+      items: requestedItems = [],
       paymentMethod,
       cateringDetails,
       allowNegativeStock = false,
@@ -82,6 +83,17 @@ const create = async (orderData) => {
       effectiveOrderDate ? [effectiveOrderDate] : [],
       CLOSED_DAY_MESSAGE
     );
+
+    // Packages with choices carry the menus the cashier picked (checked here).
+    const items = [];
+    for (const item of requestedItems) {
+      const bundleChoices = await resolveOrderBundleChoices(
+        connection,
+        getSourceMenuItemId(item),
+        item.bundleChoices
+      );
+      items.push({ ...item, bundleChoices });
+    }
 
     await deductIngredientStock(connection, toRecipeLines(items), { allowNegativeStock });
 
@@ -132,7 +144,8 @@ const create = async (orderData) => {
     for (const item of items) {
       const menuItemSnapshot = await findMenuItemSnapshot(
         connection,
-        getSourceMenuItemId(item)
+        getSourceMenuItemId(item),
+        { choices: item.bundleChoices }
       );
 
       const orderItemId = await Order.insertOrderItem(connection, orderId, {
@@ -140,6 +153,7 @@ const create = async (orderData) => {
         menuItemSnapshot,
       });
       await Order.insertOrderItemCosts(connection, orderItemId, menuItemSnapshot.costs);
+      await Order.insertOrderItemBundleChoices(connection, orderItemId, item.bundleChoices);
     }
 
     await connection.commit();

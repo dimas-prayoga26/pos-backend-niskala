@@ -403,15 +403,17 @@ describe("regressions", () => {
       categoryId: promo.body.data.id,
       name: "Paket Hemat",
       price: 30000,
+      grossProfit: 21000,
       bundleItems,
       ...extra,
     });
-    const tooSmall = await request("POST", "/api/menu-item", {
-      as: "admin",
-      body: bundleBody([{ menuItemId: kopi.id, quantity: 1 }]),
-    });
-    assert.equal(tooSmall.status, 400);
-    assert.equal(tooSmall.body.message, "Paket minimal berisi 2 menu.");
+    const empty = await request("POST", "/api/menu-item", { as: "admin", body: bundleBody([]) });
+    assert.equal(empty.status, 400);
+    assert.equal(empty.body.message, "Paket minimal berisi 1 menu.");
+    // One menu is enough (e.g. a free coffee for a review).
+    const single = await menuOf(bundleBody([{ menuItemId: kopi.id, quantity: 1 }], { name: "Paket Satu" }));
+    assert.deepEqual(single.bundleItems.map((line) => [line.menuItemId, line.quantity]), [[kopi.id, 1]]);
+    assert.equal((await request("DELETE", `/api/menu-item/${single.id}`, { as: "admin" })).status, 200);
 
     // Bahan sent with a package are not kept: its menus carry the recipes.
     const paket = await menuOf(
@@ -434,7 +436,8 @@ describe("regressions", () => {
         { menuItemId: air.id, name: "Air Paket", quantity: 1, price: 5000, hppCost: 2000 },
       ]
     );
-    assert.deepEqual([paket.hppCost, paket.grossProfit], [9000, 21000]);
+    // No HPP of its own (each sale counts its menus); the profit is entered by hand.
+    assert.deepEqual([paket.hppCost, paket.grossProfit], [0, 21000]);
 
     const nested = await request("POST", "/api/menu-item", {
       as: "admin",
@@ -492,10 +495,10 @@ describe("regressions", () => {
     assert.equal(deleteCategory.status, 409);
     assert.equal(deleteCategory.body.message, "Menu di category ini dipakai di paket Paket Hemat. Hapus dari paket dulu.");
 
-    // The package HPP follows the price of its menus' bahan.
+    // Cost changes of its menus' bahan leave the package's own figures alone.
     await request("PATCH", `/api/stock-item/${espresso}/cogs`, { as: "admin", body: { averageCost: 200 } });
     const [[price]] = await db.query("SELECT hpp_cost, gross_profit FROM menu_item_prices WHERE menu_item_id = ?", [paket.id]);
-    assert.deepEqual([Number(price.hpp_cost), Number(price.gross_profit)], [11000, 19000]);
+    assert.deepEqual([Number(price.hpp_cost), Number(price.gross_profit)], [0, 21000]);
 
     // The POS hides a package while one of its menus is unavailable.
     await request("PUT", `/api/menu-item/${rotiIsi.id}`, {
@@ -528,6 +531,264 @@ describe("regressions", () => {
     assert.equal(plain.status, 200, JSON.stringify(plain.body));
     assert.deepEqual([plain.body.data.isBundle, plain.body.data.bundleItems.length, plain.body.data.ingredients.length], [false, 0, 1]);
     assert.equal((await request("DELETE", `/api/menu-item/${kopi.id}`, { as: "admin" })).status, 200);
+  });
+
+  it("sells a promo package with menus the cashier picks from a category", async () => {
+    const categoryOf = async (body) => {
+      const created = await request("POST", "/api/category", { as: "admin", body });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      return created.body.data;
+    };
+    const promo = await categoryOf({ name: "Promo Pilih", icon: "🏷️", isBundle: true });
+    const kopiCat = await categoryOf({ name: "Kopi Pilih Cat", icon: "☕" });
+    const snackCat = await categoryOf({ name: "Snack Pilih Cat", icon: "🍟" });
+
+    const stockOf = async (name, unit, averageCost) => {
+      const created = await request("POST", "/api/stock-item", {
+        as: "admin",
+        body: { name, category: "Bahan", unit, stock: 1000 },
+      });
+      await request("PATCH", `/api/stock-item/${created.body.data.id}/cogs`, { as: "admin", body: { averageCost } });
+      return created.body.data.id;
+    };
+    const espresso = await stockOf("Espresso Pilih", "gr", 100);
+    const susu = await stockOf("Susu Pilih", "ml", 20);
+    const menuOf = async (body) => {
+      const created = await request("POST", "/api/menu-item", { as: "admin", body });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      return created.body.data;
+    };
+    const americano = await menuOf({
+      categoryId: kopiCat.id, name: "Americano Pilih", price: 15000,
+      ingredients: [{ stockItemId: espresso, quantity: 10 }],
+    });
+    const latte = await menuOf({
+      categoryId: kopiCat.id, name: "Latte Pilih", price: 20000,
+      ingredients: [{ stockItemId: espresso, quantity: 10 }, { stockItemId: susu, quantity: 100 }],
+    });
+    const kentang = await menuOf({ categoryId: snackCat.id, name: "Kentang Pilih", price: 10000, hppCost: 2500 });
+
+    const fromPromo = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: { categoryId: promo.id, name: "Paket Salah", price: 30000, bundleChoices: [{ categoryId: promo.id, quantity: 2 }] },
+    });
+    assert.equal(fromPromo.status, 400);
+    assert.equal(fromPromo.body.message, "Pilihan paket tidak bisa dari Kategori Promo: Promo Pilih.");
+
+    // 2 coffees of the cashier's choice + 1 Kentang.
+    const paket = await menuOf({
+      categoryId: promo.id, name: "Paket Pilih", price: 35000, hppCost: 9999, grossProfit: 20000,
+      bundleItems: [{ menuItemId: kentang.id, quantity: 1 }],
+      bundleChoices: [{ categoryId: kopiCat.id, quantity: 2 }],
+    });
+    assert.deepEqual(
+      paket.bundleChoices.map(({ categoryId, categoryName, quantity }) => ({ categoryId, categoryName, quantity })),
+      [{ categoryId: kopiCat.id, categoryName: "Kopi Pilih Cat", quantity: 2 }]
+    );
+    assert.deepEqual([paket.hppCost, paket.grossProfit], [0, 20000]);
+
+    const orderWith = (bundleChoices) =>
+      request("POST", "/api/order", {
+        as: "cashier",
+        body: {
+          customerDetails: { name: "Pilih" },
+          orderType: "Offline",
+          orderStatus: "In Progress",
+          bills: { total: 70000, tax: 0, totalWithTax: 70000 },
+          items: [{
+            id: `${promo.id}-${paket.id}-pilih`,
+            sourceMenuItemId: paket.id,
+            name: "Paket Pilih",
+            quantity: 2,
+            pricePerQuantity: 35000,
+            price: 70000,
+            bundleChoices,
+          }],
+          paymentMethod: "Cash",
+        },
+      });
+    const missing = await orderWith([{ menuItemId: americano.id, quantity: 1 }]);
+    assert.equal(missing.status, 400);
+    assert.equal(missing.body.message, "Pilih 2 menu Kopi Pilih Cat untuk Paket Pilih.");
+    const wrongCategory = await orderWith([{ menuItemId: americano.id, quantity: 1 }, { menuItemId: kentang.id, quantity: 1 }]);
+    assert.equal(wrongCategory.status, 400);
+    assert.equal(wrongCategory.body.message, "Menu pilihan paket tidak sesuai category paket.");
+
+    const stocks = async () => {
+      const [rows] = await db.query("SELECT id, stock FROM stock_items WHERE id IN (?) ORDER BY id", [[espresso, susu]]);
+      return rows.map((row) => Number(row.stock));
+    };
+    assert.deepEqual(await stocks(), [1000, 1000]);
+
+    // Two packages, each with an Americano and a Latte.
+    const order = await orderWith([{ menuItemId: americano.id, quantity: 1 }, { menuItemId: latte.id, quantity: 1 }]);
+    assert.equal(order.status, 201, JSON.stringify(order.body));
+    assert.deepEqual(
+      order.body.data.items[0].bundleChoices.map(({ menuItemId, name, quantity }) => ({ menuItemId, name, quantity })),
+      [
+        { menuItemId: americano.id, name: "Americano Pilih", quantity: 1 },
+        { menuItemId: latte.id, name: "Latte Pilih", quantity: 1 },
+      ]
+    );
+    assert.deepEqual(await stocks(), [960, 800]);
+    const [[sold]] = await db.query("SELECT id, hpp_cost FROM order_items WHERE order_id = ?", [order.body.data.id]);
+    assert.equal(Number(sold.hpp_cost), 6500);
+    const [lines] = await db.query(
+      "SELECT stock_item_name AS name, quantity, cost FROM order_item_costs WHERE order_item_id = ? ORDER BY id",
+      [sold.id]
+    );
+    assert.deepEqual(
+      lines.map(({ name, quantity, cost }) => ({ name, quantity: Number(quantity), cost })),
+      [
+        { name: "Kentang Pilih", quantity: 1, cost: 2500 },
+        { name: "Espresso Pilih", quantity: 20, cost: 2000 },
+        { name: "Susu Pilih", quantity: 100, cost: 2000 },
+      ]
+    );
+
+    // A choice may offer only some menus of its category.
+    const onlyAmericano = await menuOf({
+      categoryId: promo.id, name: "Paket Americano", price: 15000,
+      bundleChoices: [{ categoryId: kopiCat.id, quantity: 1, menuItemIds: [americano.id] }],
+    });
+    assert.deepEqual(onlyAmericano.bundleChoices.map((choice) => choice.menuItemIds), [[americano.id]]);
+    const pickOf = (menuId) =>
+      request("POST", "/api/order", {
+        as: "cashier",
+        body: {
+          customerDetails: { name: "Pilih" },
+          orderType: "Offline",
+          orderStatus: "In Progress",
+          bills: { total: 15000, tax: 0, totalWithTax: 15000 },
+          items: [{
+            id: `${promo.id}-${onlyAmericano.id}~1`, sourceMenuItemId: onlyAmericano.id, name: "Paket Americano",
+            quantity: 1, pricePerQuantity: 15000, price: 15000, bundleChoices: [{ menuItemId: menuId, quantity: 1 }],
+          }],
+          paymentMethod: "Cash",
+        },
+      });
+    const notOffered = await pickOf(latte.id);
+    assert.equal(notOffered.status, 400);
+    assert.equal(notOffered.body.message, "Menu pilihan paket tidak sesuai category paket.");
+    const offered = await pickOf(americano.id);
+    assert.equal(offered.status, 201, JSON.stringify(offered.body));
+    assert.equal((await request("DELETE", `/api/order/${offered.body.data.id}`, { as: "admin" })).status, 200);
+    const wrongMenu = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: {
+        categoryId: promo.id, name: "Paket Salah Menu", price: 15000,
+        bundleChoices: [{ categoryId: kopiCat.id, quantity: 1, menuItemIds: [kentang.id] }],
+      },
+    });
+    assert.equal(wrongMenu.status, 400);
+    assert.equal(wrongMenu.body.message, "Menu pilihan paket harus menu biasa dari category pilihannya.");
+    // A menu offered by a choice cannot be deleted.
+    const deleteOffered = await request("DELETE", `/api/menu-item/${americano.id}`, { as: "admin" });
+    assert.equal(deleteOffered.status, 409);
+    assert.equal(
+      deleteOffered.body.message,
+      "Menu ini dipakai di paket Paket Americano. Hapus dari paket dulu."
+    );
+
+    // A promo with a discount: 100% off its menus (e.g. a Google Maps review).
+    const review = await menuOf({
+      categoryId: promo.id, name: "Review GMaps", price: 0, discountPercent: 100,
+      bundleChoices: [{ categoryId: kopiCat.id, quantity: 2 }],
+    });
+    assert.equal(review.discountPercent, 100);
+    // Only a promo keeps a discount.
+    assert.equal(
+      (await menuOf({ categoryId: snackCat.id, name: "Snack Diskon", price: 5000, discountPercent: 50 }))
+        .discountPercent,
+      0
+    );
+
+    // The category offered by a package stays an ordinary category and is kept.
+    const toPromo = await request("PUT", `/api/category/${kopiCat.id}`, {
+      as: "admin",
+      body: { name: "Kopi Pilih Cat", icon: "☕", isBundle: true },
+    });
+    assert.equal(toPromo.status, 400);
+    assert.equal(
+      toPromo.body.message,
+      "Category ini jadi pilihan di paket Paket Americano, Paket Pilih, Review GMaps, jadi tidak bisa dijadikan Kategori Promo."
+    );
+    const deleteCategory = await request("DELETE", `/api/category/${kopiCat.id}`, { as: "admin" });
+    assert.equal(deleteCategory.status, 409);
+
+    // The POS hides the package while its category has no available menu.
+    const hide = (menu, isAvailable) =>
+      request("PUT", `/api/menu-item/${menu.id}`, {
+        as: "admin",
+        body: {
+          categoryId: kopiCat.id, name: menu.name, price: menu.regularPrice ?? menu.price,
+          ingredients: menu.ingredients.map(({ stockItemId, quantity }) => ({ stockItemId, quantity })),
+          isAvailable,
+        },
+      });
+    await hide(americano, false);
+    let posMenus = await request("GET", "/api/menu-item", { as: "cashier" });
+    assert.equal(posMenus.body.data.some((item) => item.id === paket.id), true);
+    await hide(latte, false);
+    posMenus = await request("GET", "/api/menu-item", { as: "cashier" });
+    assert.equal(posMenus.body.data.some((item) => item.id === paket.id), false);
+
+    // Deleting the order returns the bahan of the picked menus.
+    const removed = await request("DELETE", `/api/order/${order.body.data.id}`, { as: "admin" });
+    assert.equal(removed.status, 200, JSON.stringify(removed.body));
+    assert.deepEqual(await stocks(), [1000, 1000]);
+  });
+
+  it("keeps a line discount: the charged price, the percent and the rupiah taken off", async () => {
+    const [[menu]] = await db.query(
+      `SELECT mi.id, mi.category_id FROM menu_items mi
+       JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
+       WHERE mip.regular_price > 0 ORDER BY mi.id LIMIT 1`
+    );
+    const line = (extra) => ({
+      id: `${menu.category_id}-${menu.id}`,
+      sourceMenuItemId: menu.id,
+      name: "Diskon Test",
+      quantity: 2,
+      pricePerQuantity: 20000,
+      ...extra,
+    });
+    const order = await request("POST", "/api/order", {
+      as: "cashier",
+      body: {
+        customerDetails: { name: "Review GMaps" },
+        orderType: "Offline",
+        orderStatus: "In Progress",
+        bills: { total: 30000, tax: 0, totalWithTax: 30000 },
+        items: [
+          // A free line (100%) for a Google Maps review, one at 25% off.
+          line({ discountPercent: 100, price: 0 }),
+          line({ discountPercent: 25, price: 30000 }),
+          // Out of range percents are clamped.
+          line({ discountPercent: 150, price: 0 }),
+        ],
+        paymentMethod: "Cash",
+        allowNegativeStock: true,
+      },
+    });
+    assert.equal(order.status, 201, JSON.stringify(order.body));
+    assert.deepEqual(
+      order.body.data.items.map(({ pricePerQuantity, discountPercent, discountAmount, price }) => ({
+        pricePerQuantity, discountPercent, discountAmount, price,
+      })),
+      [
+        { pricePerQuantity: 0, discountPercent: 100, discountAmount: 40000, price: 0 },
+        { pricePerQuantity: 15000, discountPercent: 25, discountAmount: 10000, price: 30000 },
+        { pricePerQuantity: 0, discountPercent: 100, discountAmount: 40000, price: 0 },
+      ]
+    );
+    // The HPP of a free line is still the cost of the menu.
+    const [[hpp]] = await db.query(
+      "SELECT MIN(hpp_cost) AS low, MAX(hpp_cost) AS high FROM order_items WHERE order_id = ?",
+      [order.body.data.id]
+    );
+    assert.equal(Number(hpp.low), Number(hpp.high));
+    assert.equal((await request("DELETE", `/api/order/${order.body.data.id}`, { as: "admin" })).status, 200);
   });
 
   it("stores whole-rupiah average costs but keeps the exact stock value", async () => {

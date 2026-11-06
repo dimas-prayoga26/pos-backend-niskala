@@ -70,9 +70,39 @@ const mapItem = (row) => ({
   pricePerQuantity: Number(row.price_per_quantity),
   hppCost: Number(row.hpp_cost || 0),
   hpp: Number(row.hpp_cost || 0),
+  // price is what was charged; discountAmount was taken off the line.
+  discountPercent: Number(row.discount_percent || 0),
+  discountAmount: Number(row.discount_amount || 0),
   price: Number(row.price),
   addOns: row.addOns || [],
+  // Menus picked for a package's choices, per package.
+  bundleChoices: row.bundleChoices || [],
 });
+
+// Picked package menus by order item id: [{ menuItemId, name, quantity }].
+const findBundleChoicesByOrderItemIds = async (db, orderItemIds) => {
+  const choicesByOrderItemId = new Map();
+  if (!orderItemIds.length) return choicesByOrderItemId;
+
+  const [rows] = await db.query(
+    `SELECT order_item_id, menu_item_id, menu_item_name, quantity
+     FROM order_item_bundle_choices
+     WHERE order_item_id IN (?)
+     ORDER BY id ASC`,
+    [orderItemIds]
+  );
+  rows.forEach((row) => {
+    if (!choicesByOrderItemId.has(row.order_item_id)) {
+      choicesByOrderItemId.set(row.order_item_id, []);
+    }
+    choicesByOrderItemId.get(row.order_item_id).push({
+      menuItemId: row.menu_item_id,
+      name: row.menu_item_name,
+      quantity: Number(row.quantity),
+    });
+  });
+  return choicesByOrderItemId;
+};
 
 const findItemsByOrderIds = async (orderIds) => {
   if (!orderIds.length) return new Map();
@@ -81,6 +111,10 @@ const findItemsByOrderIds = async (orderIds) => {
     `SELECT * FROM order_items WHERE order_id IN (?) ORDER BY id ASC`,
     [orderIds]
   );
+  const choicesByOrderItemId = await findBundleChoicesByOrderItemIds(
+    pool,
+    rows.map((row) => row.id)
+  );
   const itemsByOrderId = new Map();
 
   rows.forEach((row) => {
@@ -88,7 +122,7 @@ const findItemsByOrderIds = async (orderIds) => {
       itemsByOrderId.set(row.order_id, []);
     }
     itemsByOrderId.get(row.order_id).push(
-      mapItem(row)
+      mapItem({ ...row, bundleChoices: choicesByOrderItemId.get(row.id) || [] })
     );
   });
 
@@ -232,12 +266,35 @@ const insertCateringDetails = (
     ]
   );
 
+const roundCents = (value) => Math.round(value * 100) / 100;
+
+// A line discount (0-100%) arrives priced in: price is what was charged. The
+// stored unit price is the charged one, so reports split revenue by it; the
+// discount keeps its percent and the rupiah taken off.
+const resolveLineDiscount = (item) => {
+  const percent = Math.min(Math.max(Number(item.discountPercent) || 0, 0), 100);
+  const quantity = Number(item.quantity) || 0;
+  const listUnitPrice = Number(item.pricePerQuantity) || 0;
+
+  if (!percent || quantity <= 0) {
+    return { percent: 0, amount: 0, unitPrice: item.pricePerQuantity };
+  }
+
+  const price = Number(item.price) || 0;
+  return {
+    percent,
+    amount: roundCents(Math.max(listUnitPrice * quantity - price, 0)),
+    unitPrice: roundCents(price / quantity),
+  };
+};
+
 const insertOrderItem = async (connection, orderId, { item, menuItemSnapshot }) => {
+  const discount = resolveLineDiscount(item);
   const [result] = await connection.query(
     `INSERT INTO order_items
       (order_id, item_key, menu_item_id, name, variant, quantity,
-       price_per_quantity, hpp_cost, price)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       price_per_quantity, hpp_cost, discount_percent, discount_amount, price)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       orderId,
       item.id || null,
@@ -245,8 +302,10 @@ const insertOrderItem = async (connection, orderId, { item, menuItemSnapshot }) 
       item.name,
       item.variant || null,
       item.quantity,
-      item.pricePerQuantity,
+      discount.unitPrice,
       menuItemSnapshot.hppCost,
+      discount.percent,
+      discount.amount,
       item.price,
     ]
   );
@@ -273,6 +332,17 @@ const insertOrderItemCosts = async (connection, orderItemId, costs = []) => {
         line.cost,
       ]),
     ]
+  );
+};
+
+const insertOrderItemBundleChoices = async (connection, orderItemId, choices = []) => {
+  if (!choices.length) return;
+
+  await connection.query(
+    `INSERT INTO order_item_bundle_choices
+      (order_item_id, menu_item_id, menu_item_name, quantity)
+     VALUES ?`,
+    [choices.map((choice) => [orderItemId, choice.menuItemId, choice.name, choice.quantity])]
   );
 };
 
@@ -331,6 +401,7 @@ const orderExists = async (connection, id) => {
 const findItemsForStockRestore = async (connection, id) => {
   const [itemRows] = await connection.query(
     `SELECT
+       id AS orderItemId,
        item_key AS id,
        menu_item_id AS menuItemId,
        quantity
@@ -338,8 +409,15 @@ const findItemsForStockRestore = async (connection, id) => {
      WHERE order_id = ?`,
     [id]
   );
+  const choicesByOrderItemId = await findBundleChoicesByOrderItemIds(
+    connection,
+    itemRows.map((row) => row.orderItemId)
+  );
 
-  return itemRows;
+  return itemRows.map((row) => ({
+    ...row,
+    bundleChoices: choicesByOrderItemId.get(row.orderItemId) || [],
+  }));
 };
 
 const deleteOrder = async (connection, id) => {
@@ -360,6 +438,7 @@ module.exports = {
   insertCateringDetails,
   insertOrder,
   insertOrderItem,
+  insertOrderItemBundleChoices,
   insertOrderItemCosts,
   insertOrderPlatform,
   orderExists,

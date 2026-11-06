@@ -1,5 +1,5 @@
 const { pool } = require("../../infrastructure/database/pool");
-const { findBundleItems } = require("./menu.bundles");
+const { findBundleChoices, findBundleItems } = require("./menu.bundles");
 const {
   PRICE_ROW_COLUMNS,
   normalizeIngredients,
@@ -25,6 +25,8 @@ const mapMenuItem = (row) => {
     price: regularPrice,
     regularPrice,
     onlinePrice: toNullableNumber(row.online_price),
+    // Kategori Promo: the package costs its menus' price less this percent.
+    discountPercent: Number(row.discount_percent || 0),
     includeOnlinePlatform: Boolean(row.include_online_platform),
     hppCost,
     hpp: hppCost,
@@ -32,9 +34,10 @@ const mapMenuItem = (row) => {
     profit: grossProfit,
     ingredients: [],
     // Kategori Promo: a menu of a promo category is a package of other menus
-    // (bundleItems) instead of a recipe.
+    // (bundleItems) and choices of a category (bundleChoices) instead of a recipe.
     isBundle: Boolean(row.category_is_bundle),
     bundleItems: [],
+    bundleChoices: [],
     imagePath: row.image_path,
     isAvailable: Boolean(row.is_available),
     category: row.category_name
@@ -62,6 +65,7 @@ const baseQuery = `
     mip.online_price,
     mip.hpp_cost,
     mip.gross_profit,
+    mip.discount_percent,
     c.name AS category_name,
     c.icon AS category_icon,
     c.tax AS category_tax,
@@ -72,7 +76,8 @@ const baseQuery = `
   LEFT JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
 `;
 
-// The POS only offers a package while all its menus are available.
+// The POS only offers a package while all its menus are available and each
+// of its choices has an available menu.
 const sellableFilter = `
   mi.is_available = TRUE AND c.is_active = TRUE
   AND NOT EXISTS (
@@ -82,6 +87,25 @@ const sellableFilter = `
     JOIN categories bc ON bc.id = bm.category_id
     WHERE bi.bundle_menu_item_id = mi.id
       AND (bm.is_available = FALSE OR bc.is_active = FALSE)
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM menu_item_bundle_choices bch
+    WHERE bch.bundle_menu_item_id = mi.id
+      AND NOT EXISTS (
+        SELECT 1
+        FROM menu_items cm
+        JOIN categories cc ON cc.id = cm.category_id
+        WHERE cm.category_id = bch.category_id
+          AND cm.is_available = TRUE AND cc.is_active = TRUE
+          AND (
+            NOT EXISTS (SELECT 1 FROM menu_item_bundle_choice_menus o WHERE o.bundle_choice_id = bch.id)
+            OR EXISTS (
+              SELECT 1 FROM menu_item_bundle_choice_menus o
+              WHERE o.bundle_choice_id = bch.id AND o.menu_item_id = cm.id
+            )
+          )
+      )
   )
 `;
 
@@ -185,12 +209,37 @@ const attachRecipes = async (menuItems) => {
     });
   }
 
+  const choiceRows = await findBundleChoices(pool, ids);
+  const bundleChoicesByMenuItemId = new Map();
+
+  for (const row of choiceRows) {
+    const bundleId = row.bundle_menu_item_id;
+    if (!bundleChoicesByMenuItemId.has(bundleId)) bundleChoicesByMenuItemId.set(bundleId, []);
+
+    bundleChoicesByMenuItemId.get(bundleId).push({
+      _id: row.id,
+      id: row.id,
+      categoryId: row.category_id,
+      categoryName: row.category_name,
+      quantity: Number(row.quantity),
+      // The menus it offers (none: every menu of the category).
+      menuItemIds: row.menuItemIds,
+    });
+  }
+
   return menuItems.map((item) => ({
     ...item,
     ingredients: ingredientsByMenuItemId.get(item.id) || [],
     bundleItems: bundleItemsByMenuItemId.get(item.id) || [],
+    bundleChoices: bundleChoicesByMenuItemId.get(item.id) || [],
   }));
 };
+
+const setDiscountPercent = (connection, menuItemId, discountPercent) =>
+  connection.query("UPDATE menu_item_prices SET discount_percent = ? WHERE menu_item_id = ?", [
+    discountPercent,
+    menuItemId,
+  ]);
 
 // Replaces the price row; recipe rows only when an ingredients array is supplied.
 const replacePriceAndRecipe = async (
@@ -335,5 +384,6 @@ module.exports = {
   insertMenuItem,
   remove,
   replacePriceAndRecipe,
+  setDiscountPercent,
   updateMenuItem,
 };

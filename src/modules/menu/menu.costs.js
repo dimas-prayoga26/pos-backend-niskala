@@ -3,35 +3,23 @@
 //   recipes.cost             = quantity x stock unit_cost (whole rupiah)
 //   menu_item_prices.hpp_cost = sum of the menu's recipe costs
 //   gross_profit             = regular_price - hpp_cost
-//   a package (menu_item_bundle_items) hpp_cost = sum of its menus' hpp_cost
-//                                   x quantity, refreshed with those menus
+//   a package (Kategori Promo)  hpp_cost = 0: each sale counts the HPP of
+//                                   the menus in it (order snapshot); its
+//                                   gross_profit is entered by hand
 // A menu keeps its manual HPP while its recipe costs nothing yet (no purchase
 // prices), the same fallback order HPP uses. Pass stockItemIds or menuItemIds
 // to limit the refresh; with neither, every recipe is refreshed.
-// Packages containing (or being) one of the menus; all with menuIds null.
-const refreshBundleCosts = async (connection, menuIds) => {
-  const [bundles] = await connection.query(
-    `SELECT DISTINCT bundle_menu_item_id AS id
-     FROM menu_item_bundle_items
-     ${menuIds ? "WHERE menu_item_id IN (?) OR bundle_menu_item_id IN (?)" : ""}`,
-    menuIds ? [menuIds, menuIds] : []
-  );
-  if (!bundles.length) return;
-
-  await connection.query(
+// Packages have no HPP of their own (see above); their gross profit stays.
+const clearBundleCosts = (connection) =>
+  connection.query(
     `UPDATE menu_item_prices mip
-     JOIN (
-       SELECT bi.bundle_menu_item_id, SUM(bi.quantity * COALESCE(item_prices.hpp_cost, 0)) AS hpp
-       FROM menu_item_bundle_items bi
-       LEFT JOIN menu_item_prices item_prices ON item_prices.menu_item_id = bi.menu_item_id
-       WHERE bi.bundle_menu_item_id IN (?)
-       GROUP BY bi.bundle_menu_item_id
-     ) costs ON costs.bundle_menu_item_id = mip.menu_item_id
-     SET mip.hpp_cost = costs.hpp,
-         mip.gross_profit = mip.regular_price - costs.hpp`,
-    [bundles.map((bundle) => bundle.id)]
+     SET mip.hpp_cost = 0
+     WHERE mip.hpp_cost <> 0
+       AND (
+         EXISTS (SELECT 1 FROM menu_item_bundle_items bi WHERE bi.bundle_menu_item_id = mip.menu_item_id)
+         OR EXISTS (SELECT 1 FROM menu_item_bundle_choices bc WHERE bc.bundle_menu_item_id = mip.menu_item_id)
+       )`
   );
-};
 
 const refreshMenuCosts = async (connection, { stockItemIds, menuItemIds } = {}) => {
   let menuIds = menuItemIds;
@@ -71,7 +59,7 @@ const refreshMenuCosts = async (connection, { stockItemIds, menuItemIds } = {}) 
      WHERE costs.hpp > 0`,
     params
   );
-  await refreshBundleCosts(connection, menuIds);
+  await clearBundleCosts(connection);
 };
 
 module.exports = { refreshMenuCosts };

@@ -110,19 +110,46 @@ const remove = async (id) => {
   return result.affectedRows > 0;
 };
 
-// Packages of other categories that contain a menu of this category; they
-// block deleting it (the menus go with the category).
+// Packages of other categories that contain a menu of this category or offer
+// a choice of it; they block deleting it (the menus go with the category).
 const findBundleNamesUsing = async (id) => {
   const [rows] = await pool.query(
-    `SELECT DISTINCT b.name
+    `SELECT b.name
      FROM menu_item_bundle_items bi
      JOIN menu_items m ON m.id = bi.menu_item_id
      JOIN menu_items b ON b.id = bi.bundle_menu_item_id
      WHERE m.category_id = ? AND b.category_id <> ?
-     ORDER BY b.name ASC`,
-    [id, id]
+     UNION
+     SELECT b.name
+     FROM menu_item_bundle_choices bc
+     JOIN menu_items b ON b.id = bc.bundle_menu_item_id
+     WHERE bc.category_id = ?
+     ORDER BY name ASC`,
+    [id, id, id]
   );
   return rows.map((row) => row.name);
 };
 
-module.exports = { create, findAll, findBundleNamesUsing, remove, update, updatePositions };
+// Packages offering a choice of this category; it cannot become a Kategori
+// Promo while they do.
+const findChoiceBundleNames = async (id) => {
+  const [rows] = await pool.query(
+    `SELECT DISTINCT b.name
+     FROM menu_item_bundle_choices bc
+     JOIN menu_items b ON b.id = bc.bundle_menu_item_id
+     WHERE bc.category_id = ?
+     ORDER BY b.name ASC`,
+    [id]
+  );
+  return rows.map((row) => row.name);
+};
+
+module.exports = {
+  create,
+  findAll,
+  findBundleNamesUsing,
+  findChoiceBundleNames,
+  remove,
+  update,
+  updatePositions,
+};

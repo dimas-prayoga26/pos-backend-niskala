@@ -3117,6 +3117,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5440.5,
       "hpp": 5440.5,
@@ -3159,6 +3160,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cappuccino-d2eb185afd.jpg",
       "isAvailable": true,
       "category": {
@@ -3183,6 +3185,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5440.5,
       "hpp": 5440.5,
@@ -3225,6 +3228,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cafe-latte-1acbe6600b.jpg",
       "isAvailable": true,
       "category": {
@@ -3249,6 +3253,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -3313,6 +3318,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/butterscotch-latte-3e444ae99e.jpg",
       "isAvailable": true,
       "category": {
@@ -3337,6 +3343,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -3401,6 +3408,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/caramel-latte-e6dd7de691.jpg",
       "isAvailable": true,
       "category": {
@@ -3425,6 +3433,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -3489,6 +3498,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/vanilla-latte-8231e75eae.jpg",
       "isAvailable": true,
       "category": {
@@ -3513,6 +3523,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -3577,6 +3588,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/hazelnut-latte-6f30e26336.jpg",
       "isAvailable": true,
       "category": {
@@ -3601,6 +3613,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7720.5,
       "hpp": 7720.5,
@@ -3665,6 +3678,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/aren-latte-9daa0860f4.jpg",
       "isAvailable": true,
       "category": {
@@ -3689,6 +3703,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8121.75,
       "hpp": 8121.75,
@@ -3742,6 +3757,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/moccacino-16b683cb90.jpg",
       "isAvailable": true,
       "category": {
@@ -3766,6 +3782,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8293.01,
       "hpp": 8293.01,
@@ -3841,6 +3858,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/berry-coffee-milk-d7f69b0093.jpg",
       "isAvailable": true,
       "category": {
@@ -3865,6 +3883,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3009.5,
       "hpp": 3009.5,
@@ -3907,6 +3926,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/americano-a7098299e6.jpg",
       "isAvailable": true,
       "category": {
@@ -3931,6 +3951,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4875,
       "hpp": 4875,
@@ -3973,6 +3994,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/longblack-c9fca6adf7.jpg",
       "isAvailable": true,
       "category": {
@@ -3997,6 +4019,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4745,
       "hpp": 4745,
@@ -4028,6 +4051,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/on-the-rock-espresso-1159307ad6.jpg",
       "isAvailable": true,
       "category": {
@@ -4052,6 +4076,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -4127,6 +4152,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/tropical-americano-911a87baf1.jpg",
       "isAvailable": true,
       "category": {
@@ -4151,6 +4177,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -4226,6 +4253,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/elberry-americano-c30281ce32.jpg",
       "isAvailable": true,
       "category": {
@@ -4250,6 +4278,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -4325,6 +4354,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/berry-summer-27a7222ae3.jpg",
       "isAvailable": true,
       "category": {
@@ -4349,6 +4379,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7330.38,
       "hpp": 7330.38,
@@ -4391,6 +4422,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chocolate-317bab573b.jpg",
       "isAvailable": true,
       "category": {
@@ -4415,6 +4447,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7427.88,
       "hpp": 7427.88,
@@ -4457,6 +4490,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/matcha-05d3506b73.jpg",
       "isAvailable": true,
       "category": {
@@ -4481,6 +4515,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7135.38,
       "hpp": 7135.38,
@@ -4523,6 +4558,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cookies-and-cream-4ba3428963.jpg",
       "isAvailable": true,
       "category": {
@@ -4547,6 +4583,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 2320.5,
       "hpp": 2320.5,
@@ -4589,6 +4626,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/lychee-tea-b961e917f7.jpg",
       "isAvailable": true,
       "category": {
@@ -4613,6 +4651,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 2184,
       "hpp": 2184,
@@ -4655,6 +4694,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/lemon-tea-6a2e7161fe.jpg",
       "isAvailable": true,
       "category": {
@@ -4679,6 +4719,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3081,
       "hpp": 3081,
@@ -4721,6 +4762,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/jeruk-nipis-songkit-dd4a1bded6.jpg",
       "isAvailable": true,
       "category": {
@@ -4745,6 +4787,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5227.37,
       "hpp": 5227.37,
@@ -4798,6 +4841,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/thai-tea-6793cc6d8d.jpg",
       "isAvailable": true,
       "category": {
@@ -4822,6 +4866,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8915,
       "hpp": 8915,
@@ -4908,6 +4953,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/fried-egg-rice-bowl-71e4a6b35b.jpg",
       "isAvailable": true,
       "category": {
@@ -4932,6 +4978,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 10788,
       "hpp": 10788,
@@ -5018,6 +5065,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chicken-katsu-rice-bowl-9f77c07d83.jpg",
       "isAvailable": true,
       "category": {
@@ -5042,6 +5090,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 12883,
       "hpp": 12883,
@@ -5128,6 +5177,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chicken-teriyaki-rice-bowl-de9b95075d.jpg",
       "isAvailable": true,
       "category": {
@@ -5152,6 +5202,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 14118,
       "hpp": 14118,
@@ -5238,6 +5289,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/ayam-geprek-rice-bowl-1ad15279c3.jpg",
       "isAvailable": true,
       "category": {
@@ -5262,6 +5314,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -5270,6 +5323,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/beef-teriyaki-rice-bowl-bd0d2dccf0.jpg",
       "isAvailable": true,
       "category": {
@@ -5294,6 +5348,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6915,
       "hpp": 6915,
@@ -5358,6 +5413,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/indomie-goreng-telur-908692a040.jpg",
       "isAvailable": true,
       "category": {
@@ -5382,6 +5438,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7715,
       "hpp": 7715,
@@ -5446,6 +5503,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/indomie-rebus-telur-5bb08c107c.jpg",
       "isAvailable": true,
       "category": {
@@ -5470,6 +5528,7 @@
       "price": 12000,
       "regularPrice": 12000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4718,
       "hpp": 4718,
@@ -5523,6 +5582,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/kentang-goreng-1bbb3108c0.jpg",
       "isAvailable": true,
       "category": {
@@ -5547,6 +5607,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9395,
       "hpp": 9395,
@@ -5622,6 +5683,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/mix-platter-f9eb1d5ba5.jpg",
       "isAvailable": true,
       "category": {
@@ -5646,6 +5708,7 @@
       "price": 12000,
       "regularPrice": 12000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6158,
       "hpp": 6158,
@@ -5699,6 +5762,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cireng-45396e6a79.jpg",
       "isAvailable": true,
       "category": {
@@ -5723,6 +5787,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6301,
       "hpp": 6301,
@@ -5787,6 +5852,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/pisang-nugget-keju-coklat-e321243831.jpg",
       "isAvailable": true,
       "category": {
@@ -5811,6 +5877,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -5819,6 +5886,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/roti-bakar-149c6fcfa6.jpg",
       "isAvailable": true,
       "category": {
@@ -5843,6 +5911,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -5851,6 +5920,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-air-mineral-4dab72aab0.jpg",
       "isAvailable": true,
       "category": {
@@ -5875,6 +5945,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -5883,6 +5954,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-buah-9c87ebb944.jpg",
       "isAvailable": true,
       "category": {
@@ -5907,6 +5979,7 @@
       "price": 3000,
       "regularPrice": 3000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -5915,6 +5988,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-kerupuk-faaf6f2c8f.jpg",
       "isAvailable": true,
       "category": {
@@ -5939,6 +6013,7 @@
       "price": 4000,
       "regularPrice": 4000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -5947,6 +6022,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-nasi-putih-02e8184074.jpg",
       "isAvailable": true,
       "category": {
@@ -5971,6 +6047,7 @@
       "price": 4000,
       "regularPrice": 4000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -5979,6 +6056,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-sambal-17d98fec6b.jpg",
       "isAvailable": true,
       "category": {
@@ -6003,6 +6081,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -6011,6 +6090,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-telur-25fe043ebb.jpg",
       "isAvailable": true,
       "category": {
@@ -6035,6 +6115,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -6043,6 +6124,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-20k-e91f9d8973.jpg",
       "isAvailable": true,
       "category": {
@@ -6067,6 +6149,7 @@
       "price": 28000,
       "regularPrice": 28000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -6075,6 +6158,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-28k-296bcf3058.jpg",
       "isAvailable": true,
       "category": {
@@ -6099,6 +6183,7 @@
       "price": 30000,
       "regularPrice": 30000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -6107,6 +6192,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-30k-a602b24c5e.jpg",
       "isAvailable": true,
       "category": {
@@ -6131,6 +6217,7 @@
       "price": 35000,
       "regularPrice": 35000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -6139,6 +6226,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-35k-5bac09525e.jpg",
       "isAvailable": true,
       "category": {
@@ -6163,6 +6251,7 @@
       "price": 40000,
       "regularPrice": 40000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -6171,6 +6260,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-40k-daa33e5477.jpg",
       "isAvailable": true,
       "category": {
@@ -6212,6 +6302,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5440.5,
       "hpp": 5440.5,
@@ -6254,6 +6345,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cappuccino-d2eb185afd.jpg",
       "isAvailable": true,
       "category": {
@@ -6278,6 +6370,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5440.5,
       "hpp": 5440.5,
@@ -6320,6 +6413,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cafe-latte-1acbe6600b.jpg",
       "isAvailable": true,
       "category": {
@@ -6344,6 +6438,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -6408,6 +6503,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/butterscotch-latte-3e444ae99e.jpg",
       "isAvailable": true,
       "category": {
@@ -6432,6 +6528,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -6496,6 +6593,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/caramel-latte-e6dd7de691.jpg",
       "isAvailable": true,
       "category": {
@@ -6520,6 +6618,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -6584,6 +6683,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/vanilla-latte-8231e75eae.jpg",
       "isAvailable": true,
       "category": {
@@ -6608,6 +6708,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -6672,6 +6773,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/hazelnut-latte-6f30e26336.jpg",
       "isAvailable": true,
       "category": {
@@ -6696,6 +6798,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7720.5,
       "hpp": 7720.5,
@@ -6760,6 +6863,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/aren-latte-9daa0860f4.jpg",
       "isAvailable": true,
       "category": {
@@ -6784,6 +6888,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8121.75,
       "hpp": 8121.75,
@@ -6837,6 +6942,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/moccacino-16b683cb90.jpg",
       "isAvailable": true,
       "category": {
@@ -6861,6 +6967,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8293.01,
       "hpp": 8293.01,
@@ -6936,6 +7043,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/berry-coffee-milk-d7f69b0093.jpg",
       "isAvailable": true,
       "category": {
@@ -6960,6 +7068,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3009.5,
       "hpp": 3009.5,
@@ -7002,6 +7111,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/americano-a7098299e6.jpg",
       "isAvailable": true,
       "category": {
@@ -7026,6 +7136,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4875,
       "hpp": 4875,
@@ -7068,6 +7179,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/longblack-c9fca6adf7.jpg",
       "isAvailable": true,
       "category": {
@@ -7092,6 +7204,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4745,
       "hpp": 4745,
@@ -7123,6 +7236,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/on-the-rock-espresso-1159307ad6.jpg",
       "isAvailable": true,
       "category": {
@@ -7147,6 +7261,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -7222,6 +7337,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/tropical-americano-911a87baf1.jpg",
       "isAvailable": true,
       "category": {
@@ -7246,6 +7362,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -7321,6 +7438,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/elberry-americano-c30281ce32.jpg",
       "isAvailable": true,
       "category": {
@@ -7345,6 +7463,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -7420,6 +7539,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/berry-summer-27a7222ae3.jpg",
       "isAvailable": true,
       "category": {
@@ -7495,6 +7615,7 @@
      "price": 20000,
      "regularPrice": 20000,
      "onlinePrice": 30000,
+     "discountPercent": 0,
      "includeOnlinePlatform": true,
      "hppCost": 3000,
      "hpp": 3000,
@@ -7526,6 +7647,7 @@
      ],
      "isBundle": false,
      "bundleItems": [],
+     "bundleChoices": [],
      "imagePath": null,
      "isAvailable": true,
      "category": {
@@ -7592,6 +7714,7 @@
      "price": 15000,
      "regularPrice": 15000,
      "onlinePrice": null,
+     "discountPercent": 0,
      "includeOnlinePlatform": false,
      "hppCost": 5000,
      "hpp": 5000,
@@ -7600,6 +7723,7 @@
      "ingredients": [],
      "isBundle": false,
      "bundleItems": [],
+     "bundleChoices": [],
      "imagePath": null,
      "isAvailable": true,
      "category": {
@@ -7649,6 +7773,7 @@
      "price": 12000,
      "regularPrice": 12000,
      "onlinePrice": null,
+     "discountPercent": 0,
      "includeOnlinePlatform": false,
      "hppCost": 3000,
      "hpp": 3000,
@@ -7657,6 +7782,7 @@
      "ingredients": [],
      "isBundle": false,
      "bundleItems": [],
+     "bundleChoices": [],
      "imagePath": null,
      "isAvailable": false,
      "category": {
@@ -7759,6 +7885,7 @@
      "price": 17000,
      "regularPrice": 17000,
      "onlinePrice": null,
+     "discountPercent": 0,
      "includeOnlinePlatform": false,
      "hppCost": 6000,
      "hpp": 6000,
@@ -7767,6 +7894,7 @@
      "ingredients": [],
      "isBundle": false,
      "bundleItems": [],
+     "bundleChoices": [],
      "imagePath": "/uploads/menu/<ts>-foto-menu-uji-png.png",
      "isAvailable": true,
      "category": {
@@ -7850,6 +7978,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": 30000,
+      "discountPercent": 0,
       "includeOnlinePlatform": true,
       "hppCost": 3000,
       "hpp": 3000,
@@ -7881,6 +8010,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": true,
       "category": {
@@ -7905,6 +8035,7 @@
       "price": 17000,
       "regularPrice": 17000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6000,
       "hpp": 6000,
@@ -7913,6 +8044,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/<ts>-foto-menu-uji-png.png",
       "isAvailable": true,
       "category": {
@@ -7937,6 +8069,7 @@
       "price": 12000,
       "regularPrice": 12000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3000,
       "hpp": 3000,
@@ -7945,6 +8078,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -7969,6 +8103,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5440.5,
       "hpp": 5440.5,
@@ -8011,6 +8146,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cappuccino-d2eb185afd.jpg",
       "isAvailable": true,
       "category": {
@@ -8035,6 +8171,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5440.5,
       "hpp": 5440.5,
@@ -8077,6 +8214,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cafe-latte-1acbe6600b.jpg",
       "isAvailable": true,
       "category": {
@@ -8101,6 +8239,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -8165,6 +8304,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/butterscotch-latte-3e444ae99e.jpg",
       "isAvailable": true,
       "category": {
@@ -8189,6 +8329,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -8253,6 +8394,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/caramel-latte-e6dd7de691.jpg",
       "isAvailable": true,
       "category": {
@@ -8277,6 +8419,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -8341,6 +8484,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/vanilla-latte-8231e75eae.jpg",
       "isAvailable": true,
       "category": {
@@ -8365,6 +8509,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -8429,6 +8574,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/hazelnut-latte-6f30e26336.jpg",
       "isAvailable": true,
       "category": {
@@ -8453,6 +8599,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7720.5,
       "hpp": 7720.5,
@@ -8517,6 +8664,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/aren-latte-9daa0860f4.jpg",
       "isAvailable": true,
       "category": {
@@ -8541,6 +8689,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8121.75,
       "hpp": 8121.75,
@@ -8594,6 +8743,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/moccacino-16b683cb90.jpg",
       "isAvailable": true,
       "category": {
@@ -8618,6 +8768,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8293.01,
       "hpp": 8293.01,
@@ -8693,6 +8844,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/berry-coffee-milk-d7f69b0093.jpg",
       "isAvailable": true,
       "category": {
@@ -8717,6 +8869,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3009.5,
       "hpp": 3009.5,
@@ -8759,6 +8912,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/americano-a7098299e6.jpg",
       "isAvailable": true,
       "category": {
@@ -8783,6 +8937,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4875,
       "hpp": 4875,
@@ -8825,6 +8980,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/longblack-c9fca6adf7.jpg",
       "isAvailable": true,
       "category": {
@@ -8849,6 +9005,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4745,
       "hpp": 4745,
@@ -8880,6 +9037,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/on-the-rock-espresso-1159307ad6.jpg",
       "isAvailable": true,
       "category": {
@@ -8904,6 +9062,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -8979,6 +9138,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/tropical-americano-911a87baf1.jpg",
       "isAvailable": true,
       "category": {
@@ -9003,6 +9163,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -9078,6 +9239,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/elberry-americano-c30281ce32.jpg",
       "isAvailable": true,
       "category": {
@@ -9102,6 +9264,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -9177,6 +9340,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/berry-summer-27a7222ae3.jpg",
       "isAvailable": true,
       "category": {
@@ -9201,6 +9365,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -9254,6 +9419,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -9278,6 +9444,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3047,
       "hpp": 3047,
@@ -9364,6 +9531,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -9388,6 +9556,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5862,
       "hpp": 5862,
@@ -9474,6 +9643,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -9498,6 +9668,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7330.38,
       "hpp": 7330.38,
@@ -9540,6 +9711,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chocolate-317bab573b.jpg",
       "isAvailable": true,
       "category": {
@@ -9564,6 +9736,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7427.88,
       "hpp": 7427.88,
@@ -9606,6 +9779,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/matcha-05d3506b73.jpg",
       "isAvailable": true,
       "category": {
@@ -9630,6 +9804,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7135.38,
       "hpp": 7135.38,
@@ -9672,6 +9847,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cookies-and-cream-4ba3428963.jpg",
       "isAvailable": true,
       "category": {
@@ -9696,6 +9872,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 2320.5,
       "hpp": 2320.5,
@@ -9738,6 +9915,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/lychee-tea-b961e917f7.jpg",
       "isAvailable": true,
       "category": {
@@ -9762,6 +9940,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 2184,
       "hpp": 2184,
@@ -9804,6 +9983,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/lemon-tea-6a2e7161fe.jpg",
       "isAvailable": true,
       "category": {
@@ -9828,6 +10008,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3081,
       "hpp": 3081,
@@ -9870,6 +10051,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/jeruk-nipis-songkit-dd4a1bded6.jpg",
       "isAvailable": true,
       "category": {
@@ -9894,6 +10076,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5227.37,
       "hpp": 5227.37,
@@ -9947,6 +10130,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/thai-tea-6793cc6d8d.jpg",
       "isAvailable": true,
       "category": {
@@ -9971,6 +10155,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8915,
       "hpp": 8915,
@@ -10057,6 +10242,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/fried-egg-rice-bowl-71e4a6b35b.jpg",
       "isAvailable": true,
       "category": {
@@ -10081,6 +10267,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 10788,
       "hpp": 10788,
@@ -10167,6 +10354,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chicken-katsu-rice-bowl-9f77c07d83.jpg",
       "isAvailable": true,
       "category": {
@@ -10191,6 +10379,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 12883,
       "hpp": 12883,
@@ -10277,6 +10466,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chicken-teriyaki-rice-bowl-de9b95075d.jpg",
       "isAvailable": true,
       "category": {
@@ -10301,6 +10491,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 14118,
       "hpp": 14118,
@@ -10387,6 +10578,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/ayam-geprek-rice-bowl-1ad15279c3.jpg",
       "isAvailable": true,
       "category": {
@@ -10411,6 +10603,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -10419,6 +10612,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/beef-teriyaki-rice-bowl-bd0d2dccf0.jpg",
       "isAvailable": true,
       "category": {
@@ -10443,6 +10637,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6915,
       "hpp": 6915,
@@ -10507,6 +10702,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/indomie-goreng-telur-908692a040.jpg",
       "isAvailable": true,
       "category": {
@@ -10531,6 +10727,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7715,
       "hpp": 7715,
@@ -10595,6 +10792,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/indomie-rebus-telur-5bb08c107c.jpg",
       "isAvailable": true,
       "category": {
@@ -10619,6 +10817,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 14120,
       "hpp": 14120,
@@ -10705,6 +10904,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -10729,6 +10929,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 14870,
       "hpp": 14870,
@@ -10815,6 +11016,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -10839,6 +11041,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -10847,6 +11050,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -10871,6 +11075,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -10879,6 +11084,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -10903,6 +11109,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -10911,6 +11118,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -10935,6 +11143,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6962,
       "hpp": 6962,
@@ -10955,6 +11164,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -10979,6 +11189,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 1342,
       "hpp": 1342,
@@ -11043,6 +11254,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11067,6 +11279,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3582,
       "hpp": 3582,
@@ -11142,6 +11355,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11166,6 +11380,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 52,
       "hpp": 52,
@@ -11230,6 +11445,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11254,6 +11470,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -11262,6 +11479,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11286,6 +11504,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 11542,
       "hpp": 11542,
@@ -11372,6 +11591,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11396,6 +11616,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 10820,
       "hpp": 10820,
@@ -11482,6 +11703,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11506,6 +11728,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6962,
       "hpp": 6962,
@@ -11526,6 +11749,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11550,6 +11774,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -11558,6 +11783,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11582,6 +11808,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -11590,6 +11817,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -11614,6 +11842,7 @@
       "price": 12000,
       "regularPrice": 12000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4718,
       "hpp": 4718,
@@ -11667,6 +11896,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/kentang-goreng-1bbb3108c0.jpg",
       "isAvailable": true,
       "category": {
@@ -11691,6 +11921,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9395,
       "hpp": 9395,
@@ -11766,6 +11997,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/mix-platter-f9eb1d5ba5.jpg",
       "isAvailable": true,
       "category": {
@@ -11790,6 +12022,7 @@
       "price": 12000,
       "regularPrice": 12000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6158,
       "hpp": 6158,
@@ -11843,6 +12076,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cireng-45396e6a79.jpg",
       "isAvailable": true,
       "category": {
@@ -11867,6 +12101,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6301,
       "hpp": 6301,
@@ -11931,6 +12166,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/pisang-nugget-keju-coklat-e321243831.jpg",
       "isAvailable": true,
       "category": {
@@ -11955,6 +12191,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -11963,6 +12200,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/roti-bakar-149c6fcfa6.jpg",
       "isAvailable": true,
       "category": {
@@ -11987,6 +12225,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -11995,6 +12234,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-air-mineral-4dab72aab0.jpg",
       "isAvailable": true,
       "category": {
@@ -12019,6 +12259,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12027,6 +12268,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-buah-9c87ebb944.jpg",
       "isAvailable": true,
       "category": {
@@ -12051,6 +12293,7 @@
       "price": 3000,
       "regularPrice": 3000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12059,6 +12302,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-kerupuk-faaf6f2c8f.jpg",
       "isAvailable": true,
       "category": {
@@ -12083,6 +12327,7 @@
       "price": 4000,
       "regularPrice": 4000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12091,6 +12336,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-nasi-putih-02e8184074.jpg",
       "isAvailable": true,
       "category": {
@@ -12115,6 +12361,7 @@
       "price": 4000,
       "regularPrice": 4000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12123,6 +12370,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-sambal-17d98fec6b.jpg",
       "isAvailable": true,
       "category": {
@@ -12147,6 +12395,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12155,6 +12404,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-telur-25fe043ebb.jpg",
       "isAvailable": true,
       "category": {
@@ -12179,6 +12429,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12187,6 +12438,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-20k-e91f9d8973.jpg",
       "isAvailable": true,
       "category": {
@@ -12211,6 +12463,7 @@
       "price": 28000,
       "regularPrice": 28000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12219,6 +12472,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-28k-296bcf3058.jpg",
       "isAvailable": true,
       "category": {
@@ -12243,6 +12497,7 @@
       "price": 30000,
       "regularPrice": 30000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12251,6 +12506,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-30k-a602b24c5e.jpg",
       "isAvailable": true,
       "category": {
@@ -12275,6 +12531,7 @@
       "price": 35000,
       "regularPrice": 35000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12283,6 +12540,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-35k-5bac09525e.jpg",
       "isAvailable": true,
       "category": {
@@ -12307,6 +12565,7 @@
       "price": 40000,
       "regularPrice": 40000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -12315,6 +12574,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-40k-daa33e5477.jpg",
       "isAvailable": true,
       "category": {
@@ -12339,6 +12599,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3435,
       "hpp": 3435,
@@ -12381,6 +12642,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -12405,6 +12667,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3435,
       "hpp": 3435,
@@ -12447,6 +12710,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -12471,6 +12735,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3435,
       "hpp": 3435,
@@ -12513,6 +12778,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -12537,6 +12803,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3435,
       "hpp": 3435,
@@ -12579,6 +12846,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -12620,6 +12888,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": 30000,
+      "discountPercent": 0,
       "includeOnlinePlatform": true,
       "hppCost": 3000,
       "hpp": 3000,
@@ -12651,6 +12920,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": true,
       "category": {
@@ -12675,6 +12945,7 @@
       "price": 17000,
       "regularPrice": 17000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6000,
       "hpp": 6000,
@@ -12683,6 +12954,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/<ts>-foto-menu-uji-png.png",
       "isAvailable": true,
       "category": {
@@ -12707,6 +12979,7 @@
       "price": 12000,
       "regularPrice": 12000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3000,
       "hpp": 3000,
@@ -12715,6 +12988,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -14924,8 +15198,11 @@
        "pricePerQuantity": 20000,
        "hppCost": 3434,
        "hpp": 3434,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 40000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       },
       {
        "id": "8-69",
@@ -14938,8 +15215,11 @@
        "pricePerQuantity": 17000,
        "hppCost": 6000,
        "hpp": 6000,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 17000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       }
      ],
      "paymentMethod": "Cash",
@@ -15016,8 +15296,11 @@
        "pricePerQuantity": 20000,
        "hppCost": 3434,
        "hpp": 3434,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 20000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       }
      ],
      "paymentMethod": "QRIS",
@@ -15128,8 +15411,11 @@
        "pricePerQuantity": 30000,
        "hppCost": 3434,
        "hpp": 3434,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 30000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       }
      ],
      "paymentMethod": "Online",
@@ -16785,8 +17071,11 @@
         "pricePerQuantity": 30000,
         "hppCost": 3434,
         "hpp": 3434,
+        "discountPercent": 0,
+        "discountAmount": 0,
         "price": 30000,
-        "addOns": []
+        "addOns": [],
+        "bundleChoices": []
        }
       ],
       "paymentMethod": "Online",
@@ -16830,8 +17119,11 @@
         "pricePerQuantity": 20000,
         "hppCost": 3434,
         "hpp": 3434,
+        "discountPercent": 0,
+        "discountAmount": 0,
         "price": 20000,
-        "addOns": []
+        "addOns": [],
+        "bundleChoices": []
        }
       ],
       "paymentMethod": "QRIS",
@@ -16875,8 +17167,11 @@
         "pricePerQuantity": 20000,
         "hppCost": 3434,
         "hpp": 3434,
+        "discountPercent": 0,
+        "discountAmount": 0,
         "price": 40000,
-        "addOns": []
+        "addOns": [],
+        "bundleChoices": []
        },
        {
         "id": "8-69",
@@ -16889,8 +17184,11 @@
         "pricePerQuantity": 17000,
         "hppCost": 6000,
         "hpp": 6000,
+        "discountPercent": 0,
+        "discountAmount": 0,
         "price": 17000,
-        "addOns": []
+        "addOns": [],
+        "bundleChoices": []
        }
       ],
       "paymentMethod": "Cash",
@@ -16950,8 +17248,11 @@
        "pricePerQuantity": 20000,
        "hppCost": 3434,
        "hpp": 3434,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 40000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       },
       {
        "id": "8-69",
@@ -16964,8 +17265,11 @@
        "pricePerQuantity": 17000,
        "hppCost": 6000,
        "hpp": 6000,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 17000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       }
      ],
      "paymentMethod": "Cash",
@@ -17093,8 +17397,11 @@
        "pricePerQuantity": 20000,
        "hppCost": 3434,
        "hpp": 3434,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 40000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       },
       {
        "id": "8-69",
@@ -17107,8 +17414,11 @@
        "pricePerQuantity": 17000,
        "hppCost": 6000,
        "hpp": 6000,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 17000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       }
      ],
      "paymentMethod": "Cash",
@@ -17666,8 +17976,11 @@
        "pricePerQuantity": 20000,
        "hppCost": 3434,
        "hpp": 3434,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 20000,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       }
      ],
      "paymentMethod": "Cash",
@@ -19035,8 +19348,11 @@
        "pricePerQuantity": 1,
        "hppCost": 3434,
        "hpp": 3434,
+       "discountPercent": 0,
+       "discountAmount": 0,
        "price": 1,
-       "addOns": []
+       "addOns": [],
+       "bundleChoices": []
       }
      ],
      "paymentMethod": "Cash",
@@ -21159,6 +21475,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5440.5,
       "hpp": 5440.5,
@@ -21201,6 +21518,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cappuccino-d2eb185afd.jpg",
       "isAvailable": true,
       "category": {
@@ -21225,6 +21543,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5440.5,
       "hpp": 5440.5,
@@ -21267,6 +21586,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cafe-latte-1acbe6600b.jpg",
       "isAvailable": true,
       "category": {
@@ -21291,6 +21611,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -21355,6 +21676,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/butterscotch-latte-3e444ae99e.jpg",
       "isAvailable": true,
       "category": {
@@ -21379,6 +21701,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -21443,6 +21766,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/caramel-latte-e6dd7de691.jpg",
       "isAvailable": true,
       "category": {
@@ -21467,6 +21791,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -21531,6 +21856,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/vanilla-latte-8231e75eae.jpg",
       "isAvailable": true,
       "category": {
@@ -21555,6 +21881,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9134.03,
       "hpp": 9134.03,
@@ -21619,6 +21946,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/hazelnut-latte-6f30e26336.jpg",
       "isAvailable": true,
       "category": {
@@ -21643,6 +21971,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7720.5,
       "hpp": 7720.5,
@@ -21707,6 +22036,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/aren-latte-9daa0860f4.jpg",
       "isAvailable": true,
       "category": {
@@ -21731,6 +22061,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8121.75,
       "hpp": 8121.75,
@@ -21784,6 +22115,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/moccacino-16b683cb90.jpg",
       "isAvailable": true,
       "category": {
@@ -21808,6 +22140,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8293.01,
       "hpp": 8293.01,
@@ -21883,6 +22216,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/berry-coffee-milk-d7f69b0093.jpg",
       "isAvailable": true,
       "category": {
@@ -21907,6 +22241,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3009.5,
       "hpp": 3009.5,
@@ -21949,6 +22284,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/americano-a7098299e6.jpg",
       "isAvailable": true,
       "category": {
@@ -21973,6 +22309,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4875,
       "hpp": 4875,
@@ -22015,6 +22352,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/longblack-c9fca6adf7.jpg",
       "isAvailable": true,
       "category": {
@@ -22039,6 +22377,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4745,
       "hpp": 4745,
@@ -22070,6 +22409,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/on-the-rock-espresso-1159307ad6.jpg",
       "isAvailable": true,
       "category": {
@@ -22094,6 +22434,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -22169,6 +22510,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/tropical-americano-911a87baf1.jpg",
       "isAvailable": true,
       "category": {
@@ -22193,6 +22535,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -22268,6 +22611,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/elberry-americano-c30281ce32.jpg",
       "isAvailable": true,
       "category": {
@@ -22292,6 +22636,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6348.21,
       "hpp": 6348.21,
@@ -22367,6 +22712,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/berry-summer-27a7222ae3.jpg",
       "isAvailable": true,
       "category": {
@@ -22391,6 +22737,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -22444,6 +22791,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -22468,6 +22816,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3047,
       "hpp": 3047,
@@ -22554,6 +22903,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -22578,6 +22928,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5862,
       "hpp": 5862,
@@ -22664,6 +23015,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -22688,6 +23040,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7330.38,
       "hpp": 7330.38,
@@ -22730,6 +23083,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chocolate-317bab573b.jpg",
       "isAvailable": true,
       "category": {
@@ -22754,6 +23108,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7427.88,
       "hpp": 7427.88,
@@ -22796,6 +23151,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/matcha-05d3506b73.jpg",
       "isAvailable": true,
       "category": {
@@ -22820,6 +23176,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7135.38,
       "hpp": 7135.38,
@@ -22862,6 +23219,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cookies-and-cream-4ba3428963.jpg",
       "isAvailable": true,
       "category": {
@@ -22886,6 +23244,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 2320.5,
       "hpp": 2320.5,
@@ -22928,6 +23287,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/lychee-tea-b961e917f7.jpg",
       "isAvailable": true,
       "category": {
@@ -22952,6 +23312,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 2184,
       "hpp": 2184,
@@ -22994,6 +23355,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/lemon-tea-6a2e7161fe.jpg",
       "isAvailable": true,
       "category": {
@@ -23018,6 +23380,7 @@
       "price": 13000,
       "regularPrice": 13000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3081,
       "hpp": 3081,
@@ -23060,6 +23423,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/jeruk-nipis-songkit-dd4a1bded6.jpg",
       "isAvailable": true,
       "category": {
@@ -23084,6 +23448,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 5227.37,
       "hpp": 5227.37,
@@ -23137,6 +23502,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/thai-tea-6793cc6d8d.jpg",
       "isAvailable": true,
       "category": {
@@ -23161,6 +23527,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 8915,
       "hpp": 8915,
@@ -23247,6 +23614,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/fried-egg-rice-bowl-71e4a6b35b.jpg",
       "isAvailable": true,
       "category": {
@@ -23271,6 +23639,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 10788,
       "hpp": 10788,
@@ -23357,6 +23726,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chicken-katsu-rice-bowl-9f77c07d83.jpg",
       "isAvailable": true,
       "category": {
@@ -23381,6 +23751,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 12883,
       "hpp": 12883,
@@ -23467,6 +23838,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/chicken-teriyaki-rice-bowl-de9b95075d.jpg",
       "isAvailable": true,
       "category": {
@@ -23491,6 +23863,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 14118,
       "hpp": 14118,
@@ -23577,6 +23950,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/ayam-geprek-rice-bowl-1ad15279c3.jpg",
       "isAvailable": true,
       "category": {
@@ -23601,6 +23975,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -23609,6 +23984,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/beef-teriyaki-rice-bowl-bd0d2dccf0.jpg",
       "isAvailable": true,
       "category": {
@@ -23633,6 +24009,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6915,
       "hpp": 6915,
@@ -23697,6 +24074,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/indomie-goreng-telur-908692a040.jpg",
       "isAvailable": true,
       "category": {
@@ -23721,6 +24099,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 7715,
       "hpp": 7715,
@@ -23785,6 +24164,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/indomie-rebus-telur-5bb08c107c.jpg",
       "isAvailable": true,
       "category": {
@@ -23809,6 +24189,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 14120,
       "hpp": 14120,
@@ -23895,6 +24276,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -23919,6 +24301,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 14870,
       "hpp": 14870,
@@ -24005,6 +24388,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24029,6 +24413,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -24037,6 +24422,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24061,6 +24447,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -24069,6 +24456,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24093,6 +24481,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -24101,6 +24490,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24125,6 +24515,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6962,
       "hpp": 6962,
@@ -24145,6 +24536,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24169,6 +24561,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 1342,
       "hpp": 1342,
@@ -24233,6 +24626,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24257,6 +24651,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3582,
       "hpp": 3582,
@@ -24332,6 +24727,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24356,6 +24752,7 @@
       "price": 23000,
       "regularPrice": 23000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 52,
       "hpp": 52,
@@ -24420,6 +24817,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24444,6 +24842,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -24452,6 +24851,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24476,6 +24876,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 11542,
       "hpp": 11542,
@@ -24562,6 +24963,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24586,6 +24988,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 10820,
       "hpp": 10820,
@@ -24672,6 +25075,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24696,6 +25100,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6962,
       "hpp": 6962,
@@ -24716,6 +25121,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24740,6 +25146,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -24748,6 +25155,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24772,6 +25180,7 @@
       "price": 25000,
       "regularPrice": 25000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -24780,6 +25189,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -24804,6 +25214,7 @@
       "price": 12000,
       "regularPrice": 12000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 4718,
       "hpp": 4718,
@@ -24857,6 +25268,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/kentang-goreng-1bbb3108c0.jpg",
       "isAvailable": true,
       "category": {
@@ -24881,6 +25293,7 @@
       "price": 22000,
       "regularPrice": 22000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 9395,
       "hpp": 9395,
@@ -24956,6 +25369,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/mix-platter-f9eb1d5ba5.jpg",
       "isAvailable": true,
       "category": {
@@ -24980,6 +25394,7 @@
       "price": 12000,
       "regularPrice": 12000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6158,
       "hpp": 6158,
@@ -25033,6 +25448,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/cireng-45396e6a79.jpg",
       "isAvailable": true,
       "category": {
@@ -25057,6 +25473,7 @@
       "price": 18000,
       "regularPrice": 18000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 6301,
       "hpp": 6301,
@@ -25121,6 +25538,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/pisang-nugget-keju-coklat-e321243831.jpg",
       "isAvailable": true,
       "category": {
@@ -25145,6 +25563,7 @@
       "price": 15000,
       "regularPrice": 15000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25153,6 +25572,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/roti-bakar-149c6fcfa6.jpg",
       "isAvailable": true,
       "category": {
@@ -25177,6 +25597,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25185,6 +25606,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-air-mineral-4dab72aab0.jpg",
       "isAvailable": true,
       "category": {
@@ -25209,6 +25631,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25217,6 +25640,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-buah-9c87ebb944.jpg",
       "isAvailable": true,
       "category": {
@@ -25241,6 +25665,7 @@
       "price": 3000,
       "regularPrice": 3000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25249,6 +25674,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-kerupuk-faaf6f2c8f.jpg",
       "isAvailable": true,
       "category": {
@@ -25273,6 +25699,7 @@
       "price": 4000,
       "regularPrice": 4000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25281,6 +25708,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-nasi-putih-02e8184074.jpg",
       "isAvailable": true,
       "category": {
@@ -25305,6 +25733,7 @@
       "price": 4000,
       "regularPrice": 4000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25313,6 +25742,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-sambal-17d98fec6b.jpg",
       "isAvailable": true,
       "category": {
@@ -25337,6 +25767,7 @@
       "price": 5000,
       "regularPrice": 5000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25345,6 +25776,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/addon-telur-25fe043ebb.jpg",
       "isAvailable": true,
       "category": {
@@ -25369,6 +25801,7 @@
       "price": 20000,
       "regularPrice": 20000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25377,6 +25810,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-20k-e91f9d8973.jpg",
       "isAvailable": true,
       "category": {
@@ -25401,6 +25835,7 @@
       "price": 28000,
       "regularPrice": 28000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25409,6 +25844,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-28k-296bcf3058.jpg",
       "isAvailable": true,
       "category": {
@@ -25433,6 +25869,7 @@
       "price": 30000,
       "regularPrice": 30000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25441,6 +25878,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-30k-a602b24c5e.jpg",
       "isAvailable": true,
       "category": {
@@ -25465,6 +25903,7 @@
       "price": 35000,
       "regularPrice": 35000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25473,6 +25912,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-35k-5bac09525e.jpg",
       "isAvailable": true,
       "category": {
@@ -25497,6 +25937,7 @@
       "price": 40000,
       "regularPrice": 40000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 0,
       "hpp": 0,
@@ -25505,6 +25946,7 @@
       "ingredients": [],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": "/uploads/menu/catering-paket-40k-daa33e5477.jpg",
       "isAvailable": true,
       "category": {
@@ -25529,6 +25971,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3435,
       "hpp": 3435,
@@ -25571,6 +26014,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -25595,6 +26039,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3435,
       "hpp": 3435,
@@ -25637,6 +26082,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -25661,6 +26107,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3435,
       "hpp": 3435,
@@ -25703,6 +26150,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -25727,6 +26175,7 @@
       "price": 10000,
       "regularPrice": 10000,
       "onlinePrice": null,
+      "discountPercent": 0,
       "includeOnlinePlatform": false,
       "hppCost": 3435,
       "hpp": 3435,
@@ -25769,6 +26218,7 @@
       ],
       "isBundle": false,
       "bundleItems": [],
+      "bundleChoices": [],
       "imagePath": null,
       "isAvailable": false,
       "category": {
@@ -25836,8 +26286,11 @@
         "pricePerQuantity": 1,
         "hppCost": 3434,
         "hpp": 3434,
+        "discountPercent": 0,
+        "discountAmount": 0,
         "price": 1,
-        "addOns": []
+        "addOns": [],
+        "bundleChoices": []
        }
       ],
       "paymentMethod": "Cash",
@@ -25991,8 +26444,11 @@
         "pricePerQuantity": 20000,
         "hppCost": 3434,
         "hpp": 3434,
+        "discountPercent": 0,
+        "discountAmount": 0,
         "price": 20000,
-        "addOns": []
+        "addOns": [],
+        "bundleChoices": []
        }
       ],
       "paymentMethod": "QRIS",
@@ -26036,8 +26492,11 @@
         "pricePerQuantity": 20000,
         "hppCost": 3434,
         "hpp": 3434,
+        "discountPercent": 0,
+        "discountAmount": 0,
         "price": 40000,
-        "addOns": []
+        "addOns": [],
+        "bundleChoices": []
        },
        {
         "id": "8-69",
@@ -26050,8 +26509,11 @@
         "pricePerQuantity": 17000,
         "hppCost": 6000,
         "hpp": 6000,
+        "discountPercent": 0,
+        "discountAmount": 0,
         "price": 17000,
-        "addOns": []
+        "addOns": [],
+        "bundleChoices": []
        }
       ],
       "paymentMethod": "Cash",
@@ -26496,12 +26958,20 @@
      }
     ]
    },
+   "menu_item_bundle_choice_menus": {
+    "ddl": "CREATE TABLE `menu_item_bundle_choice_menus` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `bundle_choice_id` int unsigned NOT NULL,\n  `menu_item_id` int unsigned NOT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_bundle_choice_menus` (`bundle_choice_id`,`menu_item_id`),\n  KEY `idx_menu_item_bundle_choice_menus_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_bundle_choice_menus_choice` FOREIGN KEY (`bundle_choice_id`) REFERENCES `menu_item_bundle_choices` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_menu_item_bundle_choice_menus_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "menu_item_bundle_choices": {
+    "ddl": "CREATE TABLE `menu_item_bundle_choices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `bundle_menu_item_id` int unsigned NOT NULL,\n  `category_id` int unsigned NOT NULL,\n  `quantity` int unsigned NOT NULL DEFAULT '1',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_bundle_choices` (`bundle_menu_item_id`,`category_id`),\n  KEY `idx_menu_item_bundle_choices_category_id` (`category_id`),\n  CONSTRAINT `fk_menu_item_bundle_choices_bundle` FOREIGN KEY (`bundle_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_menu_item_bundle_choices_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "menu_item_bundle_items": {
     "ddl": "CREATE TABLE `menu_item_bundle_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `bundle_menu_item_id` int unsigned NOT NULL,\n  `menu_item_id` int unsigned NOT NULL,\n  `quantity` int unsigned NOT NULL DEFAULT '1',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_bundle_items` (`bundle_menu_item_id`,`menu_item_id`),\n  KEY `idx_menu_item_bundle_items_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_bundle_items_bundle` FOREIGN KEY (`bundle_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_menu_item_bundle_items_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "menu_item_prices": {
-    "ddl": "CREATE TABLE `menu_item_prices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `menu_item_id` int unsigned NOT NULL,\n  `regular_price` decimal(12,2) NOT NULL,\n  `online_price` decimal(12,2) DEFAULT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_prices_menu_item` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_prices_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `menu_item_prices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `menu_item_id` int unsigned NOT NULL,\n  `regular_price` decimal(12,2) NOT NULL,\n  `online_price` decimal(12,2) DEFAULT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `discount_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_prices_menu_item` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_prices_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -26510,6 +26980,7 @@
       "online_price": null,
       "hpp_cost": "5440.50",
       "gross_profit": "12559.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26520,6 +26991,7 @@
       "online_price": null,
       "hpp_cost": "5440.50",
       "gross_profit": "12559.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26530,6 +27002,7 @@
       "online_price": null,
       "hpp_cost": "9134.03",
       "gross_profit": "10865.97",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26540,6 +27013,7 @@
       "online_price": null,
       "hpp_cost": "9134.03",
       "gross_profit": "10865.97",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26550,6 +27024,7 @@
       "online_price": null,
       "hpp_cost": "9134.03",
       "gross_profit": "10865.97",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26560,6 +27035,7 @@
       "online_price": null,
       "hpp_cost": "9134.03",
       "gross_profit": "10865.97",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26570,6 +27046,7 @@
       "online_price": null,
       "hpp_cost": "7720.50",
       "gross_profit": "12279.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26580,6 +27057,7 @@
       "online_price": null,
       "hpp_cost": "8121.75",
       "gross_profit": "13878.25",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26590,6 +27068,7 @@
       "online_price": null,
       "hpp_cost": "8293.01",
       "gross_profit": "13706.99",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26600,6 +27079,7 @@
       "online_price": null,
       "hpp_cost": "3009.50",
       "gross_profit": "11990.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26610,6 +27090,7 @@
       "online_price": null,
       "hpp_cost": "4875.00",
       "gross_profit": "10125.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26620,6 +27101,7 @@
       "online_price": null,
       "hpp_cost": "4745.00",
       "gross_profit": "10255.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26630,6 +27112,7 @@
       "online_price": null,
       "hpp_cost": "6348.21",
       "gross_profit": "16651.79",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26640,6 +27123,7 @@
       "online_price": null,
       "hpp_cost": "6348.21",
       "gross_profit": "16651.79",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26650,6 +27134,7 @@
       "online_price": null,
       "hpp_cost": "6348.21",
       "gross_profit": "16651.79",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26660,6 +27145,7 @@
       "online_price": null,
       "hpp_cost": "7330.38",
       "gross_profit": "10669.63",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26670,6 +27156,7 @@
       "online_price": null,
       "hpp_cost": "7427.88",
       "gross_profit": "10572.13",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26680,6 +27167,7 @@
       "online_price": null,
       "hpp_cost": "7135.38",
       "gross_profit": "10864.63",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26690,6 +27178,7 @@
       "online_price": null,
       "hpp_cost": "2320.50",
       "gross_profit": "10679.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26700,6 +27189,7 @@
       "online_price": null,
       "hpp_cost": "2184.00",
       "gross_profit": "10816.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26710,6 +27200,7 @@
       "online_price": null,
       "hpp_cost": "3081.00",
       "gross_profit": "9919.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26720,6 +27211,7 @@
       "online_price": null,
       "hpp_cost": "5227.37",
       "gross_profit": "9772.63",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26730,6 +27222,7 @@
       "online_price": null,
       "hpp_cost": "8915.00",
       "gross_profit": "6085.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26740,6 +27233,7 @@
       "online_price": null,
       "hpp_cost": "10788.00",
       "gross_profit": "14212.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26750,6 +27244,7 @@
       "online_price": null,
       "hpp_cost": "12883.00",
       "gross_profit": "10117.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26760,6 +27255,7 @@
       "online_price": null,
       "hpp_cost": "14118.00",
       "gross_profit": "7882.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26770,6 +27266,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26780,6 +27277,7 @@
       "online_price": null,
       "hpp_cost": "6915.00",
       "gross_profit": "8085.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26790,6 +27288,7 @@
       "online_price": null,
       "hpp_cost": "7715.00",
       "gross_profit": "7285.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26800,6 +27299,7 @@
       "online_price": null,
       "hpp_cost": "4718.00",
       "gross_profit": "7282.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26810,6 +27310,7 @@
       "online_price": null,
       "hpp_cost": "9395.00",
       "gross_profit": "12605.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26820,6 +27321,7 @@
       "online_price": null,
       "hpp_cost": "6158.00",
       "gross_profit": "5842.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26830,6 +27332,7 @@
       "online_price": null,
       "hpp_cost": "6301.00",
       "gross_profit": "11699.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26840,6 +27343,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26850,6 +27354,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26860,6 +27365,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26870,6 +27376,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26880,6 +27387,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26890,6 +27398,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26900,6 +27409,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26910,6 +27420,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26920,6 +27431,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26930,6 +27442,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26940,6 +27453,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26950,6 +27464,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26960,6 +27475,7 @@
       "online_price": null,
       "hpp_cost": "10820.00",
       "gross_profit": "9180.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26970,6 +27486,7 @@
       "online_price": null,
       "hpp_cost": "11542.00",
       "gross_profit": "13458.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26980,6 +27497,7 @@
       "online_price": null,
       "hpp_cost": "3047.00",
       "gross_profit": "19953.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -26990,6 +27508,7 @@
       "online_price": null,
       "hpp_cost": "5862.00",
       "gross_profit": "17138.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27000,6 +27519,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "22000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27010,6 +27530,7 @@
       "online_price": null,
       "hpp_cost": "3582.00",
       "gross_profit": "19418.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27020,6 +27541,7 @@
       "online_price": null,
       "hpp_cost": "52.00",
       "gross_profit": "22948.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27030,6 +27552,7 @@
       "online_price": null,
       "hpp_cost": "1342.00",
       "gross_profit": "21658.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27040,6 +27563,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "18000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27050,6 +27574,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "18000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27060,6 +27585,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "18000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27070,6 +27596,7 @@
       "online_price": null,
       "hpp_cost": "6962.00",
       "gross_profit": "3038.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27080,6 +27607,7 @@
       "online_price": null,
       "hpp_cost": "6962.00",
       "gross_profit": "3038.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27090,6 +27618,7 @@
       "online_price": null,
       "hpp_cost": "14870.00",
       "gross_profit": "8130.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27100,6 +27629,7 @@
       "online_price": null,
       "hpp_cost": "14120.00",
       "gross_profit": "8880.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27110,6 +27640,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "23000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27120,6 +27651,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "25000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27130,6 +27662,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "25000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27140,6 +27673,7 @@
       "online_price": null,
       "hpp_cost": "3435.00",
       "gross_profit": "6565.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27150,6 +27684,7 @@
       "online_price": null,
       "hpp_cost": "3435.00",
       "gross_profit": "6565.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27160,6 +27695,7 @@
       "online_price": null,
       "hpp_cost": "3435.00",
       "gross_profit": "6565.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -27170,6 +27706,7 @@
       "online_price": null,
       "hpp_cost": "3435.00",
       "gross_profit": "6565.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      }
@@ -27994,6 +28531,10 @@
      }
     ]
    },
+   "order_item_bundle_choices": {
+    "ddl": "CREATE TABLE `order_item_bundle_choices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_item_id` int unsigned NOT NULL,\n  `menu_item_id` int unsigned DEFAULT NULL,\n  `menu_item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` int unsigned NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_item_bundle_choices_order_item_id` (`order_item_id`),\n  KEY `idx_order_item_bundle_choices_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_order_item_bundle_choices_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_item_bundle_choices_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "order_item_costs": {
     "ddl": "CREATE TABLE `order_item_costs` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_item_id` int unsigned NOT NULL,\n  `stock_item_id` int unsigned DEFAULT NULL,\n  `stock_item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` double NOT NULL DEFAULT '0',\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `cost` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_item_costs_order_item_id` (`order_item_id`),\n  KEY `idx_order_item_costs_stock_item_id` (`stock_item_id`),\n  CONSTRAINT `fk_order_item_costs_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_order_item_costs_stock_item` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -28066,7 +28607,7 @@
     ]
    },
    "order_items": {
-    "ddl": "CREATE TABLE `order_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_id` int unsigned NOT NULL,\n  `item_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `menu_item_id` int unsigned DEFAULT NULL,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `variant` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `quantity` int NOT NULL,\n  `price_per_quantity` decimal(12,2) NOT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `price` decimal(12,2) NOT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_items_order_id` (`order_id`),\n  KEY `idx_order_items_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_order_items_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `order_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_id` int unsigned NOT NULL,\n  `item_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `menu_item_id` int unsigned DEFAULT NULL,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `variant` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `quantity` int NOT NULL,\n  `price_per_quantity` decimal(12,2) NOT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `discount_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `discount_amount` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `price` decimal(12,2) NOT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_items_order_id` (`order_id`),\n  KEY `idx_order_items_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_order_items_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -28078,6 +28619,8 @@
       "quantity": 2,
       "price_per_quantity": "20000.00",
       "hpp_cost": "3434.00",
+      "discount_percent": "0.00",
+      "discount_amount": "0.00",
       "price": "40000.00",
       "created_at": "<ts>"
      },
@@ -28091,6 +28634,8 @@
       "quantity": 1,
       "price_per_quantity": "17000.00",
       "hpp_cost": "6000.00",
+      "discount_percent": "0.00",
+      "discount_amount": "0.00",
       "price": "17000.00",
       "created_at": "<ts>"
      },
@@ -28104,6 +28649,8 @@
       "quantity": 1,
       "price_per_quantity": "20000.00",
       "hpp_cost": "3434.00",
+      "discount_percent": "0.00",
+      "discount_amount": "0.00",
       "price": "20000.00",
       "created_at": "<ts>"
      },
@@ -28117,6 +28664,8 @@
       "quantity": 200,
       "price_per_quantity": "1.00",
       "hpp_cost": "3434.00",
+      "discount_percent": "0.00",
+      "discount_amount": "0.00",
       "price": "1.00",
       "created_at": "<ts>"
      }
@@ -35096,12 +35645,20 @@
      }
     ]
    },
+   "menu_item_bundle_choice_menus": {
+    "ddl": "CREATE TABLE `menu_item_bundle_choice_menus` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `bundle_choice_id` int unsigned NOT NULL,\n  `menu_item_id` int unsigned NOT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_bundle_choice_menus` (`bundle_choice_id`,`menu_item_id`),\n  KEY `idx_menu_item_bundle_choice_menus_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_bundle_choice_menus_choice` FOREIGN KEY (`bundle_choice_id`) REFERENCES `menu_item_bundle_choices` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_menu_item_bundle_choice_menus_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "menu_item_bundle_choices": {
+    "ddl": "CREATE TABLE `menu_item_bundle_choices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `bundle_menu_item_id` int unsigned NOT NULL,\n  `category_id` int unsigned NOT NULL,\n  `quantity` int unsigned NOT NULL DEFAULT '1',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_bundle_choices` (`bundle_menu_item_id`,`category_id`),\n  KEY `idx_menu_item_bundle_choices_category_id` (`category_id`),\n  CONSTRAINT `fk_menu_item_bundle_choices_bundle` FOREIGN KEY (`bundle_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_menu_item_bundle_choices_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "menu_item_bundle_items": {
     "ddl": "CREATE TABLE `menu_item_bundle_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `bundle_menu_item_id` int unsigned NOT NULL,\n  `menu_item_id` int unsigned NOT NULL,\n  `quantity` int unsigned NOT NULL DEFAULT '1',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_bundle_items` (`bundle_menu_item_id`,`menu_item_id`),\n  KEY `idx_menu_item_bundle_items_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_bundle_items_bundle` FOREIGN KEY (`bundle_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_menu_item_bundle_items_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "menu_item_prices": {
-    "ddl": "CREATE TABLE `menu_item_prices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `menu_item_id` int unsigned NOT NULL,\n  `regular_price` decimal(12,2) NOT NULL,\n  `online_price` decimal(12,2) DEFAULT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_prices_menu_item` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_prices_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `menu_item_prices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `menu_item_id` int unsigned NOT NULL,\n  `regular_price` decimal(12,2) NOT NULL,\n  `online_price` decimal(12,2) DEFAULT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `discount_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_menu_item_prices_menu_item` (`menu_item_id`),\n  CONSTRAINT `fk_menu_item_prices_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -35110,6 +35667,7 @@
       "online_price": null,
       "hpp_cost": "5440.50",
       "gross_profit": "12559.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35120,6 +35678,7 @@
       "online_price": null,
       "hpp_cost": "5440.50",
       "gross_profit": "12559.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35130,6 +35689,7 @@
       "online_price": null,
       "hpp_cost": "9134.03",
       "gross_profit": "10865.97",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35140,6 +35700,7 @@
       "online_price": null,
       "hpp_cost": "9134.03",
       "gross_profit": "10865.97",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35150,6 +35711,7 @@
       "online_price": null,
       "hpp_cost": "9134.03",
       "gross_profit": "10865.97",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35160,6 +35722,7 @@
       "online_price": null,
       "hpp_cost": "9134.03",
       "gross_profit": "10865.97",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35170,6 +35733,7 @@
       "online_price": null,
       "hpp_cost": "7720.50",
       "gross_profit": "12279.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35180,6 +35744,7 @@
       "online_price": null,
       "hpp_cost": "8121.75",
       "gross_profit": "13878.25",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35190,6 +35755,7 @@
       "online_price": null,
       "hpp_cost": "8293.01",
       "gross_profit": "13706.99",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35200,6 +35766,7 @@
       "online_price": null,
       "hpp_cost": "3009.50",
       "gross_profit": "11990.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35210,6 +35777,7 @@
       "online_price": null,
       "hpp_cost": "4875.00",
       "gross_profit": "10125.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35220,6 +35788,7 @@
       "online_price": null,
       "hpp_cost": "4745.00",
       "gross_profit": "10255.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35230,6 +35799,7 @@
       "online_price": null,
       "hpp_cost": "6348.21",
       "gross_profit": "16651.79",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35240,6 +35810,7 @@
       "online_price": null,
       "hpp_cost": "6348.21",
       "gross_profit": "16651.79",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35250,6 +35821,7 @@
       "online_price": null,
       "hpp_cost": "6348.21",
       "gross_profit": "16651.79",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35260,6 +35832,7 @@
       "online_price": null,
       "hpp_cost": "7330.38",
       "gross_profit": "10669.63",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35270,6 +35843,7 @@
       "online_price": null,
       "hpp_cost": "7427.88",
       "gross_profit": "10572.13",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35280,6 +35854,7 @@
       "online_price": null,
       "hpp_cost": "7135.38",
       "gross_profit": "10864.63",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35290,6 +35865,7 @@
       "online_price": null,
       "hpp_cost": "2320.50",
       "gross_profit": "10679.50",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35300,6 +35876,7 @@
       "online_price": null,
       "hpp_cost": "2184.00",
       "gross_profit": "10816.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35310,6 +35887,7 @@
       "online_price": null,
       "hpp_cost": "3081.00",
       "gross_profit": "9919.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35320,6 +35898,7 @@
       "online_price": null,
       "hpp_cost": "5227.37",
       "gross_profit": "9772.63",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35330,6 +35909,7 @@
       "online_price": null,
       "hpp_cost": "8915.00",
       "gross_profit": "6085.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35340,6 +35920,7 @@
       "online_price": null,
       "hpp_cost": "10788.00",
       "gross_profit": "14212.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35350,6 +35931,7 @@
       "online_price": null,
       "hpp_cost": "12883.00",
       "gross_profit": "10117.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35360,6 +35942,7 @@
       "online_price": null,
       "hpp_cost": "14118.00",
       "gross_profit": "7882.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35370,6 +35953,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35380,6 +35964,7 @@
       "online_price": null,
       "hpp_cost": "6915.00",
       "gross_profit": "8085.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35390,6 +35975,7 @@
       "online_price": null,
       "hpp_cost": "7715.00",
       "gross_profit": "7285.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35400,6 +35986,7 @@
       "online_price": null,
       "hpp_cost": "4718.00",
       "gross_profit": "7282.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35410,6 +35997,7 @@
       "online_price": null,
       "hpp_cost": "9395.00",
       "gross_profit": "12605.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35420,6 +36008,7 @@
       "online_price": null,
       "hpp_cost": "6158.00",
       "gross_profit": "5842.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35430,6 +36019,7 @@
       "online_price": null,
       "hpp_cost": "6301.00",
       "gross_profit": "11699.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35440,6 +36030,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35450,6 +36041,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35460,6 +36052,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35470,6 +36063,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35480,6 +36074,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35490,6 +36085,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35500,6 +36096,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35510,6 +36107,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35520,6 +36118,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35530,6 +36129,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35540,6 +36140,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35550,6 +36151,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "0.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35560,6 +36162,7 @@
       "online_price": null,
       "hpp_cost": "10820.00",
       "gross_profit": "9180.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35570,6 +36173,7 @@
       "online_price": null,
       "hpp_cost": "11542.00",
       "gross_profit": "13458.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35580,6 +36184,7 @@
       "online_price": null,
       "hpp_cost": "3047.00",
       "gross_profit": "19953.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35590,6 +36195,7 @@
       "online_price": null,
       "hpp_cost": "5862.00",
       "gross_profit": "17138.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35600,6 +36206,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "22000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35610,6 +36217,7 @@
       "online_price": null,
       "hpp_cost": "3582.00",
       "gross_profit": "19418.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35620,6 +36228,7 @@
       "online_price": null,
       "hpp_cost": "52.00",
       "gross_profit": "22948.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35630,6 +36239,7 @@
       "online_price": null,
       "hpp_cost": "1342.00",
       "gross_profit": "21658.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35640,6 +36250,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "18000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35650,6 +36261,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "18000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35660,6 +36272,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "18000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35670,6 +36283,7 @@
       "online_price": null,
       "hpp_cost": "6962.00",
       "gross_profit": "3038.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35680,6 +36294,7 @@
       "online_price": null,
       "hpp_cost": "6962.00",
       "gross_profit": "3038.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35690,6 +36305,7 @@
       "online_price": null,
       "hpp_cost": "14870.00",
       "gross_profit": "8130.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35700,6 +36316,7 @@
       "online_price": null,
       "hpp_cost": "14120.00",
       "gross_profit": "8880.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35710,6 +36327,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "23000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35720,6 +36338,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "25000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35730,6 +36349,7 @@
       "online_price": null,
       "hpp_cost": "0.00",
       "gross_profit": "25000.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35740,6 +36360,7 @@
       "online_price": null,
       "hpp_cost": "3435.00",
       "gross_profit": "6565.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35750,6 +36371,7 @@
       "online_price": null,
       "hpp_cost": "3435.00",
       "gross_profit": "6565.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35760,6 +36382,7 @@
       "online_price": null,
       "hpp_cost": "3435.00",
       "gross_profit": "6565.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -35770,6 +36393,7 @@
       "online_price": null,
       "hpp_cost": "3435.00",
       "gross_profit": "6565.00",
+      "discount_percent": "0.00",
       "created_at": "<ts>",
       "updated_at": "<ts>"
      }
@@ -36594,6 +37218,10 @@
      }
     ]
    },
+   "order_item_bundle_choices": {
+    "ddl": "CREATE TABLE `order_item_bundle_choices` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_item_id` int unsigned NOT NULL,\n  `menu_item_id` int unsigned DEFAULT NULL,\n  `menu_item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` int unsigned NOT NULL DEFAULT '1',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_item_bundle_choices_order_item_id` (`order_item_id`),\n  KEY `idx_order_item_bundle_choices_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_order_item_bundle_choices_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_item_bundle_choices_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "order_item_costs": {
     "ddl": "CREATE TABLE `order_item_costs` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_item_id` int unsigned NOT NULL,\n  `stock_item_id` int unsigned DEFAULT NULL,\n  `stock_item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `quantity` double NOT NULL DEFAULT '0',\n  `unit` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `unit_cost` int NOT NULL DEFAULT '0',\n  `cost` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_item_costs_order_item_id` (`order_item_id`),\n  KEY `idx_order_item_costs_stock_item_id` (`stock_item_id`),\n  CONSTRAINT `fk_order_item_costs_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_order_item_costs_stock_item` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -36666,7 +37294,7 @@
     ]
    },
    "order_items": {
-    "ddl": "CREATE TABLE `order_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_id` int unsigned NOT NULL,\n  `item_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `menu_item_id` int unsigned DEFAULT NULL,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `variant` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `quantity` int NOT NULL,\n  `price_per_quantity` decimal(12,2) NOT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `price` decimal(12,2) NOT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_items_order_id` (`order_id`),\n  KEY `idx_order_items_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_order_items_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `order_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_id` int unsigned NOT NULL,\n  `item_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `menu_item_id` int unsigned DEFAULT NULL,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `variant` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `quantity` int NOT NULL,\n  `price_per_quantity` decimal(12,2) NOT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `discount_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `discount_amount` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `price` decimal(12,2) NOT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_items_order_id` (`order_id`),\n  KEY `idx_order_items_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_order_items_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -36678,6 +37306,8 @@
       "quantity": 2,
       "price_per_quantity": "20000.00",
       "hpp_cost": "3434.00",
+      "discount_percent": "0.00",
+      "discount_amount": "0.00",
       "price": "40000.00",
       "created_at": "<ts>"
      },
@@ -36691,6 +37321,8 @@
       "quantity": 1,
       "price_per_quantity": "17000.00",
       "hpp_cost": "6000.00",
+      "discount_percent": "0.00",
+      "discount_amount": "0.00",
       "price": "17000.00",
       "created_at": "<ts>"
      },
@@ -36704,6 +37336,8 @@
       "quantity": 1,
       "price_per_quantity": "20000.00",
       "hpp_cost": "3434.00",
+      "discount_percent": "0.00",
+      "discount_amount": "0.00",
       "price": "20000.00",
       "created_at": "<ts>"
      },
@@ -36717,6 +37351,8 @@
       "quantity": 200,
       "price_per_quantity": "1.00",
       "hpp_cost": "3434.00",
+      "discount_percent": "0.00",
+      "discount_amount": "0.00",
       "price": "1.00",
       "created_at": "<ts>"
      }

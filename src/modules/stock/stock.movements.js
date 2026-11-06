@@ -11,19 +11,30 @@ const createStockValidationError = (insufficientStock) =>
     details: { insufficientStock },
   });
 
-// A promo package sells each of its menus times that menu's quantity.
+// A promo package sells each of its menus and of its picked menus
+// (bundleChoices, per package) times that menu's quantity.
 const expandBundles = async (connection, orderItems) => {
   const bundleRows = await findBundleRows(connection, [
     ...new Set(orderItems.map((item) => item.menuItemId)),
   ]);
-  if (!bundleRows.length) return orderItems;
+  if (!bundleRows.length && !orderItems.some((item) => item.bundleChoices?.length)) {
+    return orderItems;
+  }
 
   return orderItems.flatMap((item) => {
-    const parts = bundleRows.filter((row) => Number(row.bundle_menu_item_id) === item.menuItemId);
+    const parts = [
+      ...bundleRows
+        .filter((row) => Number(row.bundle_menu_item_id) === item.menuItemId)
+        .map((row) => ({ menuItemId: Number(row.menu_item_id), quantity: Number(row.quantity) })),
+      ...(item.bundleChoices || []).map((choice) => ({
+        menuItemId: Number(choice.menuItemId),
+        quantity: Number(choice.quantity),
+      })),
+    ];
     return parts.length
-      ? parts.map((row) => ({
-          menuItemId: Number(row.menu_item_id),
-          quantity: item.quantity * Number(row.quantity),
+      ? parts.map((part) => ({
+          menuItemId: part.menuItemId,
+          quantity: item.quantity * part.quantity,
         }))
       : [item];
   });

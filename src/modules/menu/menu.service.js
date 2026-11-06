@@ -34,26 +34,27 @@ const toMenuItemRecord = (input) => {
   };
 };
 
-// A package (bundleItems set) has no recipe of its own: selling it sells
-// the recipes of its menus. An ordinary menu loses any package contents.
-const writePriceAndRecipe = async (connection, id, record, bundleItems) => {
+// A package (bundle { items, choices } set) has no recipe of its own: selling
+// it sells the recipes of its menus. An ordinary menu loses any package contents.
+const writePriceAndRecipe = async (connection, id, record, bundle) => {
   await MenuItem.replacePriceAndRecipe(connection, id, {
     price: {
       regularPrice: record.basePrice,
       onlinePrice: record.baseOnlinePrice,
       ...record.profitFields,
     },
-    ingredients: bundleItems ? [] : record.normalizedIngredients,
+    ingredients: bundle ? [] : record.normalizedIngredients,
   });
-  await replaceBundleItems(connection, id, bundleItems || []);
+  await MenuItem.setDiscountPercent(connection, id, bundle?.discountPercent || 0);
+  await replaceBundleItems(connection, id, bundle || {});
 };
 
 const create = async (input) => {
   const record = toMenuItemRecord(input);
   const id = await withTransaction(async (connection) => {
-    const bundleItems = await resolveBundleItems(connection, input);
+    const bundle = await resolveBundleItems(connection, input);
     const insertId = await MenuItem.insertMenuItem(connection, record);
-    await writePriceAndRecipe(connection, insertId, record, bundleItems);
+    await writePriceAndRecipe(connection, insertId, record, bundle);
     await refreshMenuCosts(connection, { menuItemIds: [insertId] });
     return insertId;
   });
@@ -67,9 +68,9 @@ const update = async (id, input) => {
   if (!previousMenuItem) return null;
 
   await withTransaction(async (connection) => {
-    const bundleItems = await resolveBundleItems(connection, input, id);
+    const bundle = await resolveBundleItems(connection, input, id);
     await MenuItem.updateMenuItem(connection, id, record);
-    await writePriceAndRecipe(connection, id, record, bundleItems);
+    await writePriceAndRecipe(connection, id, record, bundle);
     await refreshMenuCosts(connection, { menuItemIds: [id] });
   });
 

@@ -6,7 +6,8 @@ const { findBundleRows } = require("../menu/menu.bundles");
 
 const round4 = (value) => Math.round(value * 10000) / 10000;
 
-// A promo package (menu_item_bundle_items): the HPP of each of its menus
+// A promo package (menu_item_bundle_items, plus the menus picked for its
+// choices): the HPP of each of its menus
 // (recipe, else the menu's stored HPP) times its quantity. The bahan lines of
 // all menus are combined per bahan; a menu priced by its stored HPP alone
 // adds one line in portions, so the lines still add up to the HPP.
@@ -32,26 +33,45 @@ const findBundleSnapshot = async (connection, bundleId, bundleRows) => {
 
     const unpriced = item.hppCost - item.costs.reduce((total, line) => total + line.cost, 0);
     if (unpriced > 0) {
-      lines.set(`menu:${row.menu_item_id}`, {
-        stockItemId: null,
-        stockItemName: row.name,
-        quantity,
-        unit: "porsi",
-        unitCost: unpriced,
-        cost: unpriced * quantity,
-      });
+      const key = `menu:${row.menu_item_id}`;
+      const current = lines.get(key);
+      if (current) {
+        current.quantity += quantity;
+        current.cost += unpriced * quantity;
+      } else {
+        lines.set(key, {
+          stockItemId: null,
+          stockItemName: row.name,
+          quantity,
+          unit: "porsi",
+          unitCost: unpriced,
+          cost: unpriced * quantity,
+        });
+      }
     }
   }
 
   return { menuItemId: bundleId, hppCost, costs: [...lines.values()] };
 };
 
-const findMenuItemSnapshot = async (connection, menuItemId, { nested = false } = {}) => {
+// choices: the menus picked for the package's choices ({ menuItemId, name, quantity }).
+const findMenuItemSnapshot = async (
+  connection,
+  menuItemId,
+  { nested = false, choices = [] } = {}
+) => {
   if (!menuItemId) return { menuItemId: null, hppCost: 0, costs: [] };
 
   // Packages hold ordinary menus only, so their menus are not expanded again.
   if (!nested) {
-    const bundleRows = await findBundleRows(connection, [menuItemId]);
+    const bundleRows = [
+      ...(await findBundleRows(connection, [menuItemId])),
+      ...choices.map((choice) => ({
+        menu_item_id: choice.menuItemId,
+        quantity: choice.quantity,
+        name: choice.name,
+      })),
+    ];
     if (bundleRows.length) return findBundleSnapshot(connection, menuItemId, bundleRows);
   }
 
