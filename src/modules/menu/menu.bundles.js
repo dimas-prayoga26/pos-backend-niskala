@@ -149,27 +149,24 @@ const assertBundleChoices = async (connection, choices) => {
     );
   }
 
-  // The menus a choice offers are ordinary menus of its category.
+  // The menus a choice offers are ordinary menus. The form offers those of the
+  // choice's category; a menu that later moved to another category stays.
   const offered = [...new Set(choices.flatMap((choice) => choice.menuItemIds))];
   if (!offered.length) return;
 
   const [menus] = await connection.query(
-    `SELECT mi.id, mi.category_id,
-            EXISTS (SELECT 1 FROM menu_item_bundle_items bi WHERE bi.bundle_menu_item_id = mi.id)
+    `SELECT mi.id,
+            c.is_bundle
+              OR EXISTS (SELECT 1 FROM menu_item_bundle_items bi WHERE bi.bundle_menu_item_id = mi.id)
               OR EXISTS (SELECT 1 FROM menu_item_bundle_choices bc WHERE bc.bundle_menu_item_id = mi.id) AS is_package
      FROM menu_items mi
+     JOIN categories c ON c.id = mi.category_id
      WHERE mi.id IN (?)`,
     [offered]
   );
-  const menuById = new Map(menus.map((menu) => [Number(menu.id), menu]));
-  const fits = choices.every((choice) =>
-    choice.menuItemIds.every((id) => {
-      const menu = menuById.get(id);
-      return menu && Number(menu.category_id) === choice.categoryId && !Number(menu.is_package);
-    })
-  );
-  if (!fits) {
-    throw createHttpError(400, "Menu pilihan paket harus menu biasa dari category pilihannya.");
+  const packageById = new Map(menus.map((menu) => [Number(menu.id), Number(menu.is_package)]));
+  if (!offered.every((id) => packageById.has(id) && !packageById.get(id))) {
+    throw createHttpError(400, "Menu pilihan paket harus menu biasa, bukan paket.");
   }
 };
 
@@ -290,12 +287,15 @@ const resolveOrderBundleChoices = async (connection, bundleId, picked) => {
   const pickedPerChoice = new Map();
   for (const pick of picks) {
     const menu = menuById.get(pick.menuItemId);
+    // A choice with its own menus takes those (wherever they sit now); one
+    // without takes any menu of its category.
     const choice =
-      menu && choices.find((row) => Number(row.category_id) === Number(menu.category_id));
-    if (
-      !choice ||
-      (choice.menuItemIds.length && !choice.menuItemIds.includes(pick.menuItemId))
-    ) {
+      menu &&
+      (choices.find((row) => row.menuItemIds.includes(pick.menuItemId)) ||
+        choices.find(
+          (row) => !row.menuItemIds.length && Number(row.category_id) === Number(menu.category_id)
+        ));
+    if (!choice) {
       throw createHttpError(400, "Menu pilihan paket tidak sesuai category paket.");
     }
     pickedPerChoice.set(choice.id, (pickedPerChoice.get(choice.id) || 0) + pick.quantity);

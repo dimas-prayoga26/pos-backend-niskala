@@ -85,8 +85,8 @@ describe("regressions", () => {
   });
 
   it("seeds the COGS sheet once, adding only what is missing", async () => {
-    const [runs] = await db.query("SELECT name FROM seed_runs");
-    assert.deepEqual(runs.map((run) => run.name), ["cogs-sheet-2026-11"]);
+    const [runs] = await db.query("SELECT name FROM seed_runs ORDER BY name");
+    assert.deepEqual(runs.map((run) => run.name), ["cogs-categories-2026-11", "cogs-sheet-2026-11"]);
 
     const recipeOf = async (menuName) => {
       const [rows] = await db.query(
@@ -111,7 +111,7 @@ describe("regressions", () => {
     );
     assert.deepEqual(
       [montblanc.is_available, montblanc.category, Number(montblanc.regular_price)],
-      [0, "Coffee", 23000]
+      [0, "Black Coffee", 23000]
     );
     assert.deepEqual(await recipeOf("Montblanc"), [
       ["ESPRESSO", 8], ["DIAMOND JUICE", 55], ["WATER", 50], ["WHIPPING CREAM", 15],
@@ -138,7 +138,8 @@ describe("regressions", () => {
       `SELECT c.name FROM menu_items mi JOIN categories c ON c.id = mi.category_id
        WHERE mi.name = 'Roti Kukus Coklat'`
     );
-    assert.equal(roti.name, "Roti Kukus");
+    // The category seed then moves it to the sheet's Roti tab.
+    assert.equal(roti.name, "Roti");
 
     // It runs once: a seeded menu the admin deletes stays deleted.
     const [[sprite]] = await db.query("SELECT id FROM menu_items WHERE name = 'Sprite'");
@@ -148,6 +149,96 @@ describe("regressions", () => {
       "SELECT SUM(name = 'Sprite') AS sprite, SUM(name = 'Montblanc') AS montblanc FROM menu_items"
     );
     assert.deepEqual([Number(counts.sprite), Number(counts.montblanc)], [0, 1]);
+  });
+
+  it("arranges the sheet's menus into its tabs as categories, once", async () => {
+    const categoryOf = async (menuName) => {
+      const [[row]] = await db.query(
+        `SELECT c.name FROM menu_items mi JOIN categories c ON c.id = mi.category_id WHERE mi.name = ?`,
+        [menuName]
+      );
+      return row?.name;
+    };
+    const [categories] = await db.query(
+      "SELECT name, is_active FROM categories ORDER BY CASE WHEN sort_order > 0 THEN sort_order ELSE 9999 END, id"
+    );
+    // The tabs from Black Coffee to Roti come first; "Non Coffee" reuses Non-Coffee.
+    assert.deepEqual(categories.slice(0, 12).map((category) => category.name), [
+      "Black Coffee", "Hot Black Coffee", "White Coffee", "Hot White Coffee", "Matcha Series", "Non-Coffee",
+      "Tea Based", "Minuman Kaleng", "Snack", "Nasi Goreng", "Rice Bowl", "Roti",
+    ]);
+    assert.deepEqual(
+      await Promise.all(
+        ["Americano", "Longblack", "Cafe Latte", "Matcha Coffee", "Matcha", "Thai Tea", "Coca-Cola",
+          "Nasi Goreng Special", "Fried Egg Rice Bowl", "Roti Kukus Coklat"].map(categoryOf)
+      ),
+      ["Black Coffee", "Hot Black Coffee", "White Coffee", "Hot White Coffee", "Matcha Series", "Tea Based",
+        "Minuman Kaleng", "Nasi Goreng", "Rice Bowl", "Roti"]
+    );
+    // Each tab has its own icon, a reused category too.
+    const [icons] = await db.query(
+      `SELECT icon FROM categories
+       WHERE name IN ('Black Coffee', 'Hot Black Coffee', 'Hot White Coffee', 'Non-Coffee', 'Tea Based', 'Minuman Kaleng')
+       ORDER BY sort_order`
+    );
+    assert.deepEqual(icons.map((row) => row.icon), ["\u2615\uFE0F", "\u{1F525}", "\u2668\uFE0F", "\u{1F9CB}", "\u{1FAD6}", "\u{1F964}"]);
+    // A menu not on the sheet stays; an emptied category is turned off.
+    assert.equal(await categoryOf("Vanilla Latte"), "Coffee");
+    const isActive = (name) => Boolean(categories.find((category) => category.name === name)?.is_active);
+    assert.deepEqual([isActive("Coffee"), isActive("Roti Kukus")], [true, false]);
+
+    // Run again on a package offering every Coffee menu: it keeps offering those
+    // menus where they move, and stays sellable.
+    const [[coffee]] = await db.query("SELECT id FROM categories WHERE name = 'Coffee'");
+    const promo = await request("POST", "/api/category", {
+      as: "admin",
+      body: { name: "Promo Seed", icon: "🏷️", isBundle: true },
+    });
+    const paket = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: {
+        categoryId: promo.body.data.id, name: "Paket Kopi Seed", price: 15000,
+        bundleChoices: [{ categoryId: coffee.id, quantity: 1 }],
+      },
+    });
+    assert.equal(paket.status, 201, JSON.stringify(paket.body));
+    await db.query(
+      "UPDATE menu_items SET category_id = ? WHERE name = 'Cafe Latte'",
+      [coffee.id]
+    );
+    await db.query("DELETE FROM seed_runs WHERE name = 'cogs-categories-2026-11'");
+    await restartServer();
+
+    assert.equal(await categoryOf("Cafe Latte"), "White Coffee");
+    const [offered] = await db.query(
+      `SELECT mi.name FROM menu_item_bundle_choice_menus o
+       JOIN menu_item_bundle_choices bc ON bc.id = o.bundle_choice_id
+       JOIN menu_items mi ON mi.id = o.menu_item_id
+       WHERE bc.bundle_menu_item_id = ? ORDER BY mi.name`,
+      [paket.body.data.id]
+    );
+    assert.ok(offered.some((row) => row.name === "Cafe Latte"));
+    assert.ok(offered.some((row) => row.name === "Vanilla Latte"));
+    const [[cafeLatte]] = await db.query("SELECT id, category_id FROM menu_items WHERE name = 'Cafe Latte'");
+    const order = await request("POST", "/api/order", {
+      as: "cashier",
+      body: {
+        customerDetails: { name: "Seed" },
+        orderType: "Offline",
+        orderStatus: "In Progress",
+        bills: { total: 15000, tax: 0, totalWithTax: 15000 },
+        items: [{
+          id: `${promo.body.data.id}-${paket.body.data.id}~1`, sourceMenuItemId: paket.body.data.id,
+          name: "Paket Kopi Seed", quantity: 1, pricePerQuantity: 15000, price: 15000,
+          bundleChoices: [{ menuItemId: cafeLatte.id, quantity: 1 }],
+        }],
+        paymentMethod: "Cash",
+        allowNegativeStock: true,
+      },
+    });
+    assert.equal(order.status, 201, JSON.stringify(order.body));
+    assert.equal((await request("DELETE", `/api/order/${order.body.data.id}`, { as: "admin" })).status, 200);
+    assert.equal((await request("DELETE", `/api/menu-item/${paket.body.data.id}`, { as: "admin" })).status, 200);
   });
 
   it("returns 404 instead of crashing when the recap format is inactive", async () => {
@@ -707,11 +798,17 @@ describe("regressions", () => {
       as: "admin",
       body: {
         categoryId: promo.id, name: "Paket Salah Menu", price: 15000,
-        bundleChoices: [{ categoryId: kopiCat.id, quantity: 1, menuItemIds: [kentang.id] }],
+        bundleChoices: [{ categoryId: kopiCat.id, quantity: 1, menuItemIds: [paket.id] }],
       },
     });
     assert.equal(wrongMenu.status, 400);
-    assert.equal(wrongMenu.body.message, "Menu pilihan paket harus menu biasa dari category pilihannya.");
+    assert.equal(wrongMenu.body.message, "Menu pilihan paket harus menu biasa, bukan paket.");
+    // An offered menu moved to another category can still be picked.
+    await db.query("UPDATE menu_items SET category_id = ? WHERE id = ?", [snackCat.id, americano.id]);
+    const movedPick = await pickOf(americano.id);
+    assert.equal(movedPick.status, 201, JSON.stringify(movedPick.body));
+    assert.equal((await request("DELETE", `/api/order/${movedPick.body.data.id}`, { as: "admin" })).status, 200);
+    await db.query("UPDATE menu_items SET category_id = ? WHERE id = ?", [kopiCat.id, americano.id]);
     // A menu offered by a choice cannot be deleted.
     const deleteOffered = await request("DELETE", `/api/menu-item/${americano.id}`, { as: "admin" });
     assert.equal(deleteOffered.status, 409);

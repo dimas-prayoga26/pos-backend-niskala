@@ -97,13 +97,15 @@ const sellableFilter = `
         SELECT 1
         FROM menu_items cm
         JOIN categories cc ON cc.id = cm.category_id
-        WHERE cm.category_id = bch.category_id
-          AND cm.is_available = TRUE AND cc.is_active = TRUE
+        WHERE cm.is_available = TRUE AND cc.is_active = TRUE
           AND (
-            NOT EXISTS (SELECT 1 FROM menu_item_bundle_choice_menus o WHERE o.bundle_choice_id = bch.id)
-            OR EXISTS (
+            EXISTS (
               SELECT 1 FROM menu_item_bundle_choice_menus o
               WHERE o.bundle_choice_id = bch.id AND o.menu_item_id = cm.id
+            )
+            OR (
+              cm.category_id = bch.category_id
+              AND NOT EXISTS (SELECT 1 FROM menu_item_bundle_choice_menus o WHERE o.bundle_choice_id = bch.id)
             )
           )
       )
