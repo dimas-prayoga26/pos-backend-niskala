@@ -26,6 +26,7 @@ const {
 const { refreshMenuCosts } = require("../../../modules/menu/menu.costs");
 const { ensureShoppingSchema } = require("./shoppingSchema");
 const { seedCogsSheet } = require("./cogsSeed");
+const { seedCogsCategories } = require("./cogsCategorySeed");
 const { ensureBundleSchema } = require("./bundleSchema");
 
 const connectDB = async () => {
@@ -609,6 +610,8 @@ const bootstrapDatabase = async () => {
   await ensureBundleSchema(pool);
   // Bahan, menus and recipes of the COGS sheet, once per database (add-only).
   await seedCogsSheet();
+  // Its menus into the sheet's tabs as categories (Black Coffee ... Roti), once.
+  await seedCogsCategories();
   // Catches average costs changed outside the app (e.g. in phpMyAdmin).
   // Also prices the recipes the COGS seed just added.
   await refreshMenuCosts(pool);
