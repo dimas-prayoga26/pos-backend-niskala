@@ -2,9 +2,58 @@
 // per-ingredient breakdown (current recipe x average cost, else the HPP stored
 // in menu_item_prices) and the platform fee.
 const { parseNominal } = require("../../shared/utils/money");
+const { findBundleRows } = require("../menu/menu.bundles");
 
-const findMenuItemSnapshot = async (connection, menuItemId) => {
+const round4 = (value) => Math.round(value * 10000) / 10000;
+
+// A promo package (menu_item_bundle_items): the HPP of each of its menus
+// (recipe, else the menu's stored HPP) times its quantity. The bahan lines of
+// all menus are combined per bahan; a menu priced by its stored HPP alone
+// adds one line in portions, so the lines still add up to the HPP.
+const findBundleSnapshot = async (connection, bundleId, bundleRows) => {
+  const lines = new Map();
+  let hppCost = 0;
+
+  for (const row of bundleRows) {
+    const quantity = Number(row.quantity) || 0;
+    const item = await findMenuItemSnapshot(connection, Number(row.menu_item_id), { nested: true });
+    hppCost += item.hppCost * quantity;
+
+    for (const line of item.costs) {
+      const key = `stock:${line.stockItemId}`;
+      const current = lines.get(key);
+      if (current) {
+        current.quantity = round4(current.quantity + line.quantity * quantity);
+        current.cost += line.cost * quantity;
+      } else {
+        lines.set(key, { ...line, quantity: round4(line.quantity * quantity), cost: line.cost * quantity });
+      }
+    }
+
+    const unpriced = item.hppCost - item.costs.reduce((total, line) => total + line.cost, 0);
+    if (unpriced > 0) {
+      lines.set(`menu:${row.menu_item_id}`, {
+        stockItemId: null,
+        stockItemName: row.name,
+        quantity,
+        unit: "porsi",
+        unitCost: unpriced,
+        cost: unpriced * quantity,
+      });
+    }
+  }
+
+  return { menuItemId: bundleId, hppCost, costs: [...lines.values()] };
+};
+
+const findMenuItemSnapshot = async (connection, menuItemId, { nested = false } = {}) => {
   if (!menuItemId) return { menuItemId: null, hppCost: 0, costs: [] };
+
+  // Packages hold ordinary menus only, so their menus are not expanded again.
+  if (!nested) {
+    const bundleRows = await findBundleRows(connection, [menuItemId]);
+    if (bundleRows.length) return findBundleSnapshot(connection, menuItemId, bundleRows);
+  }
 
   const [recipeRows] = await connection.query(
     `SELECT

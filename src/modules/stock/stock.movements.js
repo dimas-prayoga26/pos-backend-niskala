@@ -4,15 +4,35 @@
 // transaction connection.
 const createHttpError = require("http-errors");
 const { roundCurrency } = require("../../shared/utils/money");
+const { findBundleRows } = require("../menu/menu.bundles");
 
 const createStockValidationError = (insufficientStock) =>
   createHttpError(409, "Stok bahan tidak mencukupi.", {
     details: { insufficientStock },
   });
 
-const buildStockDeductions = async (connection, orderItems = []) => {
-  if (!orderItems.length) return new Map();
+// A promo package sells each of its menus times that menu's quantity.
+const expandBundles = async (connection, orderItems) => {
+  const bundleRows = await findBundleRows(connection, [
+    ...new Set(orderItems.map((item) => item.menuItemId)),
+  ]);
+  if (!bundleRows.length) return orderItems;
 
+  return orderItems.flatMap((item) => {
+    const parts = bundleRows.filter((row) => Number(row.bundle_menu_item_id) === item.menuItemId);
+    return parts.length
+      ? parts.map((row) => ({
+          menuItemId: Number(row.menu_item_id),
+          quantity: item.quantity * Number(row.quantity),
+        }))
+      : [item];
+  });
+};
+
+const buildStockDeductions = async (connection, items = []) => {
+  if (!items.length) return new Map();
+
+  const orderItems = await expandBundles(connection, items);
   const menuItemIds = [...new Set(orderItems.map((item) => item.menuItemId))];
   const [ingredientRows] = await connection.query(
     `SELECT

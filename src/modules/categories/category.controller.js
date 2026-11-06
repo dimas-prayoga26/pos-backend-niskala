@@ -32,6 +32,13 @@ const parseCategoryStatus = (value) => {
   return Boolean(value);
 };
 
+// Kategori Promo flag; undefined when the request leaves it out.
+const parseBundleFlag = (body) => {
+  if (!Object.prototype.hasOwnProperty.call(body, "isBundle")) return undefined;
+  const value = body.isBundle;
+  return value === true || value === 1 || ["true", "1"].includes(String(value).toLowerCase());
+};
+
 const validateCategoryBody = ({ name }, taxRate) => {
   if (!name) return createHttpError(400, "Category name is required!");
   if (taxRate === undefined) {
@@ -55,7 +62,12 @@ const addCategory = asyncHandler(async (req, res, next) => {
 
   if (validationError) return next(validationError);
 
-  const category = await Category.create({ name, icon, taxRate });
+  const category = await Category.create({
+    name,
+    icon,
+    taxRate,
+    isBundle: Boolean(parseBundleFlag(req.body)),
+  });
   emitRealtimeEvent("menu:changed", {
     action: "category-created",
     categoryId: category.id,
@@ -73,7 +85,13 @@ const updateCategory = asyncHandler(async (req, res, next) => {
 
   if (validationError) return next(validationError);
 
-  const category = await Category.update(req.params.id, { name, icon, taxRate, isActive });
+  const category = await Category.update(req.params.id, {
+    name,
+    icon,
+    taxRate,
+    isActive,
+    isBundle: parseBundleFlag(req.body),
+  });
 
   if (!category) {
     return next(createHttpError(404, "Category not found!"));
@@ -107,6 +125,17 @@ const updateCategoryPositions = asyncHandler(async (req, res, next) => {
 
 const deleteCategory = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
+  const bundleNames = await Category.findBundleNamesUsing(id);
+
+  if (bundleNames.length) {
+    return next(
+      createHttpError(
+        409,
+        `Menu di category ini dipakai di paket ${bundleNames.join(", ")}. Hapus dari paket dulu.`
+      )
+    );
+  }
+
   const deleted = await Category.remove(id);
 
   if (!deleted) {

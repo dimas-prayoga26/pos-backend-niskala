@@ -1,4 +1,5 @@
 const { pool } = require("../../infrastructure/database/pool");
+const { findBundleItems } = require("./menu.bundles");
 const {
   PRICE_ROW_COLUMNS,
   normalizeIngredients,
@@ -30,6 +31,10 @@ const mapMenuItem = (row) => {
     grossProfit,
     profit: grossProfit,
     ingredients: [],
+    // Kategori Promo: a menu of a promo category is a package of other menus
+    // (bundleItems) instead of a recipe.
+    isBundle: Boolean(row.category_is_bundle),
+    bundleItems: [],
     imagePath: row.image_path,
     isAvailable: Boolean(row.is_available),
     category: row.category_name
@@ -40,6 +45,7 @@ const mapMenuItem = (row) => {
           icon: row.category_icon,
           tax: row.category_tax === null ? null : Number(row.category_tax),
           taxRate: row.category_tax === null ? null : Number(row.category_tax),
+          isBundle: Boolean(row.category_is_bundle),
           sortOrder: Number(row.category_sort_order || 0),
           position: Number(row.category_sort_order || 0),
         }
@@ -59,10 +65,24 @@ const baseQuery = `
     c.name AS category_name,
     c.icon AS category_icon,
     c.tax AS category_tax,
+    c.is_bundle AS category_is_bundle,
     c.sort_order AS category_sort_order
   FROM menu_items mi
   JOIN categories c ON c.id = mi.category_id
   LEFT JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
+`;
+
+// The POS only offers a package while all its menus are available.
+const sellableFilter = `
+  mi.is_available = TRUE AND c.is_active = TRUE
+  AND NOT EXISTS (
+    SELECT 1
+    FROM menu_item_bundle_items bi
+    JOIN menu_items bm ON bm.id = bi.menu_item_id
+    JOIN categories bc ON bc.id = bm.category_id
+    WHERE bi.bundle_menu_item_id = mi.id
+      AND (bm.is_available = FALSE OR bc.is_active = FALSE)
+  )
 `;
 
 const categoryOrder = `
@@ -145,9 +165,30 @@ const attachRecipes = async (menuItems) => {
     });
   }
 
+  const bundleRows = await findBundleItems(pool, ids);
+  const bundleItemsByMenuItemId = new Map();
+
+  for (const row of bundleRows) {
+    const bundleId = row.bundle_menu_item_id;
+    if (!bundleItemsByMenuItemId.has(bundleId)) bundleItemsByMenuItemId.set(bundleId, []);
+
+    bundleItemsByMenuItemId.get(bundleId).push({
+      _id: row.id,
+      id: row.id,
+      menuItemId: row.menu_item_id,
+      name: row.name,
+      quantity: Number(row.quantity),
+      price: toNullableNumber(row.regular_price),
+      onlinePrice: toNullableNumber(row.online_price),
+      hppCost: Number(row.hpp_cost || 0),
+      isAvailable: Boolean(row.is_available) && Boolean(row.category_is_active),
+    });
+  }
+
   return menuItems.map((item) => ({
     ...item,
     ingredients: ingredientsByMenuItemId.get(item.id) || [],
+    bundleItems: bundleItemsByMenuItemId.get(item.id) || [],
   }));
 };
 
@@ -197,7 +238,7 @@ const replacePriceAndRecipe = async (
 const findAll = async ({ includeUnavailable = false } = {}) => {
   const [rows] = await pool.query(
     `${baseQuery}
-     ${includeUnavailable ? "" : "WHERE mi.is_available = TRUE AND c.is_active = TRUE"}
+     ${includeUnavailable ? "" : `WHERE ${sellableFilter}`}
      ORDER BY ${categoryOrder}, ${menuItemOrder}, mi.name ASC`
   );
   return attachRecipes(rows.map(mapMenuItem));
@@ -210,7 +251,7 @@ const findByCategoryId = async (
   const [rows] = await pool.query(
     `${baseQuery}
      WHERE mi.category_id = ?
-       ${includeUnavailable ? "" : "AND mi.is_available = TRUE AND c.is_active = TRUE"}
+       ${includeUnavailable ? "" : `AND ${sellableFilter}`}
      ORDER BY ${menuItemOrder}, mi.name ASC`,
     [categoryId]
   );

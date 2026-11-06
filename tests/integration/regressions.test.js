@@ -74,6 +74,72 @@ describe("regressions", () => {
     await dropTestDatabase(DATABASE);
   });
 
+  it("seeds the COGS sheet once, adding only what is missing", async () => {
+    const [runs] = await db.query("SELECT name FROM seed_runs");
+    assert.deepEqual(runs.map((run) => run.name), ["cogs-sheet-2026-11"]);
+
+    const recipeOf = async (menuName) => {
+      const [rows] = await db.query(
+        `SELECT si.name, r.quantity
+         FROM recipes r
+         JOIN menu_items mi ON mi.id = r.menu_item_id
+         JOIN stock_items si ON si.id = r.stock_item_id
+         WHERE mi.name = ?
+         ORDER BY r.sort_order`,
+        [menuName]
+      );
+      return rows.map((row) => [row.name, Number(row.quantity)]);
+    };
+
+    // A new menu is priced as the sheet and stays off the POS until it has a photo.
+    const [[montblanc]] = await db.query(
+      `SELECT mi.is_available, c.name AS category, mip.regular_price
+       FROM menu_items mi
+       JOIN categories c ON c.id = mi.category_id
+       JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
+       WHERE mi.name = 'Montblanc'`
+    );
+    assert.deepEqual(
+      [montblanc.is_available, montblanc.category, Number(montblanc.regular_price)],
+      [0, "Coffee", 23000]
+    );
+    assert.deepEqual(await recipeOf("Montblanc"), [
+      ["ESPRESSO", 8], ["DIAMOND JUICE", 55], ["WATER", 50], ["WHIPPING CREAM", 15],
+      ["FRESHMILK", 10], ["CUP", 1], ["SEDOTAN", 1],
+    ]);
+    // An existing recipe stays as it is; an empty one is filled from the sheet.
+    assert.deepEqual(await recipeOf("Americano"), [["ESPRESSO", 8], ["WATER", 100], ["CUP", 1]]);
+    assert.deepEqual(await recipeOf("Kentang Goreng"), [
+      ["KENTANG BEKU", 120], ["SAOS", 1], ["FOOD TRAY M", 1], ["MINYAK", 1],
+    ]);
+    assert.deepEqual(await recipeOf("Milo Dino"), []);
+
+    // A new bahan starts with one pack; an existing one keeps its stock.
+    const [[telur]] = await db.query(
+      "SELECT unit, stock, unit_cost, stock_value FROM stock_items WHERE name = 'TELUR'"
+    );
+    assert.deepEqual(
+      [telur.unit, Number(telur.stock), telur.unit_cost, Number(telur.stock_value)],
+      ["pcs", 16, 1750, 28000]
+    );
+    const [[espresso]] = await db.query("SELECT stock FROM stock_items WHERE name = 'ESPRESSO'");
+    assert.equal(Number(espresso.stock), 999);
+    const [[roti]] = await db.query(
+      `SELECT c.name FROM menu_items mi JOIN categories c ON c.id = mi.category_id
+       WHERE mi.name = 'Roti Kukus Coklat'`
+    );
+    assert.equal(roti.name, "Roti Kukus");
+
+    // It runs once: a seeded menu the admin deletes stays deleted.
+    const [[sprite]] = await db.query("SELECT id FROM menu_items WHERE name = 'Sprite'");
+    assert.equal((await request("DELETE", `/api/menu-item/${sprite.id}`, { as: "admin" })).status, 200);
+    await restartServer();
+    const [[counts]] = await db.query(
+      "SELECT SUM(name = 'Sprite') AS sprite, SUM(name = 'Montblanc') AS montblanc FROM menu_items"
+    );
+    assert.deepEqual([Number(counts.sprite), Number(counts.montblanc)], [0, 1]);
+  });
+
   it("returns 404 instead of crashing when the recap format is inactive", async () => {
     await db.query("UPDATE meta_data_format_recap SET is_active = FALSE WHERE code = 'weekly'");
     try {
@@ -285,6 +351,183 @@ describe("regressions", () => {
     const [[recipe]] = await db.query("SELECT cost FROM recipes WHERE menu_item_id = ?", [menuItemId]);
     assert.equal(recipe.cost, 2500);
     assert.deepEqual(await soldCosts(), atSale);
+  });
+
+  it("sells a promo package as the recipes of its menus", async () => {
+    // A Kategori Promo keeps its flag until it is changed.
+    const promo = await request("POST", "/api/category", {
+      as: "admin",
+      body: { name: "Promo Paket", icon: "🏷️", isBundle: true },
+    });
+    assert.equal(promo.status, 201, JSON.stringify(promo.body));
+    assert.equal(promo.body.data.isBundle, true);
+    const renamed = await request("PUT", `/api/category/${promo.body.data.id}`, {
+      as: "admin",
+      body: { name: "Promo Paket", icon: "🏷️", isActive: true },
+    });
+    assert.equal(renamed.body.data.isBundle, true);
+    const plainCategory = await request("POST", "/api/category", {
+      as: "admin",
+      body: { name: "Roti Paket Cat", icon: "🥐" },
+    });
+    assert.equal(plainCategory.body.data.isBundle, false);
+    const [[coffee]] = await db.query("SELECT id FROM categories WHERE is_bundle = FALSE ORDER BY id LIMIT 1");
+
+    const stockOf = async (name, unit, stock, averageCost) => {
+      const created = await request("POST", "/api/stock-item", {
+        as: "admin",
+        body: { name, category: "Bahan", unit, stock },
+      });
+      await request("PATCH", `/api/stock-item/${created.body.data.id}/cogs`, { as: "admin", body: { averageCost } });
+      return created.body.data.id;
+    };
+    const espresso = await stockOf("Espresso Paket", "gr", 1000, 100);
+    const roti = await stockOf("Roti Paket", "pcs", 10, 5000);
+    const menuOf = async (body) => {
+      const created = await request("POST", "/api/menu-item", { as: "admin", body });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      return created.body.data;
+    };
+    const kopi = await menuOf({
+      categoryId: coffee.id, name: "Kopi Paket", price: 15000, ingredients: [{ stockItemId: espresso, quantity: 10 }],
+    });
+    const rotiIsi = await menuOf({
+      categoryId: plainCategory.body.data.id, name: "Roti Isi Paket", price: 12000, ingredients: [{ stockItemId: roti, quantity: 1 }],
+    });
+    // No recipe: priced by its stored HPP.
+    const air = await menuOf({ categoryId: coffee.id, name: "Air Paket", price: 5000, hppCost: 2000 });
+    assert.equal(kopi.hppCost, 1000);
+    assert.equal(air.hppCost, 2000);
+
+    const bundleBody = (bundleItems, extra = {}) => ({
+      categoryId: promo.body.data.id,
+      name: "Paket Hemat",
+      price: 30000,
+      bundleItems,
+      ...extra,
+    });
+    const tooSmall = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: bundleBody([{ menuItemId: kopi.id, quantity: 1 }]),
+    });
+    assert.equal(tooSmall.status, 400);
+    assert.equal(tooSmall.body.message, "Paket minimal berisi 2 menu.");
+
+    // Bahan sent with a package are not kept: its menus carry the recipes.
+    const paket = await menuOf(
+      bundleBody(
+        [
+          { menuItemId: kopi.id, quantity: 2 },
+          { menuItemId: rotiIsi.id, quantity: 1 },
+          { menuItemId: air.id, quantity: 1 },
+        ],
+        { ingredients: [{ stockItemId: espresso, quantity: 5 }] }
+      )
+    );
+    assert.equal(paket.isBundle, true);
+    assert.deepEqual(paket.ingredients, []);
+    assert.deepEqual(
+      paket.bundleItems.map(({ menuItemId, name, quantity, price, hppCost }) => ({ menuItemId, name, quantity, price, hppCost })),
+      [
+        { menuItemId: kopi.id, name: "Kopi Paket", quantity: 2, price: 15000, hppCost: 1000 },
+        { menuItemId: rotiIsi.id, name: "Roti Isi Paket", quantity: 1, price: 12000, hppCost: 5000 },
+        { menuItemId: air.id, name: "Air Paket", quantity: 1, price: 5000, hppCost: 2000 },
+      ]
+    );
+    assert.deepEqual([paket.hppCost, paket.grossProfit], [9000, 21000]);
+
+    const nested = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: bundleBody([{ menuItemId: paket.id, quantity: 1 }, { menuItemId: kopi.id, quantity: 1 }], { name: "Paket Ganda" }),
+    });
+    assert.equal(nested.status, 400);
+    assert.equal(nested.body.message, "Paket tidak bisa berisi paket lain: Paket Hemat.");
+
+    // Two packages: the bahan of every menu leave the stock.
+    const order = await request("POST", "/api/order", {
+      as: "cashier",
+      body: {
+        customerDetails: { name: "Paket" },
+        orderType: "Offline",
+        orderStatus: "In Progress",
+        bills: { total: 60000, tax: 0, totalWithTax: 60000 },
+        items: [{
+          id: `${promo.body.data.id}-${paket.id}`,
+          sourceMenuItemId: paket.id,
+          name: "Paket Hemat",
+          quantity: 2,
+          pricePerQuantity: 30000,
+          price: 60000,
+        }],
+        paymentMethod: "Cash",
+      },
+    });
+    assert.equal(order.status, 201, JSON.stringify(order.body));
+    const stocks = async () => {
+      const [rows] = await db.query("SELECT id, stock FROM stock_items WHERE id IN (?) ORDER BY id", [[espresso, roti]]);
+      return rows.map((row) => Number(row.stock));
+    };
+    assert.deepEqual(await stocks(), [960, 8]);
+
+    const [[sold]] = await db.query("SELECT id, hpp_cost FROM order_items WHERE order_id = ?", [order.body.data.id]);
+    assert.equal(Number(sold.hpp_cost), 9000);
+    const [lines] = await db.query(
+      "SELECT stock_item_name AS name, quantity, unit, unit_cost, cost FROM order_item_costs WHERE order_item_id = ? ORDER BY id",
+      [sold.id]
+    );
+    assert.deepEqual(
+      lines.map(({ name, quantity, unit, unit_cost, cost }) => ({ name, quantity: Number(quantity), unit, unitCost: unit_cost, cost })),
+      [
+        { name: "Espresso Paket", quantity: 20, unit: "gr", unitCost: 100, cost: 2000 },
+        { name: "Roti Paket", quantity: 1, unit: "pcs", unitCost: 5000, cost: 5000 },
+        { name: "Air Paket", quantity: 1, unit: "porsi", unitCost: 2000, cost: 2000 },
+      ]
+    );
+
+    // A menu inside a package (or its category) cannot be deleted.
+    const deleteKopi = await request("DELETE", `/api/menu-item/${kopi.id}`, { as: "admin" });
+    assert.equal(deleteKopi.status, 409);
+    assert.equal(deleteKopi.body.message, "Menu ini dipakai di paket Paket Hemat. Hapus dari paket dulu.");
+    const deleteCategory = await request("DELETE", `/api/category/${plainCategory.body.data.id}`, { as: "admin" });
+    assert.equal(deleteCategory.status, 409);
+    assert.equal(deleteCategory.body.message, "Menu di category ini dipakai di paket Paket Hemat. Hapus dari paket dulu.");
+
+    // The package HPP follows the price of its menus' bahan.
+    await request("PATCH", `/api/stock-item/${espresso}/cogs`, { as: "admin", body: { averageCost: 200 } });
+    const [[price]] = await db.query("SELECT hpp_cost, gross_profit FROM menu_item_prices WHERE menu_item_id = ?", [paket.id]);
+    assert.deepEqual([Number(price.hpp_cost), Number(price.gross_profit)], [11000, 19000]);
+
+    // The POS hides a package while one of its menus is unavailable.
+    await request("PUT", `/api/menu-item/${rotiIsi.id}`, {
+      as: "admin",
+      body: {
+        categoryId: plainCategory.body.data.id, name: "Roti Isi Paket", price: 12000,
+        ingredients: [{ stockItemId: roti, quantity: 1 }], isAvailable: false,
+      },
+    });
+    const posMenus = await request("GET", "/api/menu-item", { as: "cashier" });
+    assert.equal(posMenus.body.data.some((item) => item.id === paket.id), false);
+    const adminMenus = await request("GET", "/api/menu-item?includeUnavailable=true", { as: "admin" });
+    const listed = adminMenus.body.data.find((item) => item.id === paket.id);
+    assert.deepEqual(listed.bundleItems.map((item) => item.isAvailable), [true, false, true]);
+
+    // Deleting the order returns the bahan.
+    const removed = await request("DELETE", `/api/order/${order.body.data.id}`, { as: "admin" });
+    assert.equal(removed.status, 200, JSON.stringify(removed.body));
+    assert.deepEqual(await stocks(), [1000, 10]);
+
+    // Moved to an ordinary category, the package becomes a menu with a recipe.
+    const plain = await request("PUT", `/api/menu-item/${paket.id}`, {
+      as: "admin",
+      body: {
+        categoryId: coffee.id, name: "Paket Hemat", price: 30000,
+        bundleItems: [{ menuItemId: kopi.id, quantity: 2 }],
+        ingredients: [{ stockItemId: roti, quantity: 1 }],
+      },
+    });
+    assert.equal(plain.status, 200, JSON.stringify(plain.body));
+    assert.deepEqual([plain.body.data.isBundle, plain.body.data.bundleItems.length, plain.body.data.ingredients.length], [false, 0, 1]);
+    assert.equal((await request("DELETE", `/api/menu-item/${kopi.id}`, { as: "admin" })).status, 200);
   });
 
   it("stores whole-rupiah average costs but keeps the exact stock value", async () => {

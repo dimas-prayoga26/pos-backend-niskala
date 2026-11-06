@@ -25,6 +25,8 @@ const {
 } = require("./seedData");
 const { refreshMenuCosts } = require("../../../modules/menu/menu.costs");
 const { ensureShoppingSchema } = require("./shoppingSchema");
+const { seedCogsSheet } = require("./cogsSeed");
+const { ensureBundleSchema } = require("./bundleSchema");
 
 const connectDB = async () => {
   await serverPool.query(
@@ -598,7 +600,12 @@ const connectDB = async () => {
 const bootstrapDatabase = async () => {
   await connectDB();
   await ensureShoppingSchema(pool);
+  // Kategori Promo: packages of menus (categories.is_bundle, menu_item_bundle_items).
+  await ensureBundleSchema(pool);
+  // Bahan, menus and recipes of the COGS sheet, once per database (add-only).
+  await seedCogsSheet();
   // Catches average costs changed outside the app (e.g. in phpMyAdmin).
+  // Also prices the recipes the COGS seed just added.
   await refreshMenuCosts(pool);
 };
 
