@@ -42,10 +42,12 @@ let testPool, created = false, receiptDir;
   ) ENGINE=InnoDB`);
   await testPool.query("CREATE TABLE stock_semi_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL UNIQUE, unit_cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
   // Minimal menu tables: purchases refresh recipe costs and menu HPP.
-  await testPool.query("CREATE TABLE menu_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL) ENGINE=InnoDB");
+  await testPool.query("CREATE TABLE menu_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, category_id INT UNSIGNED NULL, name VARCHAR(150) NOT NULL) ENGINE=InnoDB");
   await testPool.query("CREATE TABLE menu_item_prices (menu_item_id INT UNSIGNED PRIMARY KEY, regular_price DECIMAL(12,2) NOT NULL, hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0, gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0) ENGINE=InnoDB");
   await testPool.query("CREATE TABLE menu_item_recipes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, menu_item_id INT UNSIGNED NOT NULL, stock_item_id INT UNSIGNED NOT NULL, quantity DOUBLE NOT NULL, cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
   await testPool.query("INSERT INTO users (id, name) VALUES (1, 'Admin Uji')");
+  await testPool.query("CREATE TABLE menu_item_bundle_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, bundle_menu_item_id INT UNSIGNED NOT NULL, menu_item_id INT UNSIGNED NOT NULL, quantity INT UNSIGNED NOT NULL DEFAULT 1) ENGINE=InnoDB");
+  await testPool.query("CREATE TABLE menu_item_bundle_choices (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, bundle_menu_item_id INT UNSIGNED NOT NULL, category_id INT UNSIGNED NOT NULL, quantity INT UNSIGNED NOT NULL DEFAULT 1) ENGINE=InnoDB");
   await ensureShoppingSchema(testPool);
   await ensureShoppingSchema(testPool);
   await ensurePaymentSourcesSchema(testPool);
@@ -67,6 +69,10 @@ let testPool, created = false, receiptDir;
   await testPool.query("INSERT INTO menu_items (id, name) VALUES (1, 'Kopi Resep')");
   await testPool.query("INSERT INTO menu_item_prices (menu_item_id, regular_price) VALUES (1, 20000)");
   await testPool.query("INSERT INTO menu_item_recipes (menu_item_id, stock_item_id, quantity) VALUES (1, ?, 10)", [first.id]);
+  // A promo package of two Kopi Resep: its HPP follows the purchase too.
+  await testPool.query("INSERT INTO menu_items (id, name) VALUES (90, 'Paket Kopi')");
+  await testPool.query("INSERT INTO menu_item_prices (menu_item_id, regular_price, hpp_cost, gross_profit) VALUES (90, 35000, 999, 20000)");
+  await testPool.query("INSERT INTO menu_item_bundle_items (bundle_menu_item_id, menu_item_id, quantity) VALUES (90, 1, 2)");
   await ensureShoppingSchema(testPool);
   assert.deepEqual(await shopping.suppliers(), [], "schema must not create suppliers");
   const payload = {
@@ -86,6 +92,8 @@ let testPool, created = false, receiptDir;
   assert.equal(recipe.cost, 1030, "purchase refreshes recipe cost (10 gr x 103)");
   const [[menuPrice]] = await testPool.query("SELECT hpp_cost, gross_profit FROM menu_item_prices WHERE menu_item_id = 1");
   assert.deepEqual([Number(menuPrice.hpp_cost), Number(menuPrice.gross_profit)], [1030, 18970]);
+  const [[bundlePrice]] = await testPool.query("SELECT hpp_cost, gross_profit FROM menu_item_prices WHERE menu_item_id = 90");
+  assert.deepEqual([Number(bundlePrice.hpp_cost), Number(bundlePrice.gross_profit)], [0, 20000]);
   assert.equal(stocks.find(stock=>stock.id===second.id).unit,"pcs");
   assert.equal(Number(stocks.find(stock=>stock.id===second.id).stock),3);
   assert.equal(Number(stocks.find(stock=>stock.id===second.id).unit_cost),2000);

@@ -8,6 +8,9 @@
 //                                   item's composition
 //   menu_item_prices.hpp_cost     = sum of the menu's menu_item_recipes and semi lines
 //   gross_profit                  = regular_price - hpp_cost
+//   a package (Kategori Promo)    hpp_cost = 0: each sale counts the HPP of
+//                                   the menus in it (order snapshot); its
+//                                   gross_profit is entered by hand
 // A menu keeps its manual HPP while its recipe costs nothing yet (no purchase
 // prices), the same fallback order HPP uses. Pass stockItemIds (raw),
 // semiItemIds or menuItemIds to limit the refresh; with none, every recipe is
@@ -19,6 +22,18 @@ const refreshSemiRecipeCosts = (connection, stockItemIds) =>
      SET sr.cost = ROUND(sr.quantity * si.unit_cost)
      ${stockItemIds ? "WHERE sr.stock_item_id IN (?)" : ""}`,
     stockItemIds ? [stockItemIds] : []
+  );
+
+// Packages have no HPP of their own (see above); their gross profit stays.
+const clearBundleCosts = (connection) =>
+  connection.query(
+    `UPDATE menu_item_prices mip
+     SET mip.hpp_cost = 0
+     WHERE mip.hpp_cost <> 0
+       AND (
+         EXISTS (SELECT 1 FROM menu_item_bundle_items bi WHERE bi.bundle_menu_item_id = mip.menu_item_id)
+         OR EXISTS (SELECT 1 FROM menu_item_bundle_choices bc WHERE bc.bundle_menu_item_id = mip.menu_item_id)
+       )`
   );
 
 const refreshMenuCosts = async (
@@ -80,6 +95,7 @@ const refreshMenuCosts = async (
      WHERE costs.hpp > 0`,
     [...params, ...params]
   );
+  await clearBundleCosts(connection);
 };
 
 module.exports = { refreshMenuCosts };

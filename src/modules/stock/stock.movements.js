@@ -6,6 +6,7 @@
 const createHttpError = require("http-errors");
 const { roundCurrency } = require("../../shared/utils/money");
 const { findRecipeLines } = require("../menu/menu.recipeLines");
+const { findBundleRows } = require("../menu/menu.bundles");
 
 const createStockValidationError = (insufficientStock) =>
   createHttpError(409, "Stok bahan tidak mencukupi.", {
@@ -30,9 +31,39 @@ const STOCK_UPDATES = {
      WHERE id = ?`,
 };
 
-const buildStockDeductions = async (connection, orderItems = []) => {
-  if (!orderItems.length) return new Map();
+// A promo package sells each of its menus and of its picked menus
+// (bundleChoices, per package) times that menu's quantity.
+const expandBundles = async (connection, orderItems) => {
+  const bundleRows = await findBundleRows(connection, [
+    ...new Set(orderItems.map((item) => item.menuItemId)),
+  ]);
+  if (!bundleRows.length && !orderItems.some((item) => item.bundleChoices?.length)) {
+    return orderItems;
+  }
 
+  return orderItems.flatMap((item) => {
+    const parts = [
+      ...bundleRows
+        .filter((row) => Number(row.bundle_menu_item_id) === item.menuItemId)
+        .map((row) => ({ menuItemId: Number(row.menu_item_id), quantity: Number(row.quantity) })),
+      ...(item.bundleChoices || []).map((choice) => ({
+        menuItemId: Number(choice.menuItemId),
+        quantity: Number(choice.quantity),
+      })),
+    ];
+    return parts.length
+      ? parts.map((part) => ({
+          menuItemId: part.menuItemId,
+          quantity: item.quantity * part.quantity,
+        }))
+      : [item];
+  });
+};
+
+const buildStockDeductions = async (connection, items = []) => {
+  if (!items.length) return new Map();
+
+  const orderItems = await expandBundles(connection, items);
   const menuItemIds = [...new Set(orderItems.map((item) => item.menuItemId))];
   // Bahan baku lines live in menu_item_recipes, bahan olahan lines in
   // stock_semi_item_menus.

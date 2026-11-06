@@ -1,5 +1,10 @@
 const createHttpError = require("http-errors");
-const { withTransaction } = require("../../infrastructure/database/pool");
+const { pool, withTransaction } = require("../../infrastructure/database/pool");
+const {
+  findBundleNamesUsing,
+  replaceBundleItems,
+  resolveBundleItems,
+} = require("./menu.bundles");
 const { refreshMenuCosts } = require("./menu.costs");
 const { removeImageIfUnused } = require("./menu.images");
 const { buildMenuItemRecord } = require("./menu.pricing");
@@ -29,21 +34,27 @@ const toMenuItemRecord = (input) => {
   };
 };
 
-const writePriceAndRecipe = (connection, id, record) =>
-  MenuItem.replacePriceAndRecipe(connection, id, {
+// A package (bundle { items, choices } set) has no recipe of its own: selling
+// it sells the recipes of its menus. An ordinary menu loses any package contents.
+const writePriceAndRecipe = async (connection, id, record, bundle) => {
+  await MenuItem.replacePriceAndRecipe(connection, id, {
     price: {
       regularPrice: record.basePrice,
       onlinePrice: record.baseOnlinePrice,
       ...record.profitFields,
     },
-    ingredients: record.normalizedIngredients,
+    ingredients: bundle ? [] : record.normalizedIngredients,
   });
+  await MenuItem.setDiscountPercent(connection, id, bundle?.discountPercent || 0);
+  await replaceBundleItems(connection, id, bundle || {});
+};
 
 const create = async (input) => {
   const record = toMenuItemRecord(input);
   const id = await withTransaction(async (connection) => {
+    const bundle = await resolveBundleItems(connection, input);
     const insertId = await MenuItem.insertMenuItem(connection, record);
-    await writePriceAndRecipe(connection, insertId, record);
+    await writePriceAndRecipe(connection, insertId, record, bundle);
     await refreshMenuCosts(connection, { menuItemIds: [insertId] });
     return insertId;
   });
@@ -57,8 +68,9 @@ const update = async (id, input) => {
   if (!previousMenuItem) return null;
 
   await withTransaction(async (connection) => {
+    const bundle = await resolveBundleItems(connection, input, id);
     await MenuItem.updateMenuItem(connection, id, record);
-    await writePriceAndRecipe(connection, id, record);
+    await writePriceAndRecipe(connection, id, record, bundle);
     await refreshMenuCosts(connection, { menuItemIds: [id] });
   });
 
@@ -70,9 +82,18 @@ const update = async (id, input) => {
   return menuItem;
 };
 
+// A menu inside a package cannot be deleted (409) until it leaves the package.
 const remove = async (id) => {
   const menuItem = await MenuItem.findById(id);
   if (!menuItem) return false;
+
+  const bundleNames = await findBundleNamesUsing(pool, id);
+  if (bundleNames.length) {
+    throw createHttpError(
+      409,
+      `Menu ini dipakai di paket ${bundleNames.join(", ")}. Hapus dari paket dulu.`
+    );
+  }
 
   const deleted = await MenuItem.remove(id);
   if (!deleted) return false;

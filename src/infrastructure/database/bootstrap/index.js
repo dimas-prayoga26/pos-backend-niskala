@@ -34,6 +34,8 @@ const { ensureShoppingSchema } = require("./shoppingSchema");
 const { ensureSupplySchema } = require("./supplySchema");
 const { ensureWasteSchema } = require("./wasteSchema");
 const { ensureMerkSchema } = require("./merkSchema");
+const { seedCogsSheet } = require("./cogsSeed");
+const { ensureBundleSchema } = require("./bundleSchema");
 
 const connectDB = async () => {
   await serverPool.query(
@@ -392,6 +394,8 @@ const connectDB = async () => {
       quantity INT NOT NULL,
       price_per_quantity DECIMAL(12,2) NOT NULL,
       hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+      discount_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+      discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
       price DECIMAL(12,2) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_order_items_order_id (order_id),
@@ -407,6 +411,9 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE order_items ADD COLUMN menu_item_id INT UNSIGNED NULL AFTER item_key");
   await runSafeMigration("ALTER TABLE order_items ADD COLUMN variant VARCHAR(50) NULL AFTER name");
   await runSafeMigration("ALTER TABLE order_items ADD COLUMN hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER price_per_quantity");
+  // Line discount (e.g. a free item for a Google Maps review).
+  await runSafeMigration("ALTER TABLE order_items ADD COLUMN discount_percent DECIMAL(5,2) NOT NULL DEFAULT 0 AFTER hpp_cost");
+  await runSafeMigration("ALTER TABLE order_items ADD COLUMN discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER discount_percent");
   await runSafeMigration("CREATE INDEX idx_order_items_menu_item_id ON order_items (menu_item_id)");
   await runSafeMigration(`
     UPDATE order_items oi
@@ -674,7 +681,12 @@ const bootstrapDatabase = async () => {
   await ensureRecipeIngredientSchema(pool);
   await ensureHppPendingSchema(pool);
   await ensureDayClosingSchema(pool);
+  // Kategori Promo: packages of menus (categories.is_bundle, menu_item_bundle_items).
+  await ensureBundleSchema(pool);
+  // Bahan, menus and recipes of the COGS sheet, once per database (add-only).
+  await seedCogsSheet();
   // Catches average costs changed outside the app (e.g. in phpMyAdmin).
+  // Also prices the recipes the COGS seed just added.
   await refreshMenuCosts(pool);
 };
 

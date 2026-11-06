@@ -667,6 +667,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INT NOT NULL,
   price_per_quantity DECIMAL(12,2) NOT NULL,
   hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+  discount_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+  discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
   price DECIMAL(12,2) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_order_items_order_id (order_id),

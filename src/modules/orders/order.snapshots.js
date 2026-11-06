@@ -2,10 +2,82 @@
 // per-ingredient breakdown (current recipe x average cost, else the HPP stored
 // in menu_item_prices) and the platform fee.
 const { parseNominal } = require("../../shared/utils/money");
+const { findBundleRows } = require("../menu/menu.bundles");
 const { findRecipeLines } = require("../menu/menu.recipeLines");
 
-const findMenuItemSnapshot = async (connection, menuItemId) => {
+const round4 = (value) => Math.round(value * 10000) / 10000;
+
+// A promo package (menu_item_bundle_items, plus the menus picked for its
+// choices): the HPP of each of its menus (recipe, else the menu's stored HPP)
+// times its quantity. The lines of all menus are combined per bahan baku or
+// bahan olahan; a menu priced by its stored HPP alone adds one line in
+// portions, so the lines still add up to the HPP.
+const findBundleSnapshot = async (connection, bundleId, bundleRows) => {
+  const lines = new Map();
+  let hppCost = 0;
+
+  for (const row of bundleRows) {
+    const quantity = Number(row.quantity) || 0;
+    const item = await findMenuItemSnapshot(connection, Number(row.menu_item_id), { nested: true });
+    hppCost += item.hppCost * quantity;
+
+    for (const line of item.costs) {
+      const key = line.semiItemId ? `semi:${line.semiItemId}` : `raw:${line.stockItemId}`;
+      const current = lines.get(key);
+      if (current) {
+        current.quantity = round4(current.quantity + line.quantity * quantity);
+        current.cost += line.cost * quantity;
+      } else {
+        lines.set(key, { ...line, quantity: round4(line.quantity * quantity), cost: line.cost * quantity });
+      }
+    }
+
+    const unpriced = item.hppCost - item.costs.reduce((total, line) => total + line.cost, 0);
+    if (unpriced > 0) {
+      const key = `menu:${row.menu_item_id}`;
+      const current = lines.get(key);
+      if (current) {
+        current.quantity += quantity;
+        current.cost += unpriced * quantity;
+      } else {
+        lines.set(key, {
+          stockItemId: null,
+          semiItemId: null,
+          stockItemName: row.name,
+          quantity,
+          unit: "porsi",
+          unitCost: unpriced,
+          cost: unpriced * quantity,
+          hppType: "standar",
+          isPending: false,
+        });
+      }
+    }
+  }
+
+  return { menuItemId: bundleId, hppCost, costs: [...lines.values()] };
+};
+
+// choices: the menus picked for the package's choices ({ menuItemId, name, quantity }).
+const findMenuItemSnapshot = async (
+  connection,
+  menuItemId,
+  { nested = false, choices = [] } = {}
+) => {
   if (!menuItemId) return { menuItemId: null, hppCost: 0, costs: [] };
+
+  // Packages hold ordinary menus only, so their menus are not expanded again.
+  if (!nested) {
+    const bundleRows = [
+      ...(await findBundleRows(connection, [menuItemId])),
+      ...choices.map((choice) => ({
+        menu_item_id: choice.menuItemId,
+        quantity: choice.quantity,
+        name: choice.name,
+      })),
+    ];
+    if (bundleRows.length) return findBundleSnapshot(connection, menuItemId, bundleRows);
+  }
 
   // Bahan baku lines (menu_item_recipes) and bahan olahan lines
   // (stock_semi_item_menus) of the menu.
