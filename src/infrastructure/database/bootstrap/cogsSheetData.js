@@ -742,7 +742,8 @@ const cogsHotMenus = [
 
 // Bahan of the sheet that cogsStockItems missed (read 2026-11-09): Salted
 // Creamy Latte's, the SAUS&SAMBAL tab's and CLEO of the BUNDLING tab. Same
-// format as cogsStockItems; cogsMenuFillSeed.js adds the missing ones.
+// format as cogsStockItems, then the names the bahan has on the live POS;
+// cogsMenuFillSeed.js adds the missing ones.
 const cogsExtraStockItems = [
   ["EVAPORASI", "Dairy", "ml", 500, 18000],
   ["SIRUP SALTED CARAMEL", "Syrup", "ml", 2000, 243540],
@@ -761,7 +762,7 @@ const cogsExtraStockItems = [
   ["LADA PUTIH", "Bahan Makanan", "porsi", 1, 200],
   ["KECAP INGGRIS", "Saus", "ml", 625, 31200],
   ["SAUS SAMBAL", "Saus", "ml", 1000, 22000],
-  ["CLEO 220 ml", "Beverage", "pcs", 96, 75200],
+  ["CLEO 220 ml", "Beverage", "pcs", 96, 75200, ["CLEO 200 ML"]],
 ];
 
 // Menus of the sheet's tabs that cogsMenus missed (they needed the bahan above).

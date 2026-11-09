@@ -292,13 +292,13 @@ describe("regressions", () => {
     assert.deepEqual(recipe.map((row) => [row.name, Number(row.quantity)]), [
       ["ESPRESSO", 8], ["WATER", 100], ["CUP", 1],
     ]);
-    // The bahan and menus the COGS seed missed: one pack in stock, the sheet's recipe.
+    // The bahan and menus the COGS seed missed: no stock, the sheet's COGS and recipe.
     const [[evaporasi]] = await db.query(
       "SELECT unit, stock, unit_cost, stock_value FROM stock_raw_items WHERE name = 'EVAPORASI'"
     );
     assert.deepEqual(
       [evaporasi.unit, Number(evaporasi.stock), evaporasi.unit_cost, Number(evaporasi.stock_value)],
-      ["ml", 500, 36, 18000]
+      ["ml", 0, 36, 0]
     );
     const [[sauceBahan]] = await db.query(
       "SELECT COUNT(*) AS n FROM stock_raw_items WHERE name IN ('KUNING TELUR ASIN', 'KECAP INGGRIS', 'CLEO 220 ml')"
@@ -349,9 +349,24 @@ describe("regressions", () => {
     // Run again: the copy comes back once; a menu with a photo or off the
     // sheet's tabs stays off.
     await db.query("UPDATE menu_items SET image_path = '/uploads/menu/coca-cola.png' WHERE name = 'Coca-Cola'");
+    // As on the live POS: CLEO bought as CLEO 200 ML, MICIN not there yet.
+    await db.query(
+      "UPDATE stock_raw_items SET name = 'CLEO 200 ML', stock = 96, unit_cost = 783, stock_value = 75200 WHERE name = 'CLEO 220 ml'"
+    );
+    await db.query("DELETE FROM stock_raw_items WHERE name = 'MICIN'");
+    const stockRows = async () => {
+      const [rows] = await db.query("SELECT id, name, stock, unit_cost, stock_value FROM stock_raw_items ORDER BY id");
+      return rows.map((row) => [row.id, row.name, Number(row.stock), row.unit_cost, Number(row.stock_value)]);
+    };
+    const liveStock = await stockRows();
     await db.query("DELETE FROM seed_runs WHERE name = 'cogs-menus-2026-11'");
     await restartServer();
     assert.equal(await americanoCount(), 2);
+    // The live stock, COGS and asset values stay; only the missing bahan is added, empty.
+    const stockAfter = await stockRows();
+    assert.deepEqual(stockAfter.slice(0, liveStock.length), liveStock);
+    assert.deepEqual(stockAfter.slice(liveStock.length).map((row) => row.slice(1)), [["MICIN", 0, 500, 0]]);
+    await db.query("UPDATE stock_raw_items SET name = 'CLEO 220 ml' WHERE name = 'CLEO 200 ML'");
     const [[saltedCount]] = await db.query(
       "SELECT COUNT(*) AS n FROM menu_items WHERE name = 'Salted Creamy Latte'"
     );

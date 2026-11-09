@@ -41,9 +41,10 @@ describe("COGS sheet seed data", () => {
   it("adds the missed bahan once, and the missed menus with recipes of known bahan", () => {
     const keys = [...cogsStockItems, ...cogsExtraStockItems].map(([name]) => keyOf(name));
     assert.equal(new Set(keys).size, keys.length);
-    for (const [name, , unit, packSize, packPrice] of cogsExtraStockItems) {
+    for (const [name, , unit, packSize, packPrice, otherNames = []] of cogsExtraStockItems) {
       assert.ok(["gr", "ml", "pcs", "porsi"].includes(unit), `${name}: ${unit}`);
       assert.ok(packSize > 0 && packPrice > 0, name);
+      assert.ok(otherNames.every((other) => typeof other === "string" && !keys.includes(keyOf(other))), name);
     }
 
     const bahan = new Set(keys);

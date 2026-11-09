@@ -1,6 +1,7 @@
 // One-time fill of the COGS sheet (2026-11-09), after the category seed. It
 // runs once (seed_runs), so what the admin changes later stays:
-// - the sheet's bahan the COGS seed missed are added, one pack in stock;
+// - the sheet's bahan the COGS seed missed are added with no stock (live
+//   stock and its value only come from purchases) and the sheet's COGS;
 // - its menus the COGS seed missed are added in their tab's category;
 // - a menu on a Hot tab and an Ice tab gets a second menu of the same name in
 //   the Hot category, with the Ice menu's prices and the Hot tab's recipe;
@@ -28,16 +29,17 @@ const insertRecipe = async (connection, menu, menuItemId, stockByKey, skipped) =
   );
 };
 
-// As the COGS seed: stock = packSize, unit cost = packPrice / packSize.
+// Stock 0 and value 0; unit cost = packPrice / packSize until the first
+// purchase sets it. A bahan already there under another name is left alone.
 const addMissingBahan = async (connection) => {
   const stockByKey = await stockByKeyOf(connection);
   const added = [];
-  for (const [name, category, unit, packSize, packPrice] of cogsExtraStockItems) {
-    if (stockByKey.has(keyOf(name))) continue;
+  for (const [name, category, unit, packSize, packPrice, otherNames = []] of cogsExtraStockItems) {
+    if ([name, ...otherNames].some((known) => stockByKey.has(keyOf(known)))) continue;
     await connection.query(
       `INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock, unit_cost, stock_value)
-       VALUES (?, ?, ?, ?, 0, ?, ?)`,
-      [name, category, unit, packSize, Math.round(packPrice / packSize), packPrice]
+       VALUES (?, ?, ?, 0, 0, ?, 0)`,
+      [name, category, unit, Math.round(packPrice / packSize)]
     );
     added.push(name);
   }
