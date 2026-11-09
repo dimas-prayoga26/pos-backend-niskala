@@ -125,7 +125,11 @@ const resolveCategories = async (connection, categories, menus) => {
 
 // The sheet's menus found in the database: { id, categoryId, target }.
 const findSheetMenus = (menuRows, promoCategoryIds) => {
-  const menuByKey = new Map(menuRows.map((row) => [keyOf(row.name), row]));
+  // A name used twice (a Hot tab copy, cogsMenuFillSeed) is the older menu.
+  const menuByKey = new Map();
+  for (const row of menuRows) {
+    if (!menuByKey.has(keyOf(row.name))) menuByKey.set(keyOf(row.name), row);
+  }
   const found = [];
 
   for (const sheetCategory of SHEET_CATEGORIES) {
@@ -212,7 +216,7 @@ const arrangeCategories = async (connection) => {
   const promoCategoryIds = new Set(
     categories.filter((category) => category.is_bundle).map((category) => Number(category.id))
   );
-  const [menuRows] = await connection.query("SELECT id, name, category_id FROM menu_items");
+  const [menuRows] = await connection.query("SELECT id, name, category_id FROM menu_items ORDER BY id");
   const menus = findSheetMenus(menuRows, promoCategoryIds);
   const resolved = await resolveCategories(connection, categories, menus);
   const categoryIdOf = new Map(resolved.map((category) => [category.name, category.categoryId]));

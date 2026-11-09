@@ -36,6 +36,7 @@ const { ensureWasteSchema } = require("./wasteSchema");
 const { ensureMerkSchema } = require("./merkSchema");
 const { seedCogsSheet } = require("./cogsSeed");
 const { seedCogsCategories } = require("./cogsCategorySeed");
+const { seedCogsMenuFill } = require("./cogsMenuFillSeed");
 const { ensureBundleSchema } = require("./bundleSchema");
 
 const connectDB = async () => {
@@ -688,6 +689,8 @@ const bootstrapDatabase = async () => {
   await seedCogsSheet();
   // Its menus into the sheet's tabs as categories (Black Coffee ... Roti), once.
   await seedCogsCategories();
+  // Hot tab copies of Ice menus, and the tabs' menus on the POS, once.
+  await seedCogsMenuFill();
   // Catches average costs changed outside the app (e.g. in phpMyAdmin).
   // Also prices the recipes the COGS seed just added.
   await refreshMenuCosts(pool);

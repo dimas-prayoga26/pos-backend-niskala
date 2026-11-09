@@ -11,7 +11,7 @@
 const logger = require("../../../shared/logger");
 const { areConvertible, convertBetweenUnits } = require("../../../shared/utils/units");
 const { pool, withTransaction } = require("../pool");
-const { cogsMenus, cogsStockItems } = require("./cogsSheetData");
+const { cogsExtraStockItems, cogsMenus, cogsStockItems } = require("./cogsSheetData");
 
 const SEED_NAME = "cogs-sheet-2026-11";
 const CATEGORY_ICONS = { "Roti Kukus": "\u{1F35E}" };
@@ -24,7 +24,9 @@ const normalizeUnit = (unit) => {
   const value = String(unit || "").trim().toLowerCase();
   return PIECE_UNITS.has(value) ? "pcs" : value;
 };
-const seedUnitOf = new Map(cogsStockItems.map(([name, , unit]) => [keyOf(name), unit]));
+const seedUnitOf = new Map(
+  [...cogsStockItems, ...cogsExtraStockItems].map(([name, , unit]) => [keyOf(name), unit])
+);
 
 // The quantity in the bahan's own unit, or null when the units do not convert.
 const toStockUnit = (quantity, fromUnit, toUnit) => {
@@ -176,4 +178,4 @@ const seedCogsSheet = async () => {
   }
 };
 
-module.exports = { SEED_NAME, seedCogsSheet };
+module.exports = { SEED_NAME, keyOf, recipeRowsOf, seedCogsSheet };

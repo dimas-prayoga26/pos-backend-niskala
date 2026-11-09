@@ -703,4 +703,78 @@ const cogsMenus = [
   },
 ];
 
-module.exports = { cogsMenus, cogsStockItems };
+// Hot tab menus that are on an Ice tab too (above, the Ice tab won), read
+// 2026-11-09. cogsMenuFillSeed.js gives each a menu of the same name in its
+// Hot category: price from the Ice menu (the sheet's here when it is gone),
+// recipe from the Hot tab.
+const cogsHotMenus = [
+  { category: "Hot Black Coffee", name: "Americano", price: 15000, recipe: [["ESPRESSO", 8], ["WATER", 100], ["CUP", 1]] },
+  { category: "Hot Black Coffee", name: "On The Rock Espresso", price: 15000, recipe: [["ESPRESSO", 15], ["CUP", 1]] },
+  {
+    category: "Hot White Coffee",
+    name: "Butterscotch Latte",
+    price: 20000,
+    recipe: [["ESPRESSO", 8], ["SYRUP BUTTERSCOTH", 15], ["CREAMER", 15], ["FRESHMILK", 100], ["CUP", 1]],
+  },
+  {
+    category: "Hot White Coffee",
+    name: "Caramel Latte",
+    price: 20000,
+    recipe: [["ESPRESSO", 8], ["SYRUP CLASSC CARAMEL", 15], ["CREAMER", 15], ["FRESHMILK", 100], ["CUP", 1]],
+  },
+  {
+    category: "Hot White Coffee",
+    name: "Aren Latte",
+    price: 20000,
+    recipe: [["ESPRESSO", 8], ["SYRUP AREN", 15], ["CREAMER", 15], ["FRESHMILK", 100], ["CUP", 1]],
+  },
+  { category: "Hot White Coffee", name: "Cafe Latte", price: 18000, recipe: [["ESPRESSO", 8], ["FRESHMILK", 100], ["CUP", 1]] },
+  { category: "Hot White Coffee", name: "Cappuccino", price: 18000, recipe: [["ESPRESSO", 8], ["FRESHMILK", 100], ["CUP", 1]] },
+  {
+    category: "Hot White Coffee",
+    name: "Berry Coffee Milk",
+    price: 22000,
+    recipe: [
+      ["ESPRESSO", 8], ["SYRUP STRAWBERRY", 10], ["SYRUP LYCHEE", 5], ["SYRUP BUTTERSCOTH", 5], ["FRESHMILK", 80], ["CUP", 1],
+    ],
+  },
+];
+
+// Bahan of the sheet that cogsStockItems missed (read 2026-11-09): Salted
+// Creamy Latte's, the SAUS&SAMBAL tab's and CLEO of the BUNDLING tab. Same
+// format as cogsStockItems; cogsMenuFillSeed.js adds the missing ones.
+const cogsExtraStockItems = [
+  ["EVAPORASI", "Dairy", "ml", 500, 18000],
+  ["SIRUP SALTED CARAMEL", "Syrup", "ml", 2000, 243540],
+  ["KUNING TELUR ASIN", "Bahan Makanan", "pcs", 10, 38000],
+  ["MARGARIN", "Dairy", "gr", 200, 7000],
+  ["KALDU JAMUR", "Bahan Makanan", "gr", 40, 9000],
+  ["DAUN KARI", "Bahan Makanan", "porsi", 1, 1500],
+  ["SAUS TIRAM", "Saus", "ml", 1000, 54500],
+  ["TEPUNG MEIZENA", "Bahan Makanan", "gr", 150, 10500],
+  ["SAUS LADA HITAM", "Saus", "ml", 300, 22000],
+  ["PAPRIKA MERAH", "Bahan Makanan", "pcs", 1, 5000],
+  ["LADA HITAM", "Bahan Makanan", "porsi", 1, 500],
+  ["CABE MERAH BESAR", "Bahan Makanan", "porsi", 1, 8000],
+  ["MICIN", "Bahan Makanan", "porsi", 1, 500],
+  ["LADA BUBUK", "Bahan Makanan", "porsi", 1, 500],
+  ["LADA PUTIH", "Bahan Makanan", "porsi", 1, 200],
+  ["KECAP INGGRIS", "Saus", "ml", 625, 31200],
+  ["SAUS SAMBAL", "Saus", "ml", 1000, 22000],
+  ["CLEO 220 ml", "Beverage", "pcs", 96, 75200],
+];
+
+// Menus of the sheet's tabs that cogsMenus missed (they needed the bahan above).
+const cogsExtraMenus = [
+  {
+    category: "White Coffee",
+    name: "Salted Creamy Latte",
+    price: 23000,
+    recipe: [
+      ["ESPRESSO", 8], ["FRESHMILK", 120], ["EVAPORASI", 30], ["CREAMER", 15],
+      ["SIRUP SALTED CARAMEL", 15], ["SEA SALT", 20], ["CUP", 1], ["SEDOTAN", 1],
+    ],
+  },
+];
+
+module.exports = { cogsExtraMenus, cogsExtraStockItems, cogsHotMenus, cogsMenus, cogsStockItems };

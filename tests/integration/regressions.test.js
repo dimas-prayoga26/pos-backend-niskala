@@ -86,22 +86,24 @@ describe("regressions", () => {
 
   it("seeds the COGS sheet once, adding only what is missing", async () => {
     const [runs] = await db.query("SELECT name FROM seed_runs ORDER BY name");
-    assert.deepEqual(runs.map((run) => run.name), ["cogs-categories-2026-11", "cogs-sheet-2026-11"]);
+    assert.deepEqual(runs.map((run) => run.name), [
+      "cogs-categories-2026-11", "cogs-menus-2026-11", "cogs-sheet-2026-11",
+    ]);
 
+    // The oldest menu of that name (a Hot tab copy comes later).
     const recipeOf = async (menuName) => {
       const [rows] = await db.query(
         `SELECT si.name, r.quantity
          FROM menu_item_recipes r
-         JOIN menu_items mi ON mi.id = r.menu_item_id
          JOIN stock_raw_items si ON si.id = r.stock_item_id
-         WHERE mi.name = ?
+         WHERE r.menu_item_id = (SELECT MIN(id) FROM menu_items WHERE name = ?)
          ORDER BY r.sort_order`,
         [menuName]
       );
       return rows.map((row) => [row.name, Number(row.quantity)]);
     };
 
-    // A new menu is priced as the sheet and stays off the POS until it has a photo.
+    // A new menu is priced as the sheet; the menu fill seed puts it on the POS.
     const [[montblanc]] = await db.query(
       `SELECT mi.is_available, c.name AS category, mip.regular_price
        FROM menu_items mi
@@ -111,7 +113,7 @@ describe("regressions", () => {
     );
     assert.deepEqual(
       [montblanc.is_available, montblanc.category, Number(montblanc.regular_price)],
-      [0, "Black Coffee", 23000]
+      [1, "Black Coffee", 23000]
     );
     assert.deepEqual(await recipeOf("Montblanc"), [
       ["ESPRESSO", 8], ["DIAMOND JUICE", 55], ["WATER", 50], ["WHIPPING CREAM", 15],
@@ -152,9 +154,11 @@ describe("regressions", () => {
   });
 
   it("arranges the sheet's menus into its tabs as categories, once", async () => {
+    // The category of the oldest menu of that name (a Hot tab copy comes later).
     const categoryOf = async (menuName) => {
       const [[row]] = await db.query(
-        `SELECT c.name FROM menu_items mi JOIN categories c ON c.id = mi.category_id WHERE mi.name = ?`,
+        `SELECT c.name FROM menu_items mi JOIN categories c ON c.id = mi.category_id
+         WHERE mi.name = ? ORDER BY mi.id LIMIT 1`,
         [menuName]
       );
       return row?.name;
@@ -203,13 +207,19 @@ describe("regressions", () => {
     });
     assert.equal(paket.status, 201, JSON.stringify(paket.body));
     await db.query(
-      "UPDATE menu_items SET category_id = ? WHERE name = 'Cafe Latte'",
+      "UPDATE menu_items SET category_id = ? WHERE name = 'Cafe Latte' ORDER BY id LIMIT 1",
       [coffee.id]
     );
     await db.query("DELETE FROM seed_runs WHERE name = 'cogs-categories-2026-11'");
     await restartServer();
 
+    // The Ice Cafe Latte moves back; its Hot copy stays in Hot White Coffee.
     assert.equal(await categoryOf("Cafe Latte"), "White Coffee");
+    const [cafeLatteCategories] = await db.query(
+      `SELECT c.name FROM menu_items mi JOIN categories c ON c.id = mi.category_id
+       WHERE mi.name = 'Cafe Latte' ORDER BY mi.id`
+    );
+    assert.deepEqual(cafeLatteCategories.map((row) => row.name), ["White Coffee", "Hot White Coffee"]);
     const [offered] = await db.query(
       `SELECT mi.name FROM menu_item_bundle_choice_menus o
        JOIN menu_item_bundle_choices bc ON bc.id = o.bundle_choice_id
@@ -219,7 +229,9 @@ describe("regressions", () => {
     );
     assert.ok(offered.some((row) => row.name === "Cafe Latte"));
     assert.ok(offered.some((row) => row.name === "Vanilla Latte"));
-    const [[cafeLatte]] = await db.query("SELECT id, category_id FROM menu_items WHERE name = 'Cafe Latte'");
+    const [[cafeLatte]] = await db.query(
+      "SELECT id, category_id FROM menu_items WHERE name = 'Cafe Latte' ORDER BY id LIMIT 1"
+    );
     const order = await request("POST", "/api/order", {
       as: "cashier",
       body: {
@@ -239,6 +251,119 @@ describe("regressions", () => {
     assert.equal(order.status, 201, JSON.stringify(order.body));
     assert.equal((await request("DELETE", `/api/order/${order.body.data.id}`, { as: "admin" })).status, 200);
     assert.equal((await request("DELETE", `/api/menu-item/${paket.body.data.id}`, { as: "admin" })).status, 200);
+  });
+
+  it("gives the Hot tabs same-named menus and puts the tabs' menus on the POS, once", async () => {
+    const menusIn = async (categoryName) => {
+      const [rows] = await db.query(
+        `SELECT mi.id, mi.name, mi.is_available, mip.regular_price, mip.hpp_cost
+         FROM menu_items mi
+         JOIN categories c ON c.id = mi.category_id
+         JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
+         WHERE c.name = ? ORDER BY mi.name`,
+        [categoryName]
+      );
+      return rows;
+    };
+    const hotBlack = await menusIn("Hot Black Coffee");
+    assert.deepEqual(hotBlack.map((menu) => menu.name), ["Americano", "Longblack", "On The Rock Espresso"]);
+    assert.deepEqual((await menusIn("Hot White Coffee")).map((menu) => menu.name), [
+      "Aren Latte", "Berry Coffee Milk", "Butterscotch Latte", "Cafe Latte", "Cappuccino", "Caramel Latte",
+      "Matcha Coffee",
+    ]);
+
+    // A Hot copy has the Ice menu's price and the Hot tab's recipe, and is on the POS.
+    const [[ice]] = await db.query(
+      `SELECT mip.regular_price, mip.hpp_cost FROM menu_items mi JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
+       WHERE mi.name = 'Americano' ORDER BY mi.id LIMIT 1`
+    );
+    const hot = hotBlack.find((menu) => menu.name === "Americano");
+    // Its recipe costs nothing here (no purchase prices), so it holds the Ice HPP.
+    assert.deepEqual(
+      [Number(hot.regular_price), hot.is_available, Number(hot.hpp_cost)],
+      [Number(ice.regular_price), 1, Number(ice.hpp_cost)]
+    );
+    const [recipe] = await db.query(
+      `SELECT si.name, r.quantity FROM menu_item_recipes r
+       JOIN stock_raw_items si ON si.id = r.stock_item_id
+       WHERE r.menu_item_id = ? ORDER BY r.sort_order`,
+      [hot.id]
+    );
+    assert.deepEqual(recipe.map((row) => [row.name, Number(row.quantity)]), [
+      ["ESPRESSO", 8], ["WATER", 100], ["CUP", 1],
+    ]);
+    // The bahan and menus the COGS seed missed: one pack in stock, the sheet's recipe.
+    const [[evaporasi]] = await db.query(
+      "SELECT unit, stock, unit_cost, stock_value FROM stock_raw_items WHERE name = 'EVAPORASI'"
+    );
+    assert.deepEqual(
+      [evaporasi.unit, Number(evaporasi.stock), evaporasi.unit_cost, Number(evaporasi.stock_value)],
+      ["ml", 500, 36, 18000]
+    );
+    const [[sauceBahan]] = await db.query(
+      "SELECT COUNT(*) AS n FROM stock_raw_items WHERE name IN ('KUNING TELUR ASIN', 'KECAP INGGRIS', 'CLEO 220 ml')"
+    );
+    assert.equal(Number(sauceBahan.n), 3);
+    const [[salted]] = await db.query(
+      `SELECT mi.id, mi.is_available, c.name AS category, mip.regular_price
+       FROM menu_items mi
+       JOIN categories c ON c.id = mi.category_id
+       JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
+       WHERE mi.name = 'Salted Creamy Latte'`
+    );
+    assert.deepEqual(
+      [salted.is_available, salted.category, Number(salted.regular_price)],
+      [1, "White Coffee", 23000]
+    );
+    const [saltedRecipe] = await db.query(
+      `SELECT si.name, r.quantity FROM menu_item_recipes r
+       JOIN stock_raw_items si ON si.id = r.stock_item_id
+       WHERE r.menu_item_id = ? ORDER BY r.sort_order`,
+      [salted.id]
+    );
+    assert.deepEqual(saltedRecipe.map((row) => [row.name, Number(row.quantity)]), [
+      ["ESPRESSO", 8], ["FRESHMILK", 120], ["EVAPORASI", 30], ["CREAMER", 15],
+      ["SIRUP SALTED CARAMEL", 15], ["SEA SALT", 20], ["CUP", 1], ["SEDOTAN", 1],
+    ]);
+    // The menus the COGS seed added without a photo are on the POS too.
+    const [seeded] = await db.query(
+      `SELECT name, is_available FROM menu_items
+       WHERE name IN ('Matcha Coffee', 'Coca-Cola', 'Roti Kukus Coklat') ORDER BY name`
+    );
+    assert.deepEqual(seeded.map((row) => [row.name, row.is_available]), [
+      ["Coca-Cola", 1], ["Matcha Coffee", 1], ["Roti Kukus Coklat", 1],
+    ]);
+
+    // It runs once: a Hot copy the admin deletes and a menu turned off stay so.
+    assert.equal((await request("DELETE", `/api/menu-item/${hot.id}`, { as: "admin" })).status, 200);
+    const [[vanilla]] = await db.query("SELECT id, is_available, image_path FROM menu_items WHERE name = 'Vanilla Latte'");
+    await db.query("UPDATE menu_items SET is_available = FALSE WHERE name IN ('Coca-Cola', 'Vanilla Latte')");
+    await db.query("UPDATE menu_items SET image_path = NULL WHERE id = ?", [vanilla.id]);
+    await restartServer();
+    const americanoCount = async () => {
+      const [[row]] = await db.query("SELECT COUNT(*) AS n FROM menu_items WHERE name = 'Americano'");
+      return Number(row.n);
+    };
+    assert.equal(await americanoCount(), 1);
+
+    // Run again: the copy comes back once; a menu with a photo or off the
+    // sheet's tabs stays off.
+    await db.query("UPDATE menu_items SET image_path = '/uploads/menu/coca-cola.png' WHERE name = 'Coca-Cola'");
+    await db.query("DELETE FROM seed_runs WHERE name = 'cogs-menus-2026-11'");
+    await restartServer();
+    assert.equal(await americanoCount(), 2);
+    const [[saltedCount]] = await db.query(
+      "SELECT COUNT(*) AS n FROM menu_items WHERE name = 'Salted Creamy Latte'"
+    );
+    assert.equal(Number(saltedCount.n), 1);
+    const [stayedOff] = await db.query(
+      "SELECT name, is_available FROM menu_items WHERE name IN ('Coca-Cola', 'Vanilla Latte') ORDER BY name"
+    );
+    assert.deepEqual(stayedOff.map((row) => [row.name, row.is_available]), [["Coca-Cola", 0], ["Vanilla Latte", 0]]);
+    await db.query("UPDATE menu_items SET is_available = TRUE, image_path = NULL WHERE name = 'Coca-Cola'");
+    await db.query("UPDATE menu_items SET is_available = ?, image_path = ? WHERE id = ?", [
+      vanilla.is_available, vanilla.image_path, vanilla.id,
+    ]);
   });
 
   it("returns 404 instead of crashing when the recap format is inactive", async () => {
