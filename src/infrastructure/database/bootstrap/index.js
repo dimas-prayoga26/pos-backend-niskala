@@ -35,7 +35,7 @@ const { ensureSupplySchema } = require("./supplySchema");
 const { ensureWasteSchema } = require("./wasteSchema");
 const { ensureMerkSchema } = require("./merkSchema");
 const { seedCogsSheet } = require("./cogsSeed");
-const { seedCogsCategories } = require("./cogsCategorySeed");
+const { seedCogsCategories, seedSheetCategoryTabs } = require("./cogsCategorySeed");
 const { seedCogsMenuFill } = require("./cogsMenuFillSeed");
 const { ensureBundleSchema } = require("./bundleSchema");
 
@@ -685,10 +685,15 @@ const bootstrapDatabase = async () => {
   await ensureDayClosingSchema(pool);
   // Kategori Promo: packages of menus (categories.is_bundle, menu_item_bundle_items).
   await ensureBundleSchema(pool);
+  // Best Seller tab of each category (modules/categories/bestSeller): Makanan,
+  // Minuman, Snack, '' (not shown) or NULL (not set yet: from its name).
+  await runSafeMigration("ALTER TABLE categories ADD COLUMN best_seller_group VARCHAR(20) NULL AFTER is_bundle");
   // Bahan, menus and recipes of the COGS sheet, once per database (add-only).
   await seedCogsSheet();
   // Its menus into the sheet's tabs as categories (Black Coffee ... Roti), once.
   await seedCogsCategories();
+  // Tabs added to the sheet since then (Minuman Botol), once.
+  await seedSheetCategoryTabs();
   // Hot tab copies of Ice menus, and the tabs' menus on the POS, once.
   await seedCogsMenuFill();
   // Catches average costs changed outside the app (e.g. in phpMyAdmin).

@@ -83,6 +83,7 @@ const SUPPLY_NOTA = {
     return row.id;
   },
   afterStock: async () => {},
+  logTable: "history_stock_supply_purchase_item_logs",
   snapshotLine: snapshotItem,
 };
 

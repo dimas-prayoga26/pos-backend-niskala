@@ -3,6 +3,7 @@ const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
 const { isAdmin } = require("../../shared/middleware/authorize");
 const Category = require("./category.repository");
+const { BEST_SELLER_GROUPS } = require("./bestSeller");
 
 // Returns null for "no tax", undefined for an invalid value.
 const parseCategoryTax = (value) => {
@@ -136,6 +137,46 @@ const updateCategoryPositions = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Pengaturan → Best Seller: { groups: { Makanan: [ids], Minuman: [ids], Snack: [ids] } },
+// each category in at most one group; the rest are not shown.
+const parseBestSellerGroups = (body) => {
+  const input = body?.groups;
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw createHttpError(400, "Kategori Best Seller wajib diisi.");
+  }
+  const unknown = Object.keys(input).find((group) => !BEST_SELLER_GROUPS.includes(group));
+  if (unknown) throw createHttpError(400, `Kolom Best Seller harus ${BEST_SELLER_GROUPS.join(", ")}.`);
+
+  const seen = new Set();
+  return Object.fromEntries(
+    BEST_SELLER_GROUPS.map((group) => {
+      const ids = input[group] ?? [];
+      if (!Array.isArray(ids)) throw createHttpError(400, `Kategori ${group} harus berupa daftar.`);
+      return [
+        group,
+        ids.map((value) => {
+          const id = Number(value);
+          if (!Number.isInteger(id) || id <= 0) throw createHttpError(400, "ID kategori tidak valid.");
+          if (seen.has(id)) throw createHttpError(400, "Satu kategori hanya bisa masuk satu kolom.");
+          seen.add(id);
+          return id;
+        }),
+      ];
+    })
+  );
+};
+
+const updateBestSellerGroups = asyncHandler(async (req, res) => {
+  const categories = await Category.updateBestSellerGroups(parseBestSellerGroups(req.body));
+
+  emitRealtimeEvent("menu:changed", { action: "category-best-seller-updated" });
+  res.status(200).json({
+    success: true,
+    message: "Kategori Best Seller disimpan.",
+    data: categories,
+  });
+});
+
 const deleteCategory = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const bundleNames = await Category.findBundleNamesUsing(id);
@@ -166,6 +207,7 @@ module.exports = {
   addCategory,
   deleteCategory,
   getCategories,
+  updateBestSellerGroups,
   updateCategory,
   updateCategoryPositions,
 };

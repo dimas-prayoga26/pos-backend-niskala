@@ -355,6 +355,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 1,
       "position": 1,
@@ -369,6 +370,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 2,
       "position": 2,
@@ -383,6 +385,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 3,
       "position": 3,
@@ -397,6 +400,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 4,
       "position": 4,
@@ -411,6 +415,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 5,
       "position": 5,
@@ -425,6 +430,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 6,
       "position": 6,
@@ -439,6 +445,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 7,
       "position": 7,
@@ -448,14 +455,30 @@
      {
       "_id": 14,
       "id": 14,
+      "name": "Minuman Botol",
+      "icon": "🍾",
+      "tax": null,
+      "taxRate": null,
+      "isBundle": false,
+      "bestSellerGroup": "Minuman",
+      "isActive": true,
+      "sortOrder": 8,
+      "position": 8,
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 15,
+      "id": 15,
       "name": "Minuman Kaleng",
       "icon": "🥤",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
-      "sortOrder": 8,
-      "position": 8,
+      "sortOrder": 9,
+      "position": 9,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -467,20 +490,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
-      "isActive": true,
-      "sortOrder": 9,
-      "position": 9,
-      "createdAt": "<ts>",
-      "updatedAt": "<ts>"
-     },
-     {
-      "_id": 15,
-      "id": 15,
-      "name": "Nasi Goreng",
-      "icon": "🍛",
-      "tax": null,
-      "taxRate": null,
-      "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": true,
       "sortOrder": 10,
       "position": 10,
@@ -490,11 +500,12 @@
      {
       "_id": 16,
       "id": 16,
-      "name": "Rice Bowl",
-      "icon": "🍚",
+      "name": "Nasi Goreng",
+      "icon": "🍛",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": true,
       "sortOrder": 11,
       "position": 11,
@@ -504,14 +515,30 @@
      {
       "_id": 17,
       "id": 17,
+      "name": "Rice Bowl",
+      "icon": "🍚",
+      "tax": null,
+      "taxRate": null,
+      "isBundle": false,
+      "bestSellerGroup": "Makanan",
+      "isActive": true,
+      "sortOrder": 12,
+      "position": 12,
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 18,
+      "id": 18,
       "name": "Roti",
       "icon": "🍞",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": true,
-      "sortOrder": 12,
-      "position": 12,
+      "sortOrder": 13,
+      "position": 13,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -523,9 +550,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
-      "sortOrder": 13,
-      "position": 13,
+      "sortOrder": 14,
+      "position": 14,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -537,9 +565,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": null,
       "isActive": true,
-      "sortOrder": 15,
-      "position": 15,
+      "sortOrder": 16,
+      "position": 16,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -551,9 +580,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": null,
       "isActive": true,
-      "sortOrder": 16,
-      "position": 16,
+      "sortOrder": 17,
+      "position": 17,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      }
@@ -582,6 +612,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 1,
       "position": 1,
@@ -596,6 +627,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 2,
       "position": 2,
@@ -610,6 +642,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 3,
       "position": 3,
@@ -624,6 +657,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 4,
       "position": 4,
@@ -638,6 +672,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 5,
       "position": 5,
@@ -652,6 +687,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 6,
       "position": 6,
@@ -666,6 +702,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 7,
       "position": 7,
@@ -675,14 +712,30 @@
      {
       "_id": 14,
       "id": 14,
+      "name": "Minuman Botol",
+      "icon": "🍾",
+      "tax": null,
+      "taxRate": null,
+      "isBundle": false,
+      "bestSellerGroup": "Minuman",
+      "isActive": true,
+      "sortOrder": 8,
+      "position": 8,
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 15,
+      "id": 15,
       "name": "Minuman Kaleng",
       "icon": "🥤",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
-      "sortOrder": 8,
-      "position": 8,
+      "sortOrder": 9,
+      "position": 9,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -694,20 +747,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
-      "isActive": true,
-      "sortOrder": 9,
-      "position": 9,
-      "createdAt": "<ts>",
-      "updatedAt": "<ts>"
-     },
-     {
-      "_id": 15,
-      "id": 15,
-      "name": "Nasi Goreng",
-      "icon": "🍛",
-      "tax": null,
-      "taxRate": null,
-      "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": true,
       "sortOrder": 10,
       "position": 10,
@@ -717,11 +757,12 @@
      {
       "_id": 16,
       "id": 16,
-      "name": "Rice Bowl",
-      "icon": "🍚",
+      "name": "Nasi Goreng",
+      "icon": "🍛",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": true,
       "sortOrder": 11,
       "position": 11,
@@ -731,14 +772,30 @@
      {
       "_id": 17,
       "id": 17,
+      "name": "Rice Bowl",
+      "icon": "🍚",
+      "tax": null,
+      "taxRate": null,
+      "isBundle": false,
+      "bestSellerGroup": "Makanan",
+      "isActive": true,
+      "sortOrder": 12,
+      "position": 12,
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 18,
+      "id": 18,
       "name": "Roti",
       "icon": "🍞",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": true,
-      "sortOrder": 12,
-      "position": 12,
+      "sortOrder": 13,
+      "position": 13,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -750,9 +807,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
-      "sortOrder": 13,
-      "position": 13,
+      "sortOrder": 14,
+      "position": 14,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -764,9 +822,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": null,
       "isActive": true,
-      "sortOrder": 15,
-      "position": 15,
+      "sortOrder": 16,
+      "position": 16,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -778,9 +837,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": null,
       "isActive": true,
-      "sortOrder": 16,
-      "position": 16,
+      "sortOrder": 17,
+      "position": 17,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      }
@@ -853,16 +913,17 @@
     "success": true,
     "message": "Category added!",
     "data": {
-     "_id": 18,
-     "id": 18,
+     "_id": 19,
+     "id": 19,
      "name": "Uji Kategori",
      "icon": "🧪",
      "tax": 10,
      "taxRate": 10,
      "isBundle": false,
+     "bestSellerGroup": "Makanan",
      "isActive": true,
-     "sortOrder": 27,
-     "position": 27,
+     "sortOrder": 28,
+     "position": 28,
      "createdAt": "<ts>",
      "updatedAt": "<ts>"
     }
@@ -872,7 +933,7 @@
      "event": "menu:changed",
      "payload": {
       "action": "category-created",
-      "categoryId": 18
+      "categoryId": 19
      },
      "hasTimestamp": true
     }
@@ -914,7 +975,7 @@
   },
   {
    "step": "category update",
-   "request": "PUT /api/category/18",
+   "request": "PUT /api/category/19",
    "status": 200,
    "headers": {
     "content-type": "application/json; charset=utf-8",
@@ -926,16 +987,17 @@
     "success": true,
     "message": "Category updated!",
     "data": {
-     "_id": 18,
-     "id": 18,
+     "_id": 19,
+     "id": 19,
      "name": "Uji Kategori 2",
      "icon": "🧫",
      "tax": 11,
      "taxRate": 11,
      "isBundle": false,
+     "bestSellerGroup": "Makanan",
      "isActive": true,
-     "sortOrder": 27,
-     "position": 27,
+     "sortOrder": 28,
+     "position": 28,
      "createdAt": "<ts>",
      "updatedAt": "<ts>"
     }
@@ -945,7 +1007,7 @@
      "event": "menu:changed",
      "payload": {
       "action": "category-updated",
-      "categoryId": 18
+      "categoryId": 19
      },
      "hasTimestamp": true
     }
@@ -990,6 +1052,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 1,
       "position": 1,
@@ -1004,6 +1067,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 2,
       "position": 2,
@@ -1018,6 +1082,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 3,
       "position": 3,
@@ -1032,6 +1097,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 4,
       "position": 4,
@@ -1046,6 +1112,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 5,
       "position": 5,
@@ -1060,6 +1127,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 7,
       "position": 7,
@@ -1069,14 +1137,30 @@
      {
       "_id": 14,
       "id": 14,
+      "name": "Minuman Botol",
+      "icon": "🍾",
+      "tax": null,
+      "taxRate": null,
+      "isBundle": false,
+      "bestSellerGroup": "Minuman",
+      "isActive": true,
+      "sortOrder": 8,
+      "position": 8,
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 15,
+      "id": 15,
       "name": "Minuman Kaleng",
       "icon": "🥤",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
-      "sortOrder": 8,
-      "position": 8,
+      "sortOrder": 9,
+      "position": 9,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1088,20 +1172,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
-      "isActive": true,
-      "sortOrder": 9,
-      "position": 9,
-      "createdAt": "<ts>",
-      "updatedAt": "<ts>"
-     },
-     {
-      "_id": 15,
-      "id": 15,
-      "name": "Nasi Goreng",
-      "icon": "🍛",
-      "tax": null,
-      "taxRate": null,
-      "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": true,
       "sortOrder": 10,
       "position": 10,
@@ -1109,13 +1180,14 @@
       "updatedAt": "<ts>"
      },
      {
-      "_id": 18,
-      "id": 18,
+      "_id": 19,
+      "id": 19,
       "name": "Uji Kategori 2",
       "icon": "🧫",
       "tax": 11,
       "taxRate": 11,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": true,
       "sortOrder": 10,
       "position": 10,
@@ -1125,11 +1197,12 @@
      {
       "_id": 16,
       "id": 16,
-      "name": "Rice Bowl",
-      "icon": "🍚",
+      "name": "Nasi Goreng",
+      "icon": "🍛",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": true,
       "sortOrder": 11,
       "position": 11,
@@ -1139,14 +1212,30 @@
      {
       "_id": 17,
       "id": 17,
+      "name": "Rice Bowl",
+      "icon": "🍚",
+      "tax": null,
+      "taxRate": null,
+      "isBundle": false,
+      "bestSellerGroup": "Makanan",
+      "isActive": true,
+      "sortOrder": 12,
+      "position": 12,
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 18,
+      "id": 18,
       "name": "Roti",
       "icon": "🍞",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": true,
-      "sortOrder": 12,
-      "position": 12,
+      "sortOrder": 13,
+      "position": 13,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1158,9 +1247,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": false,
-      "sortOrder": 14,
-      "position": 14,
+      "sortOrder": 15,
+      "position": 15,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1172,9 +1262,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": null,
       "isActive": true,
-      "sortOrder": 15,
-      "position": 15,
+      "sortOrder": 16,
+      "position": 16,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1186,9 +1277,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": null,
       "isActive": true,
-      "sortOrder": 16,
-      "position": 16,
+      "sortOrder": 17,
+      "position": 17,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1200,9 +1292,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": false,
-      "sortOrder": 17,
-      "position": 17,
+      "sortOrder": 18,
+      "position": 18,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1214,6 +1307,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 20,
       "position": 20,
@@ -1228,6 +1322,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 30,
       "position": 30,
@@ -1277,13 +1372,14 @@
     "success": true,
     "message": "Category added!",
     "data": {
-     "_id": 19,
-     "id": 19,
+     "_id": 20,
+     "id": 20,
      "name": "Kategori Sementara",
      "icon": null,
      "tax": null,
      "taxRate": null,
      "isBundle": false,
+     "bestSellerGroup": "Makanan",
      "isActive": true,
      "sortOrder": 40,
      "position": 40,
@@ -1296,7 +1392,7 @@
      "event": "menu:changed",
      "payload": {
       "action": "category-created",
-      "categoryId": 19
+      "categoryId": 20
      },
      "hasTimestamp": true
     }
@@ -1304,7 +1400,7 @@
   },
   {
    "step": "category deactivate temp",
-   "request": "PUT /api/category/19",
+   "request": "PUT /api/category/20",
    "status": 200,
    "headers": {
     "content-type": "application/json; charset=utf-8",
@@ -1316,13 +1412,14 @@
     "success": true,
     "message": "Category updated!",
     "data": {
-     "_id": 19,
-     "id": 19,
+     "_id": 20,
+     "id": 20,
      "name": "Kategori Sementara",
      "icon": null,
      "tax": null,
      "taxRate": null,
      "isBundle": false,
+     "bestSellerGroup": "Makanan",
      "isActive": false,
      "sortOrder": 40,
      "position": 40,
@@ -1335,7 +1432,7 @@
      "event": "menu:changed",
      "payload": {
       "action": "category-updated",
-      "categoryId": 19
+      "categoryId": 20
      },
      "hasTimestamp": true
     }
@@ -1362,6 +1459,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 1,
       "position": 1,
@@ -1376,6 +1474,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 2,
       "position": 2,
@@ -1390,6 +1489,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 3,
       "position": 3,
@@ -1404,6 +1504,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 4,
       "position": 4,
@@ -1418,6 +1519,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 5,
       "position": 5,
@@ -1432,6 +1534,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 7,
       "position": 7,
@@ -1441,14 +1544,30 @@
      {
       "_id": 14,
       "id": 14,
+      "name": "Minuman Botol",
+      "icon": "🍾",
+      "tax": null,
+      "taxRate": null,
+      "isBundle": false,
+      "bestSellerGroup": "Minuman",
+      "isActive": true,
+      "sortOrder": 8,
+      "position": 8,
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 15,
+      "id": 15,
       "name": "Minuman Kaleng",
       "icon": "🥤",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
-      "sortOrder": 8,
-      "position": 8,
+      "sortOrder": 9,
+      "position": 9,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1460,20 +1579,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
-      "isActive": true,
-      "sortOrder": 9,
-      "position": 9,
-      "createdAt": "<ts>",
-      "updatedAt": "<ts>"
-     },
-     {
-      "_id": 15,
-      "id": 15,
-      "name": "Nasi Goreng",
-      "icon": "🍛",
-      "tax": null,
-      "taxRate": null,
-      "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": true,
       "sortOrder": 10,
       "position": 10,
@@ -1481,13 +1587,14 @@
       "updatedAt": "<ts>"
      },
      {
-      "_id": 18,
-      "id": 18,
+      "_id": 19,
+      "id": 19,
       "name": "Uji Kategori 2",
       "icon": "🧫",
       "tax": 11,
       "taxRate": 11,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": true,
       "sortOrder": 10,
       "position": 10,
@@ -1497,11 +1604,12 @@
      {
       "_id": 16,
       "id": 16,
-      "name": "Rice Bowl",
-      "icon": "🍚",
+      "name": "Nasi Goreng",
+      "icon": "🍛",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": true,
       "sortOrder": 11,
       "position": 11,
@@ -1511,14 +1619,30 @@
      {
       "_id": 17,
       "id": 17,
+      "name": "Rice Bowl",
+      "icon": "🍚",
+      "tax": null,
+      "taxRate": null,
+      "isBundle": false,
+      "bestSellerGroup": "Makanan",
+      "isActive": true,
+      "sortOrder": 12,
+      "position": 12,
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 18,
+      "id": 18,
       "name": "Roti",
       "icon": "🍞",
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": true,
-      "sortOrder": 12,
-      "position": 12,
+      "sortOrder": 13,
+      "position": 13,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1530,9 +1654,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": false,
-      "sortOrder": 14,
-      "position": 14,
+      "sortOrder": 15,
+      "position": 15,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1544,9 +1669,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": null,
       "isActive": true,
-      "sortOrder": 15,
-      "position": 15,
+      "sortOrder": 16,
+      "position": 16,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1558,9 +1684,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": null,
       "isActive": true,
-      "sortOrder": 16,
-      "position": 16,
+      "sortOrder": 17,
+      "position": 17,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1572,9 +1699,10 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Snack",
       "isActive": false,
-      "sortOrder": 17,
-      "position": 17,
+      "sortOrder": 18,
+      "position": 18,
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
      },
@@ -1586,6 +1714,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 20,
       "position": 20,
@@ -1600,6 +1729,7 @@
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Minuman",
       "isActive": true,
       "sortOrder": 30,
       "position": 30,
@@ -1607,13 +1737,14 @@
       "updatedAt": "<ts>"
      },
      {
-      "_id": 19,
-      "id": 19,
+      "_id": 20,
+      "id": 20,
       "name": "Kategori Sementara",
       "icon": null,
       "tax": null,
       "taxRate": null,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "isActive": false,
       "sortOrder": 40,
       "position": 40,
@@ -1626,7 +1757,7 @@
   },
   {
    "step": "category delete temp",
-   "request": "DELETE /api/category/19",
+   "request": "DELETE /api/category/20",
    "status": 200,
    "headers": {
     "content-type": "application/json; charset=utf-8",
@@ -1643,7 +1774,7 @@
      "event": "menu:changed",
      "payload": {
       "action": "category-deleted",
-      "categoryId": 19
+      "categoryId": 20
      },
      "hasTimestamp": true
     }
@@ -4016,6 +4147,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -4075,6 +4207,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -4182,6 +4315,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -4289,6 +4423,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -4408,6 +4543,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -4479,6 +4615,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -4550,6 +4687,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -4609,6 +4747,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -4680,6 +4819,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -4751,6 +4891,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -4846,6 +4987,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -4941,6 +5083,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -5036,6 +5179,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -5143,6 +5287,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -5262,6 +5407,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -5393,6 +5539,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -5464,6 +5611,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -5535,6 +5683,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -5630,6 +5779,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -5725,6 +5875,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -5820,6 +5971,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -5927,6 +6079,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -6010,6 +6163,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -6081,6 +6235,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -6176,6 +6331,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -6283,6 +6439,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -6378,6 +6535,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -6449,6 +6607,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -6520,6 +6679,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -6591,6 +6751,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -6674,6 +6835,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -6683,7 +6845,7 @@
      {
       "_id": 58,
       "id": 58,
-      "categoryId": 14,
+      "categoryId": 15,
       "name": "Coca-Cola",
       "price": 10000,
       "regularPrice": 10000,
@@ -6714,15 +6876,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 14,
-       "id": 14,
+       "_id": 15,
+       "id": 15,
        "name": "Minuman Kaleng",
        "icon": "🥤",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 8,
-       "position": 8
+       "bestSellerGroup": "Minuman",
+       "sortOrder": 9,
+       "position": 9
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -6730,7 +6893,7 @@
      {
       "_id": 57,
       "id": 57,
-      "categoryId": 14,
+      "categoryId": 15,
       "name": "Sprite",
       "price": 10000,
       "regularPrice": 10000,
@@ -6761,15 +6924,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 14,
-       "id": 14,
+       "_id": 15,
+       "id": 15,
        "name": "Minuman Kaleng",
        "icon": "🥤",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 8,
-       "position": 8
+       "bestSellerGroup": "Minuman",
+       "sortOrder": 9,
+       "position": 9
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -6851,8 +7015,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -6958,8 +7123,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7041,8 +7207,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7136,8 +7303,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7170,8 +7338,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7179,7 +7348,7 @@
      {
       "_id": 47,
       "id": 47,
-      "categoryId": 15,
+      "categoryId": 16,
       "name": "Nasi Goreng Katsu",
       "price": 25000,
       "regularPrice": 25000,
@@ -7282,15 +7451,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 15,
-       "id": 15,
+       "_id": 16,
+       "id": 16,
        "name": "Nasi Goreng",
        "icon": "🍛",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 10,
-       "position": 10
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 11,
+       "position": 11
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7298,7 +7468,7 @@
      {
       "_id": 46,
       "id": 46,
-      "categoryId": 15,
+      "categoryId": 16,
       "name": "Nasi Goreng Special",
       "price": 20000,
       "regularPrice": 20000,
@@ -7401,15 +7571,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 15,
-       "id": 15,
+       "_id": 16,
+       "id": 16,
        "name": "Nasi Goreng",
        "icon": "🍛",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 10,
-       "position": 10
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 11,
+       "position": 11
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7417,7 +7588,7 @@
      {
       "_id": 23,
       "id": 23,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Fried Egg Rice Bowl",
       "price": 15000,
       "regularPrice": 15000,
@@ -7520,15 +7691,16 @@
       "imagePath": "/uploads/menu/fried-egg-rice-bowl-71e4a6b35b.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7536,7 +7708,7 @@
      {
       "_id": 24,
       "id": 24,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Chicken Katsu Rice Bowl",
       "price": 25000,
       "regularPrice": 25000,
@@ -7639,15 +7811,16 @@
       "imagePath": "/uploads/menu/chicken-katsu-rice-bowl-9f77c07d83.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7655,7 +7828,7 @@
      {
       "_id": 25,
       "id": 25,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Chicken Teriyaki Rice Bowl",
       "price": 23000,
       "regularPrice": 23000,
@@ -7758,15 +7931,16 @@
       "imagePath": "/uploads/menu/chicken-teriyaki-rice-bowl-de9b95075d.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7774,7 +7948,7 @@
      {
       "_id": 26,
       "id": 26,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Geprek Rice Bowl",
       "price": 22000,
       "regularPrice": 22000,
@@ -7877,15 +8051,16 @@
       "imagePath": "/uploads/menu/ayam-geprek-rice-bowl-1ad15279c3.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7893,7 +8068,7 @@
      {
       "_id": 27,
       "id": 27,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Beef Teriyaki Rice Bowl",
       "price": 25000,
       "regularPrice": 25000,
@@ -7911,15 +8086,16 @@
       "imagePath": "/uploads/menu/beef-teriyaki-rice-bowl-bd0d2dccf0.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -7927,7 +8103,7 @@
      {
       "_id": 28,
       "id": 28,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Indomie Goreng Telur",
       "price": 15000,
       "regularPrice": 15000,
@@ -8006,15 +8182,16 @@
       "imagePath": "/uploads/menu/indomie-goreng-telur-908692a040.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8022,7 +8199,7 @@
      {
       "_id": 29,
       "id": 29,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Indomie Rebus Telur",
       "price": 15000,
       "regularPrice": 15000,
@@ -8101,15 +8278,16 @@
       "imagePath": "/uploads/menu/indomie-rebus-telur-5bb08c107c.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8117,7 +8295,7 @@
      {
       "_id": 60,
       "id": 60,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Black Pepper",
       "price": 23000,
       "regularPrice": 23000,
@@ -8220,15 +8398,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8236,7 +8415,7 @@
      {
       "_id": 59,
       "id": 59,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Salted Egg",
       "price": 23000,
       "regularPrice": 23000,
@@ -8339,15 +8518,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8355,7 +8535,7 @@
      {
       "_id": 61,
       "id": 61,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Sambel Orek",
       "price": 23000,
       "regularPrice": 23000,
@@ -8373,15 +8553,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8389,7 +8570,7 @@
      {
       "_id": 63,
       "id": 63,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Beef Basir",
       "price": 25000,
       "regularPrice": 25000,
@@ -8407,15 +8588,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8423,7 +8605,7 @@
      {
       "_id": 62,
       "id": 62,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Udang Salted",
       "price": 25000,
       "regularPrice": 25000,
@@ -8441,15 +8623,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8457,7 +8640,7 @@
      {
       "_id": 64,
       "id": 64,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Coklat",
       "price": 10000,
       "regularPrice": 10000,
@@ -8512,15 +8695,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8528,7 +8712,7 @@
      {
       "_id": 67,
       "id": 67,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Slice",
       "price": 10000,
       "regularPrice": 10000,
@@ -8583,15 +8767,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8599,7 +8784,7 @@
      {
       "_id": 66,
       "id": 66,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Strawberry",
       "price": 10000,
       "regularPrice": 10000,
@@ -8654,15 +8839,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8670,7 +8856,7 @@
      {
       "_id": 65,
       "id": 65,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Tiramisu",
       "price": 10000,
       "regularPrice": 10000,
@@ -8725,15 +8911,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8766,8 +8953,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8800,8 +8988,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8834,8 +9023,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8868,8 +9058,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8902,8 +9093,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8936,8 +9128,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -8970,8 +9163,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -9004,8 +9198,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -9038,8 +9233,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -9072,8 +9268,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -9106,8 +9303,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -9201,6 +9399,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -9296,6 +9495,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -9379,6 +9579,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -9486,6 +9687,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -9557,6 +9759,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -9628,6 +9831,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -9662,6 +9866,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -9696,6 +9901,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -9730,6 +9936,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -9842,6 +10049,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -9937,6 +10145,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -10020,6 +10229,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -10127,6 +10337,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -10187,7 +10398,7 @@
     "data": {
      "_id": 77,
      "id": 77,
-     "categoryId": 18,
+     "categoryId": 19,
      "name": "Kopi Uji",
      "price": 20000,
      "regularPrice": 20000,
@@ -10230,13 +10441,14 @@
      "imagePath": null,
      "isAvailable": true,
      "category": {
-      "_id": 18,
-      "id": 18,
+      "_id": 19,
+      "id": 19,
       "name": "Uji Kategori 2",
       "icon": "🧫",
       "tax": 11,
       "taxRate": 11,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "sortOrder": 10,
       "position": 10
      },
@@ -10288,7 +10500,7 @@
     "data": {
      "_id": 78,
      "id": 78,
-     "categoryId": 18,
+     "categoryId": 19,
      "name": "Roti Uji",
      "price": 15000,
      "regularPrice": 15000,
@@ -10306,13 +10518,14 @@
      "imagePath": null,
      "isAvailable": true,
      "category": {
-      "_id": 18,
-      "id": 18,
+      "_id": 19,
+      "id": 19,
       "name": "Uji Kategori 2",
       "icon": "🧫",
       "tax": 11,
       "taxRate": 11,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "sortOrder": 10,
       "position": 10
      },
@@ -10347,7 +10560,7 @@
     "data": {
      "_id": 79,
      "id": 79,
-     "categoryId": 18,
+     "categoryId": 19,
      "name": "Teh Uji",
      "price": 12000,
      "regularPrice": 12000,
@@ -10365,13 +10578,14 @@
      "imagePath": null,
      "isAvailable": false,
      "category": {
-      "_id": 18,
-      "id": 18,
+      "_id": 19,
+      "id": 19,
       "name": "Uji Kategori 2",
       "icon": "🧫",
       "tax": 11,
       "taxRate": 11,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "sortOrder": 10,
       "position": 10
      },
@@ -10459,7 +10673,7 @@
     "data": {
      "_id": 78,
      "id": 78,
-     "categoryId": 18,
+     "categoryId": 19,
      "name": "Roti Uji Bakar",
      "price": 17000,
      "regularPrice": 17000,
@@ -10477,13 +10691,14 @@
      "imagePath": "/uploads/menu/<ts>-foto-menu-uji-png.png",
      "isAvailable": true,
      "category": {
-      "_id": 18,
-      "id": 18,
+      "_id": 19,
+      "id": 19,
       "name": "Uji Kategori 2",
       "icon": "🧫",
       "tax": 11,
       "taxRate": 11,
       "isBundle": false,
+      "bestSellerGroup": "Makanan",
       "sortOrder": 10,
       "position": 10
      },
@@ -10614,6 +10829,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -10673,6 +10889,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -10780,6 +10997,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -10887,6 +11105,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -11006,6 +11225,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -11077,6 +11297,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -11148,6 +11369,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -11207,6 +11429,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -11278,6 +11501,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -11349,6 +11573,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -11444,6 +11669,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -11539,6 +11765,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -11634,6 +11861,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -11741,6 +11969,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -11860,6 +12089,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -11991,6 +12221,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -12062,6 +12293,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -12133,6 +12365,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -12228,6 +12461,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -12323,6 +12557,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -12418,6 +12653,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -12525,6 +12761,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -12608,6 +12845,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -12679,6 +12917,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -12774,6 +13013,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -12881,6 +13121,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -12976,6 +13217,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -13047,6 +13289,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -13118,6 +13361,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -13189,6 +13433,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -13272,6 +13517,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -13281,7 +13527,7 @@
      {
       "_id": 58,
       "id": 58,
-      "categoryId": 14,
+      "categoryId": 15,
       "name": "Coca-Cola",
       "price": 10000,
       "regularPrice": 10000,
@@ -13312,15 +13558,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 14,
-       "id": 14,
+       "_id": 15,
+       "id": 15,
        "name": "Minuman Kaleng",
        "icon": "🥤",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 8,
-       "position": 8
+       "bestSellerGroup": "Minuman",
+       "sortOrder": 9,
+       "position": 9
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -13328,7 +13575,7 @@
      {
       "_id": 57,
       "id": 57,
-      "categoryId": 14,
+      "categoryId": 15,
       "name": "Sprite",
       "price": 10000,
       "regularPrice": 10000,
@@ -13359,15 +13606,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 14,
-       "id": 14,
+       "_id": 15,
+       "id": 15,
        "name": "Minuman Kaleng",
        "icon": "🥤",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 8,
-       "position": 8
+       "bestSellerGroup": "Minuman",
+       "sortOrder": 9,
+       "position": 9
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -13449,8 +13697,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -13556,8 +13805,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -13639,8 +13889,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -13734,8 +13985,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -13768,8 +14020,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -13777,7 +14030,7 @@
      {
       "_id": 77,
       "id": 77,
-      "categoryId": 18,
+      "categoryId": 19,
       "name": "Kopi Uji",
       "price": 20000,
       "regularPrice": 20000,
@@ -13820,13 +14073,84 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 18,
-       "id": 18,
+       "_id": 19,
+       "id": 19,
        "name": "Uji Kategori 2",
        "icon": "🧫",
        "tax": 11,
        "taxRate": 11,
        "isBundle": false,
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 10,
+       "position": 10
+      },
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 78,
+      "id": 78,
+      "categoryId": 19,
+      "name": "Roti Uji Bakar",
+      "price": 17000,
+      "regularPrice": 17000,
+      "onlinePrice": null,
+      "discountPercent": 0,
+      "includeOnlinePlatform": false,
+      "hppCost": 6000,
+      "hpp": 6000,
+      "grossProfit": 11000,
+      "profit": 11000,
+      "ingredients": [],
+      "isBundle": false,
+      "bundleItems": [],
+      "bundleChoices": [],
+      "imagePath": "/uploads/menu/<ts>-foto-menu-uji-png.png",
+      "isAvailable": true,
+      "category": {
+       "_id": 19,
+       "id": 19,
+       "name": "Uji Kategori 2",
+       "icon": "🧫",
+       "tax": 11,
+       "taxRate": 11,
+       "isBundle": false,
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 10,
+       "position": 10
+      },
+      "createdAt": "<ts>",
+      "updatedAt": "<ts>"
+     },
+     {
+      "_id": 79,
+      "id": 79,
+      "categoryId": 19,
+      "name": "Teh Uji",
+      "price": 12000,
+      "regularPrice": 12000,
+      "onlinePrice": null,
+      "discountPercent": 0,
+      "includeOnlinePlatform": false,
+      "hppCost": 3000,
+      "hpp": 3000,
+      "grossProfit": 9000,
+      "profit": 9000,
+      "ingredients": [],
+      "isBundle": false,
+      "bundleItems": [],
+      "bundleChoices": [],
+      "imagePath": null,
+      "isAvailable": false,
+      "category": {
+       "_id": 19,
+       "id": 19,
+       "name": "Uji Kategori 2",
+       "icon": "🧫",
+       "tax": 11,
+       "taxRate": 11,
+       "isBundle": false,
+       "bestSellerGroup": "Makanan",
        "sortOrder": 10,
        "position": 10
       },
@@ -13836,7 +14160,7 @@
      {
       "_id": 47,
       "id": 47,
-      "categoryId": 15,
+      "categoryId": 16,
       "name": "Nasi Goreng Katsu",
       "price": 25000,
       "regularPrice": 25000,
@@ -13939,15 +14263,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 15,
-       "id": 15,
+       "_id": 16,
+       "id": 16,
        "name": "Nasi Goreng",
        "icon": "🍛",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 10,
-       "position": 10
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 11,
+       "position": 11
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -13955,7 +14280,7 @@
      {
       "_id": 46,
       "id": 46,
-      "categoryId": 15,
+      "categoryId": 16,
       "name": "Nasi Goreng Special",
       "price": 20000,
       "regularPrice": 20000,
@@ -14058,83 +14383,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 15,
-       "id": 15,
+       "_id": 16,
+       "id": 16,
        "name": "Nasi Goreng",
        "icon": "🍛",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 10,
-       "position": 10
-      },
-      "createdAt": "<ts>",
-      "updatedAt": "<ts>"
-     },
-     {
-      "_id": 78,
-      "id": 78,
-      "categoryId": 18,
-      "name": "Roti Uji Bakar",
-      "price": 17000,
-      "regularPrice": 17000,
-      "onlinePrice": null,
-      "discountPercent": 0,
-      "includeOnlinePlatform": false,
-      "hppCost": 6000,
-      "hpp": 6000,
-      "grossProfit": 11000,
-      "profit": 11000,
-      "ingredients": [],
-      "isBundle": false,
-      "bundleItems": [],
-      "bundleChoices": [],
-      "imagePath": "/uploads/menu/<ts>-foto-menu-uji-png.png",
-      "isAvailable": true,
-      "category": {
-       "_id": 18,
-       "id": 18,
-       "name": "Uji Kategori 2",
-       "icon": "🧫",
-       "tax": 11,
-       "taxRate": 11,
-       "isBundle": false,
-       "sortOrder": 10,
-       "position": 10
-      },
-      "createdAt": "<ts>",
-      "updatedAt": "<ts>"
-     },
-     {
-      "_id": 79,
-      "id": 79,
-      "categoryId": 18,
-      "name": "Teh Uji",
-      "price": 12000,
-      "regularPrice": 12000,
-      "onlinePrice": null,
-      "discountPercent": 0,
-      "includeOnlinePlatform": false,
-      "hppCost": 3000,
-      "hpp": 3000,
-      "grossProfit": 9000,
-      "profit": 9000,
-      "ingredients": [],
-      "isBundle": false,
-      "bundleItems": [],
-      "bundleChoices": [],
-      "imagePath": null,
-      "isAvailable": false,
-      "category": {
-       "_id": 18,
-       "id": 18,
-       "name": "Uji Kategori 2",
-       "icon": "🧫",
-       "tax": 11,
-       "taxRate": 11,
-       "isBundle": false,
-       "sortOrder": 10,
-       "position": 10
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 11,
+       "position": 11
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14142,7 +14400,7 @@
      {
       "_id": 23,
       "id": 23,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Fried Egg Rice Bowl",
       "price": 15000,
       "regularPrice": 15000,
@@ -14245,15 +14503,16 @@
       "imagePath": "/uploads/menu/fried-egg-rice-bowl-71e4a6b35b.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14261,7 +14520,7 @@
      {
       "_id": 24,
       "id": 24,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Chicken Katsu Rice Bowl",
       "price": 25000,
       "regularPrice": 25000,
@@ -14364,15 +14623,16 @@
       "imagePath": "/uploads/menu/chicken-katsu-rice-bowl-9f77c07d83.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14380,7 +14640,7 @@
      {
       "_id": 25,
       "id": 25,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Chicken Teriyaki Rice Bowl",
       "price": 23000,
       "regularPrice": 23000,
@@ -14483,15 +14743,16 @@
       "imagePath": "/uploads/menu/chicken-teriyaki-rice-bowl-de9b95075d.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14499,7 +14760,7 @@
      {
       "_id": 26,
       "id": 26,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Geprek Rice Bowl",
       "price": 22000,
       "regularPrice": 22000,
@@ -14602,15 +14863,16 @@
       "imagePath": "/uploads/menu/ayam-geprek-rice-bowl-1ad15279c3.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14618,7 +14880,7 @@
      {
       "_id": 27,
       "id": 27,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Beef Teriyaki Rice Bowl",
       "price": 25000,
       "regularPrice": 25000,
@@ -14636,15 +14898,16 @@
       "imagePath": "/uploads/menu/beef-teriyaki-rice-bowl-bd0d2dccf0.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14652,7 +14915,7 @@
      {
       "_id": 28,
       "id": 28,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Indomie Goreng Telur",
       "price": 15000,
       "regularPrice": 15000,
@@ -14731,15 +14994,16 @@
       "imagePath": "/uploads/menu/indomie-goreng-telur-908692a040.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14747,7 +15011,7 @@
      {
       "_id": 29,
       "id": 29,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Indomie Rebus Telur",
       "price": 15000,
       "regularPrice": 15000,
@@ -14826,15 +15090,16 @@
       "imagePath": "/uploads/menu/indomie-rebus-telur-5bb08c107c.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14842,7 +15107,7 @@
      {
       "_id": 60,
       "id": 60,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Black Pepper",
       "price": 23000,
       "regularPrice": 23000,
@@ -14945,15 +15210,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -14961,7 +15227,7 @@
      {
       "_id": 59,
       "id": 59,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Salted Egg",
       "price": 23000,
       "regularPrice": 23000,
@@ -15064,15 +15330,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15080,7 +15347,7 @@
      {
       "_id": 61,
       "id": 61,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Sambel Orek",
       "price": 23000,
       "regularPrice": 23000,
@@ -15098,15 +15365,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15114,7 +15382,7 @@
      {
       "_id": 63,
       "id": 63,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Beef Basir",
       "price": 25000,
       "regularPrice": 25000,
@@ -15132,15 +15400,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15148,7 +15417,7 @@
      {
       "_id": 62,
       "id": 62,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Udang Salted",
       "price": 25000,
       "regularPrice": 25000,
@@ -15166,15 +15435,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15182,7 +15452,7 @@
      {
       "_id": 64,
       "id": 64,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Coklat",
       "price": 10000,
       "regularPrice": 10000,
@@ -15237,15 +15507,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15253,7 +15524,7 @@
      {
       "_id": 67,
       "id": 67,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Slice",
       "price": 10000,
       "regularPrice": 10000,
@@ -15308,15 +15579,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15324,7 +15596,7 @@
      {
       "_id": 66,
       "id": 66,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Strawberry",
       "price": 10000,
       "regularPrice": 10000,
@@ -15379,15 +15651,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15395,7 +15668,7 @@
      {
       "_id": 65,
       "id": 65,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Tiramisu",
       "price": 10000,
       "regularPrice": 10000,
@@ -15450,15 +15723,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15491,8 +15765,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15525,8 +15800,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15559,8 +15835,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15593,8 +15870,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15627,8 +15905,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15661,8 +15940,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15695,8 +15975,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15729,8 +16010,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15763,8 +16045,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15797,8 +16080,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15831,8 +16115,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -15926,6 +16211,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -16021,6 +16307,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -16104,6 +16391,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -16211,6 +16499,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -16282,6 +16571,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -16353,6 +16643,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -16387,6 +16678,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -16421,6 +16713,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -16455,6 +16748,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -16467,7 +16761,7 @@
   },
   {
    "step": "menu list category includeUnavailable",
-   "request": "GET /api/menu-item?categoryId=18&includeUnavailable=true",
+   "request": "GET /api/menu-item?categoryId=19&includeUnavailable=true",
    "status": 200,
    "headers": {
     "content-type": "application/json; charset=utf-8",
@@ -16481,7 +16775,7 @@
      {
       "_id": 77,
       "id": 77,
-      "categoryId": 18,
+      "categoryId": 19,
       "name": "Kopi Uji",
       "price": 20000,
       "regularPrice": 20000,
@@ -16524,13 +16818,14 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 18,
-       "id": 18,
+       "_id": 19,
+       "id": 19,
        "name": "Uji Kategori 2",
        "icon": "🧫",
        "tax": 11,
        "taxRate": 11,
        "isBundle": false,
+       "bestSellerGroup": "Makanan",
        "sortOrder": 10,
        "position": 10
       },
@@ -16540,7 +16835,7 @@
      {
       "_id": 78,
       "id": 78,
-      "categoryId": 18,
+      "categoryId": 19,
       "name": "Roti Uji Bakar",
       "price": 17000,
       "regularPrice": 17000,
@@ -16558,13 +16853,14 @@
       "imagePath": "/uploads/menu/<ts>-foto-menu-uji-png.png",
       "isAvailable": true,
       "category": {
-       "_id": 18,
-       "id": 18,
+       "_id": 19,
+       "id": 19,
        "name": "Uji Kategori 2",
        "icon": "🧫",
        "tax": 11,
        "taxRate": 11,
        "isBundle": false,
+       "bestSellerGroup": "Makanan",
        "sortOrder": 10,
        "position": 10
       },
@@ -16574,7 +16870,7 @@
      {
       "_id": 79,
       "id": 79,
-      "categoryId": 18,
+      "categoryId": 19,
       "name": "Teh Uji",
       "price": 12000,
       "regularPrice": 12000,
@@ -16592,13 +16888,14 @@
       "imagePath": null,
       "isAvailable": false,
       "category": {
-       "_id": 18,
-       "id": 18,
+       "_id": 19,
+       "id": 19,
        "name": "Uji Kategori 2",
        "icon": "🧫",
        "tax": 11,
        "taxRate": 11,
        "isBundle": false,
+       "bestSellerGroup": "Makanan",
        "sortOrder": 10,
        "position": 10
       },
@@ -19258,7 +19555,7 @@
      },
      "items": [
       {
-       "id": "18-77",
+       "id": "19-77",
        "_id": 1,
        "menuItemId": 77,
        "sourceMenuItemId": 77,
@@ -19276,7 +19573,7 @@
        "bundleChoices": []
       },
       {
-       "id": "18-78",
+       "id": "19-78",
        "_id": 2,
        "menuItemId": 78,
        "sourceMenuItemId": 78,
@@ -19360,7 +19657,7 @@
      },
      "items": [
       {
-       "id": "18-77",
+       "id": "19-77",
        "_id": 3,
        "menuItemId": 77,
        "sourceMenuItemId": 77,
@@ -19478,7 +19775,7 @@
      },
      "items": [
       {
-       "id": "18-77",
+       "id": "19-77",
        "_id": 4,
        "menuItemId": 77,
        "sourceMenuItemId": 77,
@@ -21548,7 +21845,7 @@
       },
       "items": [
        {
-        "id": "18-77",
+        "id": "19-77",
         "_id": 4,
         "menuItemId": 77,
         "sourceMenuItemId": 77,
@@ -21599,7 +21896,7 @@
       },
       "items": [
        {
-        "id": "18-77",
+        "id": "19-77",
         "_id": 3,
         "menuItemId": 77,
         "sourceMenuItemId": 77,
@@ -21650,7 +21947,7 @@
       },
       "items": [
        {
-        "id": "18-77",
+        "id": "19-77",
         "_id": 1,
         "menuItemId": 77,
         "sourceMenuItemId": 77,
@@ -21668,7 +21965,7 @@
         "bundleChoices": []
        },
        {
-        "id": "18-78",
+        "id": "19-78",
         "_id": 2,
         "menuItemId": 78,
         "sourceMenuItemId": 78,
@@ -21735,7 +22032,7 @@
      },
      "items": [
       {
-       "id": "18-77",
+       "id": "19-77",
        "_id": 1,
        "menuItemId": 77,
        "sourceMenuItemId": 77,
@@ -21753,7 +22050,7 @@
        "bundleChoices": []
       },
       {
-       "id": "18-78",
+       "id": "19-78",
        "_id": 2,
        "menuItemId": 78,
        "sourceMenuItemId": 78,
@@ -21888,7 +22185,7 @@
      },
      "items": [
       {
-       "id": "18-77",
+       "id": "19-77",
        "_id": 1,
        "menuItemId": 77,
        "sourceMenuItemId": 77,
@@ -21906,7 +22203,7 @@
        "bundleChoices": []
       },
       {
-       "id": "18-78",
+       "id": "19-78",
        "_id": 2,
        "menuItemId": 78,
        "sourceMenuItemId": 78,
@@ -22477,7 +22774,7 @@
      },
      "items": [
       {
-       "id": "18-77",
+       "id": "19-77",
        "_id": 5,
        "menuItemId": 77,
        "sourceMenuItemId": 77,
@@ -24247,7 +24544,7 @@
      },
      "items": [
       {
-       "id": "18-77",
+       "id": "19-77",
        "_id": 6,
        "menuItemId": 77,
        "sourceMenuItemId": 77,
@@ -26741,7 +27038,7 @@
   },
   {
    "step": "category delete with items",
-   "request": "DELETE /api/category/18",
+   "request": "DELETE /api/category/19",
    "status": 200,
    "headers": {
     "content-type": "application/json; charset=utf-8",
@@ -26758,7 +27055,7 @@
      "event": "menu:changed",
      "payload": {
       "action": "category-deleted",
-      "categoryId": 18
+      "categoryId": 19
      },
      "hasTimestamp": true
     }
@@ -26842,6 +27139,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -26901,6 +27199,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -27008,6 +27307,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -27115,6 +27415,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -27234,6 +27535,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 1,
        "position": 1
       },
@@ -27305,6 +27607,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -27376,6 +27679,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -27435,6 +27739,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 2,
        "position": 2
       },
@@ -27506,6 +27811,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -27577,6 +27883,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -27672,6 +27979,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -27767,6 +28075,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -27862,6 +28171,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -27969,6 +28279,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -28088,6 +28399,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -28219,6 +28531,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 3,
        "position": 3
       },
@@ -28290,6 +28603,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -28361,6 +28675,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -28456,6 +28771,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -28551,6 +28867,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -28646,6 +28963,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -28753,6 +29071,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -28836,6 +29155,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 4,
        "position": 4
       },
@@ -28907,6 +29227,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -29002,6 +29323,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -29109,6 +29431,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -29204,6 +29527,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 5,
        "position": 5
       },
@@ -29275,6 +29599,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -29346,6 +29671,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -29417,6 +29743,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -29500,6 +29827,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 7,
        "position": 7
       },
@@ -29509,7 +29837,7 @@
      {
       "_id": 58,
       "id": 58,
-      "categoryId": 14,
+      "categoryId": 15,
       "name": "Coca-Cola",
       "price": 10000,
       "regularPrice": 10000,
@@ -29540,15 +29868,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 14,
-       "id": 14,
+       "_id": 15,
+       "id": 15,
        "name": "Minuman Kaleng",
        "icon": "🥤",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 8,
-       "position": 8
+       "bestSellerGroup": "Minuman",
+       "sortOrder": 9,
+       "position": 9
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -29556,7 +29885,7 @@
      {
       "_id": 57,
       "id": 57,
-      "categoryId": 14,
+      "categoryId": 15,
       "name": "Sprite",
       "price": 10000,
       "regularPrice": 10000,
@@ -29587,15 +29916,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 14,
-       "id": 14,
+       "_id": 15,
+       "id": 15,
        "name": "Minuman Kaleng",
        "icon": "🥤",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 8,
-       "position": 8
+       "bestSellerGroup": "Minuman",
+       "sortOrder": 9,
+       "position": 9
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -29677,8 +30007,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -29784,8 +30115,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -29867,8 +30199,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -29962,8 +30295,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -29996,8 +30330,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 9,
-       "position": 9
+       "bestSellerGroup": "Snack",
+       "sortOrder": 10,
+       "position": 10
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30005,7 +30340,7 @@
      {
       "_id": 47,
       "id": 47,
-      "categoryId": 15,
+      "categoryId": 16,
       "name": "Nasi Goreng Katsu",
       "price": 25000,
       "regularPrice": 25000,
@@ -30108,15 +30443,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 15,
-       "id": 15,
+       "_id": 16,
+       "id": 16,
        "name": "Nasi Goreng",
        "icon": "🍛",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 10,
-       "position": 10
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 11,
+       "position": 11
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30124,7 +30460,7 @@
      {
       "_id": 46,
       "id": 46,
-      "categoryId": 15,
+      "categoryId": 16,
       "name": "Nasi Goreng Special",
       "price": 20000,
       "regularPrice": 20000,
@@ -30227,15 +30563,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 15,
-       "id": 15,
+       "_id": 16,
+       "id": 16,
        "name": "Nasi Goreng",
        "icon": "🍛",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 10,
-       "position": 10
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 11,
+       "position": 11
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30243,7 +30580,7 @@
      {
       "_id": 23,
       "id": 23,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Fried Egg Rice Bowl",
       "price": 15000,
       "regularPrice": 15000,
@@ -30346,15 +30683,16 @@
       "imagePath": "/uploads/menu/fried-egg-rice-bowl-71e4a6b35b.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30362,7 +30700,7 @@
      {
       "_id": 24,
       "id": 24,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Chicken Katsu Rice Bowl",
       "price": 25000,
       "regularPrice": 25000,
@@ -30465,15 +30803,16 @@
       "imagePath": "/uploads/menu/chicken-katsu-rice-bowl-9f77c07d83.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30481,7 +30820,7 @@
      {
       "_id": 25,
       "id": 25,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Chicken Teriyaki Rice Bowl",
       "price": 23000,
       "regularPrice": 23000,
@@ -30584,15 +30923,16 @@
       "imagePath": "/uploads/menu/chicken-teriyaki-rice-bowl-de9b95075d.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30600,7 +30940,7 @@
      {
       "_id": 26,
       "id": 26,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Geprek Rice Bowl",
       "price": 22000,
       "regularPrice": 22000,
@@ -30703,15 +31043,16 @@
       "imagePath": "/uploads/menu/ayam-geprek-rice-bowl-1ad15279c3.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30719,7 +31060,7 @@
      {
       "_id": 27,
       "id": 27,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Beef Teriyaki Rice Bowl",
       "price": 25000,
       "regularPrice": 25000,
@@ -30737,15 +31078,16 @@
       "imagePath": "/uploads/menu/beef-teriyaki-rice-bowl-bd0d2dccf0.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30753,7 +31095,7 @@
      {
       "_id": 28,
       "id": 28,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Indomie Goreng Telur",
       "price": 15000,
       "regularPrice": 15000,
@@ -30832,15 +31174,16 @@
       "imagePath": "/uploads/menu/indomie-goreng-telur-908692a040.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30848,7 +31191,7 @@
      {
       "_id": 29,
       "id": 29,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Indomie Rebus Telur",
       "price": 15000,
       "regularPrice": 15000,
@@ -30927,15 +31270,16 @@
       "imagePath": "/uploads/menu/indomie-rebus-telur-5bb08c107c.jpg",
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -30943,7 +31287,7 @@
      {
       "_id": 60,
       "id": 60,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Black Pepper",
       "price": 23000,
       "regularPrice": 23000,
@@ -31046,15 +31390,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31062,7 +31407,7 @@
      {
       "_id": 59,
       "id": 59,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Salted Egg",
       "price": 23000,
       "regularPrice": 23000,
@@ -31165,15 +31510,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31181,7 +31527,7 @@
      {
       "_id": 61,
       "id": 61,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Ayam Sambel Orek",
       "price": 23000,
       "regularPrice": 23000,
@@ -31199,15 +31545,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31215,7 +31562,7 @@
      {
       "_id": 63,
       "id": 63,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Beef Basir",
       "price": 25000,
       "regularPrice": 25000,
@@ -31233,15 +31580,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31249,7 +31597,7 @@
      {
       "_id": 62,
       "id": 62,
-      "categoryId": 16,
+      "categoryId": 17,
       "name": "Udang Salted",
       "price": 25000,
       "regularPrice": 25000,
@@ -31267,15 +31615,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 16,
-       "id": 16,
+       "_id": 17,
+       "id": 17,
        "name": "Rice Bowl",
        "icon": "🍚",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 11,
-       "position": 11
+       "bestSellerGroup": "Makanan",
+       "sortOrder": 12,
+       "position": 12
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31283,7 +31632,7 @@
      {
       "_id": 64,
       "id": 64,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Coklat",
       "price": 10000,
       "regularPrice": 10000,
@@ -31338,15 +31687,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31354,7 +31704,7 @@
      {
       "_id": 67,
       "id": 67,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Slice",
       "price": 10000,
       "regularPrice": 10000,
@@ -31409,15 +31759,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31425,7 +31776,7 @@
      {
       "_id": 66,
       "id": 66,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Strawberry",
       "price": 10000,
       "regularPrice": 10000,
@@ -31480,15 +31831,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31496,7 +31848,7 @@
      {
       "_id": 65,
       "id": 65,
-      "categoryId": 17,
+      "categoryId": 18,
       "name": "Roti Kukus Tiramisu",
       "price": 10000,
       "regularPrice": 10000,
@@ -31551,15 +31903,16 @@
       "imagePath": null,
       "isAvailable": true,
       "category": {
-       "_id": 17,
-       "id": 17,
+       "_id": 18,
+       "id": 18,
        "name": "Roti",
        "icon": "🍞",
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 12,
-       "position": 12
+       "bestSellerGroup": "Snack",
+       "sortOrder": 13,
+       "position": 13
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31592,8 +31945,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31626,8 +31980,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31660,8 +32015,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31694,8 +32050,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31728,8 +32085,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31762,8 +32120,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 15,
-       "position": 15
+       "bestSellerGroup": null,
+       "sortOrder": 16,
+       "position": 16
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31796,8 +32155,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31830,8 +32190,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31864,8 +32225,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31898,8 +32260,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -31932,8 +32295,9 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
-       "sortOrder": 16,
-       "position": 16
+       "bestSellerGroup": null,
+       "sortOrder": 17,
+       "position": 17
       },
       "createdAt": "<ts>",
       "updatedAt": "<ts>"
@@ -32027,6 +32391,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -32122,6 +32487,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -32205,6 +32571,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -32312,6 +32679,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 20,
        "position": 20
       },
@@ -32383,6 +32751,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -32454,6 +32823,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -32488,6 +32858,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -32522,6 +32893,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -32556,6 +32928,7 @@
        "tax": null,
        "taxRate": null,
        "isBundle": false,
+       "bestSellerGroup": "Minuman",
        "sortOrder": 30,
        "position": 30
       },
@@ -32605,7 +32978,7 @@
       },
       "items": [
        {
-        "id": "18-77",
+        "id": "19-77",
         "_id": 6,
         "menuItemId": null,
         "sourceMenuItemId": null,
@@ -32772,7 +33145,7 @@
       },
       "items": [
        {
-        "id": "18-77",
+        "id": "19-77",
         "_id": 3,
         "menuItemId": null,
         "sourceMenuItemId": null,
@@ -32823,7 +33196,7 @@
       },
       "items": [
        {
-        "id": "18-77",
+        "id": "19-77",
         "_id": 1,
         "menuItemId": null,
         "sourceMenuItemId": null,
@@ -32841,7 +33214,7 @@
         "bundleChoices": []
        },
        {
-        "id": "18-78",
+        "id": "19-78",
         "_id": 2,
         "menuItemId": null,
         "sourceMenuItemId": null,
@@ -32947,7 +33320,7 @@
     ]
    },
    "categories": {
-    "ddl": "CREATE TABLE `categories` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `icon` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `tax` decimal(5,2) DEFAULT NULL,\n  `is_bundle` tinyint(1) NOT NULL DEFAULT '0',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_categories_sort_order` (`sort_order`,`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `categories` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `icon` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `tax` decimal(5,2) DEFAULT NULL,\n  `is_bundle` tinyint(1) NOT NULL DEFAULT '0',\n  `best_seller_group` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_categories_sort_order` (`sort_order`,`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -32955,6 +33328,7 @@
       "icon": "☕",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 20,
       "created_at": "<ts>",
@@ -32966,6 +33340,7 @@
       "icon": "🧋",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 30,
       "created_at": "<ts>",
@@ -32977,8 +33352,9 @@
       "icon": "🍚",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 0,
-      "sort_order": 14,
+      "sort_order": 15,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -32988,8 +33364,9 @@
       "icon": "🍟",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 9,
+      "sort_order": 10,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -32999,8 +33376,9 @@
       "icon": "🍱",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 16,
+      "sort_order": 17,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -33010,8 +33388,9 @@
       "icon": "➕",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 15,
+      "sort_order": 16,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -33021,8 +33400,9 @@
       "icon": "🍞",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 0,
-      "sort_order": 17,
+      "sort_order": 18,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -33032,6 +33412,7 @@
       "icon": "☕️",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 1,
       "created_at": "<ts>",
@@ -33043,6 +33424,7 @@
       "icon": "🔥",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 2,
       "created_at": "<ts>",
@@ -33054,6 +33436,7 @@
       "icon": "🥛",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 3,
       "created_at": "<ts>",
@@ -33065,6 +33448,7 @@
       "icon": "♨️",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 4,
       "created_at": "<ts>",
@@ -33076,6 +33460,7 @@
       "icon": "🍵",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 5,
       "created_at": "<ts>",
@@ -33087,6 +33472,7 @@
       "icon": "🫖",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 7,
       "created_at": "<ts>",
@@ -33094,10 +33480,11 @@
      },
      {
       "id": 14,
-      "name": "Minuman Kaleng",
-      "icon": "🥤",
+      "name": "Minuman Botol",
+      "icon": "🍾",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 8,
       "created_at": "<ts>",
@@ -33105,21 +33492,23 @@
      },
      {
       "id": 15,
-      "name": "Nasi Goreng",
-      "icon": "🍛",
+      "name": "Minuman Kaleng",
+      "icon": "🥤",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 10,
+      "sort_order": 9,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
      {
       "id": 16,
-      "name": "Rice Bowl",
-      "icon": "🍚",
+      "name": "Nasi Goreng",
+      "icon": "🍛",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 11,
       "created_at": "<ts>",
@@ -33127,12 +33516,25 @@
      },
      {
       "id": 17,
+      "name": "Rice Bowl",
+      "icon": "🍚",
+      "tax": null,
+      "is_bundle": 0,
+      "best_seller_group": null,
+      "is_active": 1,
+      "sort_order": 12,
+      "created_at": "<ts>",
+      "updated_at": "<ts>"
+     },
+     {
+      "id": 18,
       "name": "Roti",
       "icon": "🍞",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 12,
+      "sort_order": 13,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      }
@@ -33479,6 +33881,10 @@
    },
    "history_stock_supply_purchase_attachments": {
     "ddl": "CREATE TABLE `history_stock_supply_purchase_attachments` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `file_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `mime_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `size_bytes` int unsigned NOT NULL,\n  `uploaded_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `file_name` (`file_name`),\n  KEY `idx_supply_purchase_attachments_purchase` (`purchase_id`,`id`),\n  KEY `uploaded_by` (`uploaded_by`),\n  CONSTRAINT `history_stock_supply_purchase_attachments_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_supply_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_supply_purchase_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_supply_purchase_item_logs": {
+    "ddl": "CREATE TABLE `history_stock_supply_purchase_item_logs` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_item_id` int unsigned DEFAULT NULL,\n  `purchase_id` int unsigned DEFAULT NULL,\n  `supply_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `action` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `old_data` json DEFAULT NULL,\n  `new_data` json DEFAULT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `user_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_supply_purchase_item_logs_item` (`supply_item_id`,`created_at`),\n  KEY `idx_supply_purchase_item_logs_purchase` (`purchase_id`,`action`),\n  KEY `purchase_item_id` (`purchase_item_id`),\n  KEY `user_id` (`user_id`),\n  CONSTRAINT `history_stock_supply_purchase_item_logs_ibfk_1` FOREIGN KEY (`purchase_item_id`) REFERENCES `history_stock_supply_purchase_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_supply_purchase_item_logs_ibfk_2` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_supply_purchases` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_supply_purchase_item_logs_ibfk_3` FOREIGN KEY (`supply_item_id`) REFERENCES `stock_supply_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_supply_purchase_item_logs_ibfk_4` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "history_stock_supply_purchase_items": {
@@ -37454,7 +37860,7 @@
      },
      {
       "id": 23,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Fried Egg Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/fried-egg-rice-bowl-71e4a6b35b.jpg",
@@ -37464,7 +37870,7 @@
      },
      {
       "id": 24,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Chicken Katsu Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/chicken-katsu-rice-bowl-9f77c07d83.jpg",
@@ -37474,7 +37880,7 @@
      },
      {
       "id": 25,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Chicken Teriyaki Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/chicken-teriyaki-rice-bowl-de9b95075d.jpg",
@@ -37484,7 +37890,7 @@
      },
      {
       "id": 26,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Ayam Geprek Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/ayam-geprek-rice-bowl-1ad15279c3.jpg",
@@ -37494,7 +37900,7 @@
      },
      {
       "id": 27,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Beef Teriyaki Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/beef-teriyaki-rice-bowl-bd0d2dccf0.jpg",
@@ -37504,7 +37910,7 @@
      },
      {
       "id": 28,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Indomie Goreng Telur",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/indomie-goreng-telur-908692a040.jpg",
@@ -37514,7 +37920,7 @@
      },
      {
       "id": 29,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Indomie Rebus Telur",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/indomie-rebus-telur-5bb08c107c.jpg",
@@ -37684,7 +38090,7 @@
      },
      {
       "id": 46,
-      "category_id": 15,
+      "category_id": 16,
       "name": "Nasi Goreng Special",
       "include_online_platform": 0,
       "image_path": null,
@@ -37694,7 +38100,7 @@
      },
      {
       "id": 47,
-      "category_id": 15,
+      "category_id": 16,
       "name": "Nasi Goreng Katsu",
       "include_online_platform": 0,
       "image_path": null,
@@ -37794,7 +38200,7 @@
      },
      {
       "id": 57,
-      "category_id": 14,
+      "category_id": 15,
       "name": "Sprite",
       "include_online_platform": 0,
       "image_path": null,
@@ -37804,7 +38210,7 @@
      },
      {
       "id": 58,
-      "category_id": 14,
+      "category_id": 15,
       "name": "Coca-Cola",
       "include_online_platform": 0,
       "image_path": null,
@@ -37814,7 +38220,7 @@
      },
      {
       "id": 59,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Ayam Salted Egg",
       "include_online_platform": 0,
       "image_path": null,
@@ -37824,7 +38230,7 @@
      },
      {
       "id": 60,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Ayam Black Pepper",
       "include_online_platform": 0,
       "image_path": null,
@@ -37834,7 +38240,7 @@
      },
      {
       "id": 61,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Ayam Sambel Orek",
       "include_online_platform": 0,
       "image_path": null,
@@ -37844,7 +38250,7 @@
      },
      {
       "id": 62,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Udang Salted",
       "include_online_platform": 0,
       "image_path": null,
@@ -37854,7 +38260,7 @@
      },
      {
       "id": 63,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Beef Basir",
       "include_online_platform": 0,
       "image_path": null,
@@ -37864,7 +38270,7 @@
      },
      {
       "id": 64,
-      "category_id": 17,
+      "category_id": 18,
       "name": "Roti Kukus Coklat",
       "include_online_platform": 0,
       "image_path": null,
@@ -37874,7 +38280,7 @@
      },
      {
       "id": 65,
-      "category_id": 17,
+      "category_id": 18,
       "name": "Roti Kukus Tiramisu",
       "include_online_platform": 0,
       "image_path": null,
@@ -37884,7 +38290,7 @@
      },
      {
       "id": 66,
-      "category_id": 17,
+      "category_id": 18,
       "name": "Roti Kukus Strawberry",
       "include_online_platform": 0,
       "image_path": null,
@@ -37894,7 +38300,7 @@
      },
      {
       "id": 67,
-      "category_id": 17,
+      "category_id": 18,
       "name": "Roti Kukus Slice",
       "include_online_platform": 0,
       "image_path": null,
@@ -38279,7 +38685,7 @@
      {
       "id": 1,
       "order_id": 1,
-      "item_key": "18-77",
+      "item_key": "19-77",
       "menu_item_id": null,
       "name": "Kopi Uji",
       "variant": null,
@@ -38294,7 +38700,7 @@
      {
       "id": 2,
       "order_id": 1,
-      "item_key": "18-78",
+      "item_key": "19-78",
       "menu_item_id": null,
       "name": "Roti Uji Bakar",
       "variant": null,
@@ -38309,7 +38715,7 @@
      {
       "id": 3,
       "order_id": 2,
-      "item_key": "18-77",
+      "item_key": "19-77",
       "menu_item_id": null,
       "name": "Kopi Uji",
       "variant": null,
@@ -38324,7 +38730,7 @@
      {
       "id": 6,
       "order_id": 8,
-      "item_key": "18-77",
+      "item_key": "19-77",
       "menu_item_id": null,
       "name": "Kopi Uji",
       "variant": null,
@@ -41887,6 +42293,10 @@
     "rows": [
      {
       "name": "cogs-categories-2026-11",
+      "ran_at": "<now>"
+     },
+     {
+      "name": "cogs-category-tabs-2026-11",
       "ran_at": "<now>"
      },
      {
@@ -43434,7 +43844,7 @@
     ]
    },
    "categories": {
-    "ddl": "CREATE TABLE `categories` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `icon` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `tax` decimal(5,2) DEFAULT NULL,\n  `is_bundle` tinyint(1) NOT NULL DEFAULT '0',\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_categories_sort_order` (`sort_order`,`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `categories` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `icon` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `tax` decimal(5,2) DEFAULT NULL,\n  `is_bundle` tinyint(1) NOT NULL DEFAULT '0',\n  `best_seller_group` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`),\n  KEY `idx_categories_sort_order` (`sort_order`,`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -43442,6 +43852,7 @@
       "icon": "☕",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 20,
       "created_at": "<ts>",
@@ -43453,6 +43864,7 @@
       "icon": "🧋",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 30,
       "created_at": "<ts>",
@@ -43464,8 +43876,9 @@
       "icon": "🍚",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 0,
-      "sort_order": 14,
+      "sort_order": 15,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -43475,8 +43888,9 @@
       "icon": "🍟",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 9,
+      "sort_order": 10,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -43486,8 +43900,9 @@
       "icon": "🍱",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 16,
+      "sort_order": 17,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -43497,8 +43912,9 @@
       "icon": "➕",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 15,
+      "sort_order": 16,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -43508,8 +43924,9 @@
       "icon": "🍞",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 0,
-      "sort_order": 17,
+      "sort_order": 18,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
@@ -43519,6 +43936,7 @@
       "icon": "☕️",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 1,
       "created_at": "<ts>",
@@ -43530,6 +43948,7 @@
       "icon": "🔥",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 2,
       "created_at": "<ts>",
@@ -43541,6 +43960,7 @@
       "icon": "🥛",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 3,
       "created_at": "<ts>",
@@ -43552,6 +43972,7 @@
       "icon": "♨️",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 4,
       "created_at": "<ts>",
@@ -43563,6 +43984,7 @@
       "icon": "🍵",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 5,
       "created_at": "<ts>",
@@ -43574,6 +43996,7 @@
       "icon": "🫖",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 7,
       "created_at": "<ts>",
@@ -43581,10 +44004,11 @@
      },
      {
       "id": 14,
-      "name": "Minuman Kaleng",
-      "icon": "🥤",
+      "name": "Minuman Botol",
+      "icon": "🍾",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 8,
       "created_at": "<ts>",
@@ -43592,21 +44016,23 @@
      },
      {
       "id": 15,
-      "name": "Nasi Goreng",
-      "icon": "🍛",
+      "name": "Minuman Kaleng",
+      "icon": "🥤",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 10,
+      "sort_order": 9,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      },
      {
       "id": 16,
-      "name": "Rice Bowl",
-      "icon": "🍚",
+      "name": "Nasi Goreng",
+      "icon": "🍛",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
       "sort_order": 11,
       "created_at": "<ts>",
@@ -43614,12 +44040,25 @@
      },
      {
       "id": 17,
+      "name": "Rice Bowl",
+      "icon": "🍚",
+      "tax": null,
+      "is_bundle": 0,
+      "best_seller_group": null,
+      "is_active": 1,
+      "sort_order": 12,
+      "created_at": "<ts>",
+      "updated_at": "<ts>"
+     },
+     {
+      "id": 18,
       "name": "Roti",
       "icon": "🍞",
       "tax": null,
       "is_bundle": 0,
+      "best_seller_group": null,
       "is_active": 1,
-      "sort_order": 12,
+      "sort_order": 13,
       "created_at": "<ts>",
       "updated_at": "<ts>"
      }
@@ -43966,6 +44405,10 @@
    },
    "history_stock_supply_purchase_attachments": {
     "ddl": "CREATE TABLE `history_stock_supply_purchase_attachments` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_id` int unsigned NOT NULL,\n  `file_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `mime_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `size_bytes` int unsigned NOT NULL,\n  `uploaded_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `file_name` (`file_name`),\n  KEY `idx_supply_purchase_attachments_purchase` (`purchase_id`,`id`),\n  KEY `uploaded_by` (`uploaded_by`),\n  CONSTRAINT `history_stock_supply_purchase_attachments_ibfk_1` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_supply_purchases` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `history_stock_supply_purchase_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "history_stock_supply_purchase_item_logs": {
+    "ddl": "CREATE TABLE `history_stock_supply_purchase_item_logs` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `purchase_item_id` int unsigned DEFAULT NULL,\n  `purchase_id` int unsigned DEFAULT NULL,\n  `supply_item_id` int unsigned DEFAULT NULL,\n  `item_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `action` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `old_data` json DEFAULT NULL,\n  `new_data` json DEFAULT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `user_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_supply_purchase_item_logs_item` (`supply_item_id`,`created_at`),\n  KEY `idx_supply_purchase_item_logs_purchase` (`purchase_id`,`action`),\n  KEY `purchase_item_id` (`purchase_item_id`),\n  KEY `user_id` (`user_id`),\n  CONSTRAINT `history_stock_supply_purchase_item_logs_ibfk_1` FOREIGN KEY (`purchase_item_id`) REFERENCES `history_stock_supply_purchase_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_supply_purchase_item_logs_ibfk_2` FOREIGN KEY (`purchase_id`) REFERENCES `history_stock_supply_purchases` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_supply_purchase_item_logs_ibfk_3` FOREIGN KEY (`supply_item_id`) REFERENCES `stock_supply_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `history_stock_supply_purchase_item_logs_ibfk_4` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "history_stock_supply_purchase_items": {
@@ -47941,7 +48384,7 @@
      },
      {
       "id": 23,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Fried Egg Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/fried-egg-rice-bowl-71e4a6b35b.jpg",
@@ -47951,7 +48394,7 @@
      },
      {
       "id": 24,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Chicken Katsu Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/chicken-katsu-rice-bowl-9f77c07d83.jpg",
@@ -47961,7 +48404,7 @@
      },
      {
       "id": 25,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Chicken Teriyaki Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/chicken-teriyaki-rice-bowl-de9b95075d.jpg",
@@ -47971,7 +48414,7 @@
      },
      {
       "id": 26,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Ayam Geprek Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/ayam-geprek-rice-bowl-1ad15279c3.jpg",
@@ -47981,7 +48424,7 @@
      },
      {
       "id": 27,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Beef Teriyaki Rice Bowl",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/beef-teriyaki-rice-bowl-bd0d2dccf0.jpg",
@@ -47991,7 +48434,7 @@
      },
      {
       "id": 28,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Indomie Goreng Telur",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/indomie-goreng-telur-908692a040.jpg",
@@ -48001,7 +48444,7 @@
      },
      {
       "id": 29,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Indomie Rebus Telur",
       "include_online_platform": 0,
       "image_path": "/uploads/menu/indomie-rebus-telur-5bb08c107c.jpg",
@@ -48171,7 +48614,7 @@
      },
      {
       "id": 46,
-      "category_id": 15,
+      "category_id": 16,
       "name": "Nasi Goreng Special",
       "include_online_platform": 0,
       "image_path": null,
@@ -48181,7 +48624,7 @@
      },
      {
       "id": 47,
-      "category_id": 15,
+      "category_id": 16,
       "name": "Nasi Goreng Katsu",
       "include_online_platform": 0,
       "image_path": null,
@@ -48281,7 +48724,7 @@
      },
      {
       "id": 57,
-      "category_id": 14,
+      "category_id": 15,
       "name": "Sprite",
       "include_online_platform": 0,
       "image_path": null,
@@ -48291,7 +48734,7 @@
      },
      {
       "id": 58,
-      "category_id": 14,
+      "category_id": 15,
       "name": "Coca-Cola",
       "include_online_platform": 0,
       "image_path": null,
@@ -48301,7 +48744,7 @@
      },
      {
       "id": 59,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Ayam Salted Egg",
       "include_online_platform": 0,
       "image_path": null,
@@ -48311,7 +48754,7 @@
      },
      {
       "id": 60,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Ayam Black Pepper",
       "include_online_platform": 0,
       "image_path": null,
@@ -48321,7 +48764,7 @@
      },
      {
       "id": 61,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Ayam Sambel Orek",
       "include_online_platform": 0,
       "image_path": null,
@@ -48331,7 +48774,7 @@
      },
      {
       "id": 62,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Udang Salted",
       "include_online_platform": 0,
       "image_path": null,
@@ -48341,7 +48784,7 @@
      },
      {
       "id": 63,
-      "category_id": 16,
+      "category_id": 17,
       "name": "Beef Basir",
       "include_online_platform": 0,
       "image_path": null,
@@ -48351,7 +48794,7 @@
      },
      {
       "id": 64,
-      "category_id": 17,
+      "category_id": 18,
       "name": "Roti Kukus Coklat",
       "include_online_platform": 0,
       "image_path": null,
@@ -48361,7 +48804,7 @@
      },
      {
       "id": 65,
-      "category_id": 17,
+      "category_id": 18,
       "name": "Roti Kukus Tiramisu",
       "include_online_platform": 0,
       "image_path": null,
@@ -48371,7 +48814,7 @@
      },
      {
       "id": 66,
-      "category_id": 17,
+      "category_id": 18,
       "name": "Roti Kukus Strawberry",
       "include_online_platform": 0,
       "image_path": null,
@@ -48381,7 +48824,7 @@
      },
      {
       "id": 67,
-      "category_id": 17,
+      "category_id": 18,
       "name": "Roti Kukus Slice",
       "include_online_platform": 0,
       "image_path": null,
@@ -48766,7 +49209,7 @@
      {
       "id": 1,
       "order_id": 1,
-      "item_key": "18-77",
+      "item_key": "19-77",
       "menu_item_id": null,
       "name": "Kopi Uji",
       "variant": null,
@@ -48781,7 +49224,7 @@
      {
       "id": 2,
       "order_id": 1,
-      "item_key": "18-78",
+      "item_key": "19-78",
       "menu_item_id": null,
       "name": "Roti Uji Bakar",
       "variant": null,
@@ -48796,7 +49239,7 @@
      {
       "id": 3,
       "order_id": 2,
-      "item_key": "18-77",
+      "item_key": "19-77",
       "menu_item_id": null,
       "name": "Kopi Uji",
       "variant": null,
@@ -48811,7 +49254,7 @@
      {
       "id": 6,
       "order_id": 8,
-      "item_key": "18-77",
+      "item_key": "19-77",
       "menu_item_id": null,
       "name": "Kopi Uji",
       "variant": null,
@@ -52374,6 +52817,10 @@
     "rows": [
      {
       "name": "cogs-categories-2026-11",
+      "ran_at": "<now>"
+     },
+     {
+      "name": "cogs-category-tabs-2026-11",
       "ran_at": "<now>"
      },
      {

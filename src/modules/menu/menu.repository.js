@@ -6,6 +6,7 @@ const {
   toPriceRow,
 } = require("./menu.options");
 const { findRecipeLines } = require("./menu.recipeLines");
+const { bestSellerGroupOf } = require("../categories/bestSeller");
 
 const toNullableNumber = (value) =>
   value === null || value === undefined ? null : Number(value);
@@ -50,6 +51,12 @@ const mapMenuItem = (row) => {
           tax: row.category_tax === null ? null : Number(row.category_tax),
           taxRate: row.category_tax === null ? null : Number(row.category_tax),
           isBundle: Boolean(row.category_is_bundle),
+          // Its tab in Best Seller on Home (Makanan, Minuman, Snack or null).
+          bestSellerGroup: bestSellerGroupOf({
+            group: row.category_best_seller_group,
+            name: row.category_name,
+            isBundle: row.category_is_bundle,
+          }),
           sortOrder: Number(row.category_sort_order || 0),
           position: Number(row.category_sort_order || 0),
         }
@@ -71,6 +78,7 @@ const baseQuery = `
     c.icon AS category_icon,
     c.tax AS category_tax,
     c.is_bundle AS category_is_bundle,
+    c.best_seller_group AS category_best_seller_group,
     c.sort_order AS category_sort_order
   FROM menu_items mi
   JOIN categories c ON c.id = mi.category_id

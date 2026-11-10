@@ -1,4 +1,6 @@
 const { pool, withTransaction } = require("../../infrastructure/database/pool");
+const createHttpError = require("http-errors");
+const { bestSellerGroupOf } = require("./bestSeller");
 
 const mapCategory = (row) => {
   if (!row) return null;
@@ -12,6 +14,12 @@ const mapCategory = (row) => {
     taxRate: row.tax === null || row.tax === undefined ? null : Number(row.tax),
     // Kategori Promo: its menus are packages of other menus, not bahan.
     isBundle: Boolean(row.is_bundle),
+    // Makanan, Minuman, Snack or null: its tab in Best Seller on Home.
+    bestSellerGroup: bestSellerGroupOf({
+      group: row.best_seller_group,
+      name: row.name,
+      isBundle: row.is_bundle,
+    }),
     isActive: Boolean(row.is_active),
     sortOrder: Number(row.sort_order || 0),
     position: Number(row.sort_order || 0),
@@ -103,6 +111,27 @@ const updatePositions = async (categoryIds) => {
   return findAll({ includeInactive: true });
 };
 
+// Pengaturan → Best Seller: groups maps Makanan/Minuman/Snack to category ids;
+// every other category is not shown ('').
+const updateBestSellerGroups = async (groups) => {
+  const ids = Object.values(groups).flat();
+  await withTransaction(async (connection) => {
+    if (ids.length) {
+      const [rows] = await connection.query("SELECT id FROM categories WHERE id IN (?) FOR UPDATE", [ids]);
+      if (rows.length !== ids.length) {
+        throw createHttpError(400, "Kategori tidak ditemukan. Muat ulang halaman.");
+      }
+    }
+    await connection.query("UPDATE categories SET best_seller_group = ''");
+    for (const [group, categoryIds] of Object.entries(groups)) {
+      if (!categoryIds.length) continue;
+      await connection.query("UPDATE categories SET best_seller_group = ? WHERE id IN (?)", [group, categoryIds]);
+    }
+  });
+
+  return findAll({ includeInactive: true });
+};
+
 const remove = async (id) => {
   const [result] = await pool.query("DELETE FROM categories WHERE id = ?", [
     id,
@@ -151,5 +180,6 @@ module.exports = {
   findChoiceBundleNames,
   remove,
   update,
+  updateBestSellerGroups,
   updatePositions,
 };

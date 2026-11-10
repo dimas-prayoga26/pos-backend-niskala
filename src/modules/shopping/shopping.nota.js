@@ -101,6 +101,36 @@ const postPurchaseDifference = async (
   });
 };
 
+// A JSON column as an object (mysql2 may hand back the text).
+const parseJson = value => {
+  if (!value) return null;
+  if (typeof value === "object") return value;
+  try { return JSON.parse(value); } catch { return null; }
+};
+
+// One line's create, edit or delete in its kind's log (cfg.logTable), with the
+// line before and after (cfg.snapshotLine). Deleting a line of a posted nota
+// keeps it here, so the nota still shows it (describeNotas deletedItems).
+const writeLineLog = async (connection, cfg, { line, action, oldData, newData, user }) => {
+  const by = actor(user);
+  await connection.query(
+    `INSERT INTO ${cfg.logTable}
+      (purchase_item_id, purchase_id, ${cfg.itemFk}, item_name, action, old_data, new_data, user_id, user_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      line.id,
+      line.purchase_id,
+      line[cfg.itemFk],
+      line.item_name,
+      action,
+      oldData == null ? null : JSON.stringify(oldData),
+      newData == null ? null : JSON.stringify(newData),
+      by.userId,
+      by.userName,
+    ]
+  );
+};
+
 // The harga total typed on the form when sent (exact even when the price per
 // gr or ml has more than 2 decimals: 19.000 ml for Rp 8.000), else qty x harga.
 const lineAmount = item => roundCurrency(item.total ?? item.quantity * item.unitPrice);
@@ -113,8 +143,8 @@ const footerColumns = totals => [
 ];
 
 // cfg describes one kind of nota: its tables, the stock table of its items,
-// the API name of an item id (itemIdKey), ledger reference types, and hooks
-// (checkNewItem, createItem, afterStock, logLine, lineCategory).
+// the API name of an item id (itemIdKey), its line log (logTable), ledger
+// reference types, and hooks (checkNewItem, createItem, afterStock, lineCategory).
 const createNotaEngine = (db, cfg) => {
   const withTransaction = async fn => {
     const connection = await db.getConnection();
@@ -272,9 +302,9 @@ const createNotaEngine = (db, cfg) => {
           line.id,
         ]
       );
-      if (cfg.logLine) {
+      if (cfg.logTable) {
         const [[posted]] = await connection.query(`SELECT * FROM ${cfg.items} WHERE id = ?`, [line.id]);
-        await cfg.logLine(connection, { line: posted, action: "create", oldData: null, newData: cfg.snapshotLine(posted), user });
+        await writeLineLog(connection, cfg, { line: posted, action: "create", oldData: null, newData: cfg.snapshotLine(posted), user });
       }
     }
     await cfg.afterStock(connection, ids);
@@ -506,8 +536,8 @@ const createNotaEngine = (db, cfg) => {
         }
       }
       if (remove) {
-        if (cfg.logLine) {
-          await cfg.logLine(connection, { line: target, action: "delete", oldData: cfg.snapshotLine(target), newData: null, user });
+        if (cfg.logTable) {
+          await writeLineLog(connection, cfg, { line: target, action: "delete", oldData: cfg.snapshotLine(target), newData: null, user });
         }
         await connection.query(`DELETE FROM ${cfg.items} WHERE id = ?`, [target.id]);
       }
@@ -530,8 +560,8 @@ const createNotaEngine = (db, cfg) => {
       if (!edited) return cfg.snapshotLine(target);
       const [[updated]] = await connection.query(`SELECT * FROM ${cfg.items} WHERE id = ?`, [target.id]);
       const newData = cfg.snapshotLine(updated);
-      if (cfg.logLine) {
-        await cfg.logLine(connection, { line: target, action: "edit", oldData: cfg.snapshotLine(original), newData, user });
+      if (cfg.logTable) {
+        await writeLineLog(connection, cfg, { line: target, action: "edit", oldData: cfg.snapshotLine(original), newData, user });
       }
       return newData;
     });
@@ -540,11 +570,22 @@ const createNotaEngine = (db, cfg) => {
   // Nota with their lines and bukti. Drafts carry what the form needs to open
   // them again; posted nota (posted) also their posting, what each line put
   // into stock and the COGS (and stock value) right after it, with the
-  // kategori its barang has now (Lainnya).
+  // kategori its barang has now (Lainnya), and the lines deleted from it
+  // (deletedItems, from the line log: who deleted what and when).
   const describeNotas = async (headers, { posted = false } = {}) => {
     if (!headers.length) return [];
     const ids = headers.map(header => header.id);
     const placeholders = ids.map(() => "?").join(",");
+    const [deletions] = posted && cfg.logTable
+      ? await db.query(
+        `SELECT l.id, l.purchase_id, l.item_name, l.old_data, l.created_at,
+                COALESCE(u.name, SUBSTRING_INDEX(l.user_name, ' - ', 1)) AS deleted_by
+         FROM ${cfg.logTable} l
+         LEFT JOIN users u ON u.id = l.user_id
+         WHERE l.action = 'delete' AND l.purchase_id IN (${placeholders}) ORDER BY l.id`,
+        ids
+      )
+      : [[]];
     const [lines] = await db.query(
       `SELECT i.*, m.name AS merk_name${cfg.lineCategory ? ", COALESCE(s.category, i.category) AS current_category" : ""}
        FROM ${cfg.items} i
@@ -600,6 +641,25 @@ const createNotaEngine = (db, cfg) => {
             stockValueAfter: Number(line.stock_value_after || 0),
           }),
         })),
+      // Not in the total any more; shown so the nota keeps its history.
+      ...(posted && {
+        deletedItems: deletions
+          .filter(row => row.purchase_id === header.id)
+          .map(row => {
+            const line = parseJson(row.old_data) || {};
+            return {
+              id: row.id,
+              itemName: row.item_name,
+              quantity: Number(line.quantity || 0),
+              unit: line.unit || "",
+              ...(line.packSize != null && { packSize: Number(line.packSize), packUnit: line.stockUnit }),
+              unitPrice: Number(line.unitPrice || 0),
+              total: Number(line.total || 0),
+              deletedBy: row.deleted_by || "Admin",
+              deletedAt: row.created_at,
+            };
+          }),
+      }),
       attachments: attachments
         .filter(attachment => attachment.purchase_id === header.id)
         .map(attachment => ({ id: attachment.id, url: cfg.attachmentUrl(attachment.id), name: attachment.original_name })),
@@ -672,4 +732,4 @@ const createNotaEngine = (db, cfg) => {
   };
 };
 
-module.exports = { actor, createNotaEngine, dateRange, findOrCreateSupplier, itemFilter, merkFields, postPurchaseDifference };
+module.exports = { actor, createNotaEngine, dateRange, findOrCreateSupplier, itemFilter, merkFields, parseJson, postPurchaseDifference };

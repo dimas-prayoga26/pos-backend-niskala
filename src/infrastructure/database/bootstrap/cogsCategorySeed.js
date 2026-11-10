@@ -56,6 +56,8 @@ const SHEET_CATEGORIES = [
     icon: "\u{1FAD6}",
     menus: ["Lychee Tea", "Lemon Tea", "Jeruk Nipis Songkit", "Thai Tea"],
   },
+  // A tab added to the sheet later, still without menus (seedSheetCategoryTabs).
+  { name: "Minuman Botol", icon: "\u{1F37E}", menus: [] },
   { name: "Minuman Kaleng", icon: "\u{1F964}", menus: ["Sprite", "Coca-Cola"] },
   {
     name: "Snack",
@@ -282,4 +284,72 @@ const seedCogsCategories = async () => {
   }
 };
 
-module.exports = { SEED_NAME, SHEET_CATEGORIES, seedCogsCategories };
+// Tabs added to the sheet after seedCogsCategories ran on a database (Minuman
+// Botol) become categories once, right after the tab before them; nothing else
+// moves. A category of that name already there is left as it is, and one the
+// admin deletes later is not made again.
+const TABS_SEED_NAME = "cogs-category-tabs-2026-11";
+
+const addMissingTabs = async (connection) => {
+  const [categories] = await connection.query("SELECT id, name, sort_order FROM categories");
+  const byKey = new Map(categories.map((category) => [keyOf(category.name), category]));
+  const added = [];
+
+  for (const [index, tab] of SHEET_CATEGORIES.entries()) {
+    if (byKey.has(keyOf(tab.name))) continue;
+
+    const before = SHEET_CATEGORIES.slice(0, index)
+      .reverse()
+      .map((previous) => byKey.get(keyOf(previous.name)))
+      .find((category) => category && Number(category.sort_order) > 0);
+    let sortOrder;
+    if (before) {
+      sortOrder = Number(before.sort_order) + 1;
+      // The later categories step down one only when that place is taken.
+      const [[taken]] = await connection.query("SELECT COUNT(*) AS n FROM categories WHERE sort_order = ?", [
+        sortOrder,
+      ]);
+      if (Number(taken.n)) {
+        await connection.query("UPDATE categories SET sort_order = sort_order + 1 WHERE sort_order >= ?", [sortOrder]);
+        for (const category of byKey.values()) {
+          if (Number(category.sort_order) >= sortOrder) category.sort_order = Number(category.sort_order) + 1;
+        }
+      }
+    } else {
+      const [[last]] = await connection.query("SELECT COALESCE(MAX(sort_order), 0) + 1 AS next FROM categories");
+      sortOrder = Number(last.next);
+    }
+
+    const [result] = await connection.query(
+      "INSERT INTO categories (name, icon, tax, is_active, sort_order) VALUES (?, ?, NULL, TRUE, ?)",
+      [tab.name, tab.icon, sortOrder]
+    );
+    byKey.set(keyOf(tab.name), { id: result.insertId, name: tab.name, sort_order: sortOrder });
+    added.push(tab.name);
+  }
+  return added;
+};
+
+// Waits for seedCogsCategories (a fresh database gets the tabs from it), then
+// runs once per database.
+const seedSheetCategoryTabs = async () => {
+  const [runs] = await pool.query("SELECT name FROM seed_runs WHERE name IN (?)", [[SEED_NAME, TABS_SEED_NAME]]);
+  const ran = new Set(runs.map((run) => run.name));
+  if (!ran.has(SEED_NAME) || ran.has(TABS_SEED_NAME)) return null;
+
+  try {
+    const added = await withTransaction(async (connection) => {
+      await connection.query("INSERT INTO seed_runs (name) VALUES (?)", [TABS_SEED_NAME]);
+      return addMissingTabs(connection);
+    });
+    if (added.length) logger.info("COGS sheet tabs added as categories", { seed: TABS_SEED_NAME, added });
+    return added;
+  } catch (error) {
+    if (error.code !== "ER_DUP_ENTRY") {
+      logger.error("COGS category tabs seed failed; retried on the next boot", { error: error.message });
+    }
+    return null;
+  }
+};
+
+module.exports = { SEED_NAME, SHEET_CATEGORIES, TABS_SEED_NAME, seedCogsCategories, seedSheetCategoryTabs };

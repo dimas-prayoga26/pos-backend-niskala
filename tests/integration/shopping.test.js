@@ -185,6 +185,11 @@ let testPool, created = false, receiptDir;
   assert.equal((await sources.findById(kasir.id)).balance,494000);
   await shopping.updateItem(paidItem.id,{quantity:2,unit:"pcs",unitPrice:3000},1);
   await shopping.deleteItem(paidItem.id,1);
+  // A deleted line stays on its nota (deletedItems), out of the total.
+  const paidNota = (await shopping.listNotas({pageSize:1000})).notas.find(nota=>nota.id===paid.id);
+  assert.deepEqual([paidNota.items.length,paidNota.total,paidNota.deletedItems.map(row=>[row.itemName,row.quantity,row.unit,row.unitPrice,row.total,row.deletedBy])],
+    [0,0,[["Cup Uji",2,"pcs",3000,6000,"Admin Uji"]]]);
+  assert.ok(paidNota.deletedItems[0].deletedAt);
   const ledger = await sources.listMutations(kasir.id);
   assert.deepEqual(ledger.mutations.map(row=>[row.referenceType,row.amountIn,row.amountOut,row.balanceAfter]),[
     ["purchase_delete",6000,0,500000],
@@ -254,6 +259,11 @@ let testPool, created = false, receiptDir;
   await supply.updateItem(gasLine.id,{quantity:2,unit:"pcs",unitPrice:23000},1);
   assert.deepEqual(await supplyRow("Gas LPG"),{category:"Perlengkapan",unit:"pcs",stock:"3.00",unit_cost:23333,stock_value:"70000.00"});
   await supply.deleteItem(bannerLine.id,1);
+  // Barang Lainnya log their lines too, so a deleted one stays on its nota.
+  const supplyNota = (await supply.listNotas({search:"Toko Plastik"})).notas.find(nota=>nota.id===supplyPurchase.id);
+  assert.deepEqual(supplyNota.items.map(row=>row.itemName),["Gas LPG"]);
+  assert.deepEqual(supplyNota.deletedItems.map(row=>[row.itemName,row.quantity,row.unitPrice,row.total,row.deletedBy]),[["Banner Promo",1,150000,150000,"Admin Uji"]]);
+  assert.deepEqual((await testPool.query("SELECT action FROM history_stock_supply_purchase_item_logs WHERE purchase_id=? ORDER BY id",[supplyPurchase.id]))[0].map(row=>row.action),["create","create","edit","delete"]);
   assert.deepEqual([Number((await supplyRow("Banner Promo")).stock),Number((await supplyRow("Banner Promo")).stock_value)],[0,0]);
   assert.equal((await sources.findById(kasir.id)).balance,430000);
   assert.equal(Number((await testPool.query("SELECT total FROM history_stock_supply_purchases WHERE id=?",[supplyPurchase.id]))[0][0].total),46000);

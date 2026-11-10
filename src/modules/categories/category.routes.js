@@ -6,6 +6,7 @@ const {
   addCategory,
   deleteCategory,
   getCategories,
+  updateBestSellerGroups,
   updateCategory,
   updateCategoryPositions,
 } = require("./category.controller");
@@ -16,6 +17,7 @@ const adminOnly = requireRole("admin", "Only admin can manage categories!");
 router.get("/", authenticate, getCategories);
 router.post("/", authenticate, adminOnly, addCategory);
 router.put("/positions", authenticate, adminOnly, updateCategoryPositions);
+router.put("/best-seller-groups", authenticate, adminOnly, updateBestSellerGroups);
 router.put("/:id", authenticate, adminOnly, requireNumericId(), updateCategory);
 router.delete("/:id", authenticate, adminOnly, requireNumericId(), deleteCategory);
 

@@ -87,7 +87,7 @@ describe("regressions", () => {
   it("seeds the COGS sheet once, adding only what is missing", async () => {
     const [runs] = await db.query("SELECT name FROM seed_runs ORDER BY name");
     assert.deepEqual(runs.map((run) => run.name), [
-      "cogs-categories-2026-11", "cogs-menus-2026-11", "cogs-sheet-2026-11",
+      "cogs-categories-2026-11", "cogs-category-tabs-2026-11", "cogs-menus-2026-11", "cogs-sheet-2026-11",
     ]);
 
     // The oldest menu of that name (a Hot tab copy comes later).
@@ -167,9 +167,9 @@ describe("regressions", () => {
       "SELECT name, is_active FROM categories ORDER BY CASE WHEN sort_order > 0 THEN sort_order ELSE 9999 END, id"
     );
     // The tabs from Black Coffee to Roti come first; "Non Coffee" reuses Non-Coffee.
-    assert.deepEqual(categories.slice(0, 12).map((category) => category.name), [
+    assert.deepEqual(categories.slice(0, 13).map((category) => category.name), [
       "Black Coffee", "Hot Black Coffee", "White Coffee", "Hot White Coffee", "Matcha Series", "Non-Coffee",
-      "Tea Based", "Minuman Kaleng", "Snack", "Nasi Goreng", "Rice Bowl", "Roti",
+      "Tea Based", "Minuman Botol", "Minuman Kaleng", "Snack", "Nasi Goreng", "Rice Bowl", "Roti",
     ]);
     assert.deepEqual(
       await Promise.all(
@@ -182,10 +182,13 @@ describe("regressions", () => {
     // Each tab has its own icon, a reused category too.
     const [icons] = await db.query(
       `SELECT icon FROM categories
-       WHERE name IN ('Black Coffee', 'Hot Black Coffee', 'Hot White Coffee', 'Non-Coffee', 'Tea Based', 'Minuman Kaleng')
+       WHERE name IN ('Black Coffee', 'Hot Black Coffee', 'Hot White Coffee', 'Non-Coffee', 'Tea Based',
+                      'Minuman Botol', 'Minuman Kaleng')
        ORDER BY sort_order`
     );
-    assert.deepEqual(icons.map((row) => row.icon), ["\u2615\uFE0F", "\u{1F525}", "\u2668\uFE0F", "\u{1F9CB}", "\u{1FAD6}", "\u{1F964}"]);
+    assert.deepEqual(icons.map((row) => row.icon), [
+      "\u2615\uFE0F", "\u{1F525}", "\u2668\uFE0F", "\u{1F9CB}", "\u{1FAD6}", "\u{1F37E}", "\u{1F964}",
+    ]);
     // A menu not on the sheet stays; an emptied category is turned off.
     assert.equal(await categoryOf("Vanilla Latte"), "Coffee");
     const isActive = (name) => Boolean(categories.find((category) => category.name === name)?.is_active);
@@ -251,6 +254,54 @@ describe("regressions", () => {
     assert.equal(order.status, 201, JSON.stringify(order.body));
     assert.equal((await request("DELETE", `/api/order/${order.body.data.id}`, { as: "admin" })).status, 200);
     assert.equal((await request("DELETE", `/api/menu-item/${paket.body.data.id}`, { as: "admin" })).status, 200);
+  });
+
+  it("adds a tab added to the sheet later (Minuman Botol) as a category after the tab before it, once", async () => {
+    const orderedNames = async () => {
+      const [rows] = await db.query(
+        "SELECT name FROM categories ORDER BY CASE WHEN sort_order > 0 THEN sort_order ELSE 9999 END, id"
+      );
+      return rows.map((row) => row.name);
+    };
+    const countBotol = async () => {
+      const [[row]] = await db.query("SELECT COUNT(*) AS n FROM categories WHERE name = 'Minuman Botol'");
+      return Number(row.n);
+    };
+
+    // A database whose sheet categories were arranged before the tab existed.
+    await db.query("DELETE FROM categories WHERE name = 'Minuman Botol'");
+    await db.query("DELETE FROM seed_runs WHERE name = 'cogs-category-tabs-2026-11'");
+    const withoutBotol = await orderedNames();
+    await restartServer();
+
+    const withBotol = await orderedNames();
+    const teaBased = withoutBotol.indexOf("Tea Based");
+    assert.deepEqual(withBotol, [
+      ...withoutBotol.slice(0, teaBased + 1), "Minuman Botol", ...withoutBotol.slice(teaBased + 1),
+    ]);
+    const [[botol]] = await db.query("SELECT icon, tax, is_active, is_bundle FROM categories WHERE name = 'Minuman Botol'");
+    assert.deepEqual({ ...botol }, { icon: "\u{1F37E}", tax: null, is_active: 1, is_bundle: 0 });
+
+    // Deleted by the admin: it is not made again.
+    await db.query("DELETE FROM categories WHERE name = 'Minuman Botol'");
+    await restartServer();
+    assert.equal(await countBotol(), 0);
+
+    // Made by the admin before the seed ran: kept as it is, not doubled.
+    await db.query(
+      "INSERT INTO categories (name, icon, is_active, sort_order) VALUES ('Minuman Botol', '\u{1F9C3}', TRUE, 999)"
+    );
+    await db.query("DELETE FROM seed_runs WHERE name = 'cogs-category-tabs-2026-11'");
+    await restartServer();
+    assert.equal(await countBotol(), 1);
+    const [[kept]] = await db.query("SELECT icon, sort_order FROM categories WHERE name = 'Minuman Botol'");
+    assert.deepEqual({ ...kept }, { icon: "\u{1F9C3}", sort_order: 999 });
+
+    // Back where a fresh database has it.
+    await db.query("DELETE FROM categories WHERE name = 'Minuman Botol'");
+    await db.query("DELETE FROM seed_runs WHERE name = 'cogs-category-tabs-2026-11'");
+    await restartServer();
+    assert.deepEqual(await orderedNames(), withBotol);
   });
 
   it("gives the Hot tabs same-named menus and puts the tabs' menus on the POS, once", async () => {
@@ -2390,5 +2441,44 @@ describe("regressions", () => {
     const recap = await request("POST", "/api/recap/daily", { as: "admin", body: { recapDate: day } });
     assert.equal(recap.status, 201);
     assert.deepEqual([recap.body.data.writtenOff, recap.body.data.hppClosed.closedOrders], [[], 0]);
+  });
+
+  it("sorts categories into the Best Seller tabs: from their name until an admin sets them", async () => {
+    const categories = async () =>
+      (await request("GET", "/api/category?includeInactive=true", { as: "admin" })).body.data;
+    const groupOf = (list, name) => list.find((category) => category.name === name)?.bestSellerGroup;
+    const before = await categories();
+    assert.deepEqual(
+      ["Black Coffee", "Non-Coffee", "Main Course", "Snack", "Roti", "Catering", "Add Ons"].map((name) => groupOf(before, name)),
+      ["Minuman", "Minuman", "Makanan", "Snack", "Snack", null, null]
+    );
+    const id = (name) => before.find((category) => category.name === name).id;
+
+    const save = (as, groups) => request("PUT", "/api/category/best-seller-groups", { as, body: { groups } });
+    assert.equal((await save("cashier", { Makanan: [id("Snack")] })).status, 403);
+    const twice = await save("admin", { Makanan: [id("Snack")], Snack: [id("Snack")] });
+    assert.deepEqual([twice.status, twice.body.message], [400, "Satu kategori hanya bisa masuk satu kolom."]);
+    assert.equal((await save("admin", { Dessert: [id("Snack")] })).status, 400);
+    assert.equal((await save("admin", { Makanan: [987654321] })).status, 400);
+    assert.equal(groupOf(await categories(), "Snack"), "Snack", "a refused save changes nothing");
+
+    // Saved: what the admin chose, every other category out of Best Seller.
+    const saved = await save("admin", { Makanan: [id("Main Course"), id("Snack")], Minuman: [id("Black Coffee")], Snack: [id("Roti")] });
+    assert.equal(saved.status, 200);
+    const after = await categories();
+    assert.deepEqual(
+      ["Main Course", "Snack", "Black Coffee", "Roti", "Non-Coffee", "Catering"].map((name) => groupOf(after, name)),
+      ["Makanan", "Makanan", "Minuman", "Snack", null, null]
+    );
+    // Menus carry it for the Home tabs.
+    const menus = (await request("GET", "/api/menu-item", { as: "cashier" })).body.data;
+    const rotiMenu = menus.find((menu) => menu.categoryId === id("Roti"));
+    assert.equal(rotiMenu.category.bestSellerGroup, "Snack");
+
+    // A category added later starts from its name again.
+    const added = await request("POST", "/api/category", { as: "admin", body: { name: "Iced Tea Uji" } });
+    assert.equal(added.body.data.bestSellerGroup, "Minuman");
+    await request("DELETE", `/api/category/${added.body.data.id}`, { as: "admin" });
+    await db.query("UPDATE categories SET best_seller_group = NULL");
   });
 });

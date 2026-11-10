@@ -30,6 +30,7 @@ UI: Dashboard → **Belanja** → Tambah Belanja (draft: admin atau kasir; posti
 - Stok minus (terjual sebelum dibeli) ikut dihitung dengan nilai minusnya, jadi barang masuk menutup minus dulu. Contoh FRESHMILK −2.000 ml @ Rp 20 + 3.000 ml Rp 59.100 → Rp 19/ml. Bila stok masih ≤ 0 setelah masuk (atau nilainya jadi minus), harga modal = harga beli nota ini dan nilai stok 0.
 - `unit_cost` disimpan rupiah bulat; `stock_value` menyimpan nilai persisnya.
 - Ubah/hapus item nota yang sudah diposting menghitung ulang footer (ongkir tetap, diskon % dan PPN mengikuti subtotal baru), membagi ulang ke semua baris, dan menggeser stok serta saldo sebesar selisihnya.
+- Baris yang dihapus tidak hilang dari riwayat: tiap tambah/ubah/hapus baris dicatat di log baris (`history_stock_raw_purchase_item_logs`, `history_stock_supply_purchase_item_logs`), dan nota (Per Struk & Detail Struk) tetap menampilkan baris yang dihapus, dicoret, dengan "Dihapus <user> · <waktu>", tanpa ikut ke total (`deletedItems` di `/notas`). Menghapus barang dari stok juga tidak menghapus riwayat belanjanya (baris belanja menyimpan nama barang, `stock_item_id`/`supply_item_id` menjadi NULL).
 - Perhitungan ada di `shopping.totals` (backend) dan `utils/notaTotals.js` (form); keduanya harus sama.
 
 ## Draft dan Posting

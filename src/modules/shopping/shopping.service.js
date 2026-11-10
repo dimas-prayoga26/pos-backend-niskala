@@ -9,14 +9,9 @@ const { refreshMenuCosts } = require("../menu/menu.costs");
 const { convertUnitIn } = require("../stock/stock.repository");
 const { REFERENCE_TYPES } = require("../paymentSources/paymentSource.ledger");
 const { RECEIPT_TARGETS, attachmentUrl } = require("./shopping.attachments");
-const { actor, createNotaEngine, dateRange, itemFilter, merkFields } = require("./shopping.nota");
+const { createNotaEngine, dateRange, itemFilter, merkFields, parseJson } = require("./shopping.nota");
 const { clean, normalizePurchase, number } = require("./shopping.validation");
 
-const parseJson = value => {
-  if (!value) return null;
-  if (typeof value === "object") return value;
-  try { return JSON.parse(value); } catch { return null; }
-};
 const snapshotItem = row => ({
   id: row.id,
   purchaseId: row.purchase_id,
@@ -33,27 +28,6 @@ const snapshotItem = row => ({
   stockAverageCost: Number(row.stock_unit_cost || 0),
   stockValueAfter: Number(row.stock_value_after || 0),
 });
-const writeItemLog = async (connection, { line, action, oldData, newData, user }) => {
-  const by = actor(user);
-
-  await connection.query(
-    `INSERT INTO history_stock_raw_purchase_item_logs
-      (purchase_item_id, purchase_id, stock_item_id, item_name, action, old_data, new_data, user_id, user_name)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      line.id,
-      line.purchase_id,
-      line.stock_item_id,
-      line.item_name,
-      action,
-      oldData == null ? null : JSON.stringify(oldData),
-      newData == null ? null : JSON.stringify(newData),
-      by.userId,
-      by.userName,
-    ]
-  );
-};
-
 // A new name may not be a bahan olahan or perlengkapan.
 const checkNewItem = async (connection, { itemName }) => {
   const name = clean(itemName, 150, "Nama barang");
@@ -98,7 +72,7 @@ const RAW_NOTA = {
   },
   afterStock: (connection, stockItemIds) => refreshMenuCosts(connection, { stockItemIds }),
   convertStockUnit: convertUnitIn,
-  logLine: writeItemLog,
+  logTable: "history_stock_raw_purchase_item_logs",
   snapshotLine: snapshotItem,
 };
 

@@ -6,6 +6,7 @@
 //   history_stock_supply_purchases (+ _items)  belanja perlengkapan; the same
 //                                              nota as belanja bahan baku
 //   history_stock_supply_purchase_attachments  bukti nota photos
+//   history_stock_supply_purchase_item_logs    line create/edit/delete log
 // Purchases are created from the same "Tambah Belanja" form (Jenis Belanja:
 // Lainnya). See SHOPPING.md.
 const ensureSupplySchema = async (db) => {
@@ -71,6 +72,27 @@ const ensureSupplySchema = async (db) => {
     INDEX idx_supply_purchase_attachments_purchase (purchase_id, id),
     FOREIGN KEY (purchase_id) REFERENCES history_stock_supply_purchases(id) ON DELETE CASCADE,
     FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+  ) ENGINE=InnoDB`);
+  // Create, edit and delete of posted lines, like history_stock_raw_purchase_item_logs:
+  // a deleted line stays on its nota from here (shopping.nota deletedItems).
+  await db.query(`CREATE TABLE IF NOT EXISTS history_stock_supply_purchase_item_logs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    purchase_item_id INT UNSIGNED NULL,
+    purchase_id INT UNSIGNED NULL,
+    supply_item_id INT UNSIGNED NULL,
+    item_name VARCHAR(150) NOT NULL,
+    action VARCHAR(20) NOT NULL,
+    old_data JSON NULL,
+    new_data JSON NULL,
+    user_id INT UNSIGNED NULL,
+    user_name VARCHAR(150) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_supply_purchase_item_logs_item (supply_item_id, created_at),
+    INDEX idx_supply_purchase_item_logs_purchase (purchase_id, action),
+    FOREIGN KEY (purchase_item_id) REFERENCES history_stock_supply_purchase_items(id) ON DELETE SET NULL,
+    FOREIGN KEY (purchase_id) REFERENCES history_stock_supply_purchases(id) ON DELETE SET NULL,
+    FOREIGN KEY (supply_item_id) REFERENCES stock_supply_items(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
   // Kategori were Peralatan, Operasional, Promosi; Operasional became Perlengkapan.
   await db.query("UPDATE stock_supply_items SET category = 'Perlengkapan' WHERE category = 'Operasional'");
