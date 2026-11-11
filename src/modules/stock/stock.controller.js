@@ -57,6 +57,16 @@ const addStockItem = asyncHandler(async (req, res, next) => {
 
   if (validationError) return next(validationError);
 
+  const reactivated = await StockItem.reactivateByName(payload);
+  if (reactivated) {
+    emitStockChanged("stock-item-reactivated", reactivated.id);
+    return res.status(200).json({
+      success: true,
+      message: `${reactivated.name} diaktifkan lagi (satuan ${reactivated.unit}).`,
+      data: reactivated,
+    });
+  }
+
   const stockItem = await StockItem.create(payload).catch(rethrowDuplicateName(payload.name));
 
   emitStockChanged("stock-item-created", stockItem.id);

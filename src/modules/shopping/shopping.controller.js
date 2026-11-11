@@ -34,6 +34,13 @@ const updateSupplier = asyncHandler(async (req, res) => {
   res.json({ success: true, data });
 });
 
+// Refused (409) while any nota uses the suplier.
+const deleteSupplier = asyncHandler(async (req, res) => {
+  const data = await shopping.removeSupplier(req.params.id);
+  emitRealtimeEvent("shopping:changed", { action: "supplier-deleted" });
+  res.json({ success: true, message: `Suplier ${data.name} dihapus.`, data });
+});
+
 // Staff save drafts ("Simpan Draft"); posting moves stock and saldo, so only
 // admins post ("Simpan & Posting" or approving a draft).
 const requirePostingRight = (req) => {
@@ -134,6 +141,7 @@ module.exports = {
   deletePurchaseAttachment: rawReceipts.remove,
   deletePurchaseDraft: raw.removeDraft,
   deletePurchaseItem: raw.deleteItem,
+  deleteSupplier,
   deleteSupplyPurchaseAttachment: supplyReceipts.remove,
   deleteSupplyPurchaseDraft: supply.removeDraft,
   deleteSupplyPurchaseItem: supply.deleteItem,

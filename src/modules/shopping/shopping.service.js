@@ -36,7 +36,7 @@ const checkNewItem = async (connection, { itemName }) => {
   const [supplyRows] = await connection.query("SELECT id FROM stock_supply_items WHERE name = ?", [name]);
   if (supplyRows.length) throw createError(400, `${name} sudah tercatat sebagai barang Lainnya. Pilih Jenis Belanja Lainnya.`);
   const [[existing]] = await connection.query("SELECT is_active FROM stock_raw_items WHERE name = ?", [name]);
-  if (existing && !existing.is_active) throw createError(409, "Barang sudah ada tetapi tidak aktif. Aktifkan melalui pengelolaan stok.");
+  if (existing && !existing.is_active) throw createError(409, `${name} sudah ada tetapi tidak aktif. Aktifkan lewat Stok Bahan → Tambah Bahan dengan nama yang sama.`);
 };
 
 const RAW_NOTA = {
@@ -120,6 +120,29 @@ const createShoppingService = (db, { receiptDir } = {}) => {
       if (error.code === "ER_DUP_ENTRY") throw createError(409, "Nama suplier sudah digunakan. Pilih nama lain atau ubah suplier yang sudah ada.");
       throw error;
     }
+  };
+  // Only a suplier no nota (posted or draft, bahan baku or Lainnya) uses: the
+  // notas keep it (suplier_id ON DELETE RESTRICT).
+  const removeSupplier = async (id) => {
+    id = number(id, 1, 4294967295, 0, "ID suplier");
+    const [[supplier]] = await db.query(
+      `SELECT name,
+         (SELECT COUNT(*) FROM history_stock_raw_purchases WHERE suplier_id = s.id)
+         + (SELECT COUNT(*) FROM history_stock_supply_purchases WHERE suplier_id = s.id) AS notas
+       FROM suplier s WHERE id = ?`,
+      [id]
+    );
+    if (!supplier) throw createError(404, "Suplier tidak ditemukan.");
+    const inUse = () =>
+      createError(409, `${supplier.name} dipakai di ${Number(supplier.notas) || "beberapa"} nota belanja, jadi tidak bisa dihapus. Ganti namanya lewat Ubah.`);
+    if (Number(supplier.notas) > 0) throw inUse();
+    try {
+      await db.query("DELETE FROM suplier WHERE id = ?", [id]);
+    } catch (error) {
+      if (error.code === "ER_ROW_IS_REFERENCED_2") throw inUse();
+      throw error;
+    }
+    return { id, name: supplier.name };
   };
   // itemId keeps one bahan baku: its detail (COGS, riwayat, log) opened from a
   // line of the Per Nota history. from/to keep a period (dateRange).
@@ -273,6 +296,7 @@ const createShoppingService = (db, { receiptDir } = {}) => {
     suppliers,
     merks,
     saveSupplier,
+    removeSupplier,
     save: nota.create,
     updateDraft: nota.updateDraft,
     removeDraft: nota.removeDraft,

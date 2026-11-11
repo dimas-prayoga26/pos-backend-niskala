@@ -2481,4 +2481,50 @@ describe("regressions", () => {
     await request("DELETE", `/api/category/${added.body.data.id}`, { as: "admin" });
     await db.query("UPDATE categories SET best_seller_group = NULL");
   });
+
+  it("Tambah Bahan adds a bahan without stock and brings a hidden bahan back by name", async () => {
+    const added = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Cabe Rawit Uji", category: "Bahan Makanan", unit: "gr", stock: 0, minimumStock: 100 },
+    });
+    assert.equal(added.status, 201);
+    assert.equal(added.body.data.stock, 0);
+    assert.equal(added.body.data.averageCost, 0);
+    assert.equal(added.body.data.isRecipeIngredient, true);
+
+    const duplicate = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "cabe rawit uji", category: "Umum", unit: "gr" },
+    });
+    assert.equal(duplicate.status, 409);
+
+    // A hidden bahan keeps its unit, stock and COGS; the form sets the rest.
+    await db.query(
+      `INSERT INTO stock_raw_items (name, category, unit, stock, minimum_stock, unit_cost, stock_value, is_active, is_recipe_ingredient)
+       VALUES ('Beras Uji', 'Makanan', 'kg', 15, 0, 4333, 65000, FALSE, FALSE)`
+    );
+    const hiddenList = (await request("GET", "/api/stock-item", { as: "admin" })).body.data;
+    assert.ok(!hiddenList.some((item) => item.name === "Beras Uji"));
+
+    const back = await request("POST", "/api/stock-item", {
+      as: "admin",
+      body: { name: "Beras Uji", category: "Bahan Makanan", unit: "gr", stock: 0, minimumStock: 5, isRecipeIngredient: true },
+    });
+    assert.equal(back.status, 200);
+    assert.equal(back.body.message, "Beras Uji diaktifkan lagi (satuan kg).");
+    assert.deepEqual(
+      [back.body.data.unit, back.body.data.stock, back.body.data.averageCost, back.body.data.stockValue],
+      ["kg", 15, 4333, 65000]
+    );
+    assert.deepEqual(
+      [back.body.data.category, back.body.data.minimumStock, back.body.data.isRecipeIngredient, back.body.data.isActive],
+      ["Bahan Makanan", 5, true, true]
+    );
+    const list = (await request("GET", "/api/stock-item", { as: "admin" })).body.data;
+    assert.ok(list.some((item) => item.name === "Beras Uji"));
+
+    for (const item of [added.body.data, back.body.data]) {
+      assert.equal((await request("DELETE", `/api/stock-item/${item.id}`, { as: "admin" })).status, 200);
+    }
+  });
 });

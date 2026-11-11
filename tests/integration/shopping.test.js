@@ -156,6 +156,13 @@ let testPool, created = false, receiptDir;
   await assert.rejects(shopping.saveSupplier({name:" "}),error=>error.status===400);
   await shopping.saveSupplier({id:supplier.id,name:"Toko Uji Baru"});
   assert.equal((await shopping.list({search:"Kopi"})).purchases[0].suplier_name,"Toko Uji","supplier rename preserves purchase snapshot");
+  // Hapus: only a suplier no nota uses; the notas keep theirs.
+  await assert.rejects(shopping.removeSupplier(supplier.id),error=>error.status===409&&/Toko Uji Baru dipakai di \d+ nota belanja/.test(error.message));
+  assert.ok((await shopping.suppliers()).some(row=>row.id===supplier.id));
+  assert.deepEqual(await shopping.removeSupplier(managed.id),{id:managed.id,name:"Suplier Diubah"});
+  assert.ok(!(await shopping.suppliers()).some(row=>row.id===managed.id));
+  await assert.rejects(shopping.removeSupplier(managed.id),error=>error.status===404);
+  await assert.rejects(shopping.removeSupplier("x"),error=>error.status===400);
 
   // Payment sources: seeded once; a purchase posts saldo keluar and item edits/deletes post the difference.
   const sources = createPaymentSourceService(testPool);

@@ -11,6 +11,7 @@ const {
   deletePurchaseAttachment,
   deletePurchaseDraft,
   deletePurchaseItem,
+  deleteSupplier,
   deleteSupplyPurchaseAttachment,
   deleteSupplyPurchaseDraft,
   deleteSupplyPurchaseItem,
@@ -46,6 +47,7 @@ router.get("/merks", getMerks);
 router.get("/summary", getShoppingSummary);
 router.post("/suppliers", adminOnly, createSupplier);
 router.put("/suppliers/:id", adminOnly, updateSupplier);
+router.delete("/suppliers/:id", adminOnly, requireNumericId(), deleteSupplier);
 
 // Belanja bahan baku (stock_raw_items).
 router.get("/purchases", getPurchases);

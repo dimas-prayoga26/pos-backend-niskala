@@ -99,6 +99,26 @@ const create = async ({
   return findById(result.insertId);
 };
 
+// Tambah Bahan with the name of a hidden bahan (is_active = 0) shows it again.
+// Its unit, stock and COGS stay; kategori, minimum, supplier and Bahan Resep
+// take the form's values. Null when no hidden bahan has that name.
+const reactivateByName = async ({ name, category, minimumStock = 0, supplier, isRecipeIngredient = true }) => {
+  const [result] = await pool.query(
+    `UPDATE stock_raw_items
+     SET is_active = TRUE,
+         category = ?,
+         minimum_stock = ?,
+         supplier = COALESCE(NULLIF(?, ''), supplier),
+         is_recipe_ingredient = ?
+     WHERE name = ? AND is_active = FALSE`,
+    [category, minimumStock, supplier || "", isRecipeIngredient ? 1 : 0, name]
+  );
+  if (!result.affectedRows) return null;
+
+  const [rows] = await pool.query("SELECT * FROM stock_raw_items WHERE name = ? LIMIT 1", [name]);
+  return mapStockItem(rows[0]);
+};
+
 // stock_value for a new stock quantity at the exact unit cost (stock_value /
 // stock) instead of the whole-rupiah unit_cost, so editing stock does not
 // shift the asset value. It reads the old `stock`, so it must come before the
@@ -328,6 +348,7 @@ module.exports = {
   findSemiItemNames,
   getStockStatus,
   isSemiItemName,
+  reactivateByName,
   RESCALED_STOCK_VALUE,
   remove,
   setRecipeIngredient,
