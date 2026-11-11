@@ -1081,6 +1081,108 @@ describe("regressions", () => {
     assert.deepEqual(await stocks(), [1000, 1000]);
   });
 
+  it("lets a promo choice offer menus of several categories under its own name and outlive its category", async () => {
+    const categoryOf = async (body) => {
+      const created = await request("POST", "/api/category", { as: "admin", body });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      return created.body.data;
+    };
+    const menuOf = async (body) => {
+      const created = await request("POST", "/api/menu-item", { as: "admin", body });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      return created.body.data;
+    };
+    const choicesOf = (item) =>
+      item.bundleChoices.map(({ categoryId, label, categoryName, menuItemIds }) => ({ categoryId, label, categoryName, menuItemIds }));
+    const promo = await categoryOf({ name: "Promo Gabung", icon: "🏷️", isBundle: true });
+    const lama = await categoryOf({ name: "Coffee Lama", icon: "☕" });
+    const black = await categoryOf({ name: "Black Gabung", icon: "☕" });
+    const white = await categoryOf({ name: "White Gabung", icon: "🥛" });
+    const americano = await menuOf({ categoryId: black.id, name: "Americano Gabung", price: 15000, hppCost: 3000 });
+    const latte = await menuOf({ categoryId: white.id, name: "Latte Gabung", price: 20000, hppCost: 5000 });
+    const usang = await menuOf({ categoryId: lama.id, name: "Kopi Usang", price: 10000, hppCost: 1000 });
+
+    // Pilihan Coffee Lama offers a Black and a White menu.
+    const siang = await menuOf({
+      categoryId: promo.id, name: "Siang Gabung", price: 35000,
+      bundleChoices: [{ categoryId: lama.id, quantity: 1, menuItemIds: [americano.id, latte.id] }],
+    });
+    assert.deepEqual(choicesOf(siang), [
+      { categoryId: lama.id, label: null, categoryName: "Coffee Lama", menuItemIds: [americano.id, latte.id] },
+    ]);
+    // A choice may carry its own name.
+    const pagi = await menuOf({
+      categoryId: promo.id, name: "Pagi Gabung", price: 20000,
+      bundleChoices: [{ categoryId: black.id, label: "  Kopi   Apa Saja ", quantity: 1, menuItemIds: [americano.id, latte.id] }],
+    });
+    assert.deepEqual(choicesOf(pagi), [
+      { categoryId: black.id, label: "Kopi Apa Saja", categoryName: "Kopi Apa Saja", menuItemIds: [americano.id, latte.id] },
+    ]);
+
+    // A choice offering the whole category (no menus of its own) still keeps it.
+    const semua = await menuOf({
+      categoryId: promo.id, name: "Semua Lama", price: 10000, bundleChoices: [{ categoryId: lama.id, quantity: 1 }],
+    });
+    let deleted = await request("DELETE", `/api/category/${lama.id}`, { as: "admin" });
+    assert.equal(deleted.status, 409);
+    assert.equal(deleted.body.message, "Category ini jadi pilihan di paket Semua Lama. Pilih menu pilihannya dulu di paket.");
+    assert.equal((await request("DELETE", `/api/menu-item/${semua.id}`, { as: "admin" })).status, 200);
+
+    // Deleting Coffee Lama takes its own menus; Siang Gabung keeps "Coffee Lama".
+    deleted = await request("DELETE", `/api/category/${lama.id}`, { as: "admin" });
+    assert.equal(deleted.status, 200, JSON.stringify(deleted.body));
+    assert.equal((await db.query("SELECT id FROM menu_items WHERE id = ?", [usang.id]))[0].length, 0);
+    const posMenus = await request("GET", "/api/menu-item", { as: "cashier" });
+    const kept = posMenus.body.data.find((item) => item.id === siang.id);
+    assert.ok(kept, "the promo stays on sale");
+    assert.deepEqual(choicesOf(kept), [
+      { categoryId: null, label: "Coffee Lama", categoryName: "Coffee Lama", menuItemIds: [americano.id, latte.id] },
+    ]);
+
+    const order = await request("POST", "/api/order", {
+      as: "cashier",
+      body: {
+        customerDetails: { name: "Gabung" },
+        orderType: "Offline",
+        orderStatus: "In Progress",
+        bills: { total: 35000, tax: 0, totalWithTax: 35000 },
+        items: [{
+          id: `${promo.id}-${siang.id}~1`, sourceMenuItemId: siang.id, name: "Siang Gabung",
+          quantity: 1, pricePerQuantity: 35000, price: 35000, bundleChoices: [{ menuItemId: latte.id, quantity: 1 }],
+        }],
+        paymentMethod: "Cash",
+      },
+    });
+    assert.equal(order.status, 201, JSON.stringify(order.body));
+    assert.equal((await request("DELETE", `/api/order/${order.body.data.id}`, { as: "admin" })).status, 200);
+
+    // Saved again without a category: it needs its name and menus.
+    const renamed = await request("PUT", `/api/menu-item/${siang.id}`, {
+      as: "admin",
+      body: {
+        categoryId: promo.id, name: "Siang Gabung", price: 35000,
+        bundleChoices: [{ categoryId: null, label: "Coffee", quantity: 1, menuItemIds: [americano.id, latte.id] }],
+      },
+    });
+    assert.equal(renamed.status, 200, JSON.stringify(renamed.body));
+    assert.deepEqual(choicesOf(renamed.body.data), [
+      { categoryId: null, label: "Coffee", categoryName: "Coffee", menuItemIds: [americano.id, latte.id] },
+    ]);
+    const nameless = await request("PUT", `/api/menu-item/${siang.id}`, {
+      as: "admin",
+      body: {
+        categoryId: promo.id, name: "Siang Gabung", price: 35000,
+        bundleChoices: [{ categoryId: null, label: " ", quantity: 1, menuItemIds: [americano.id] }],
+      },
+    });
+    assert.equal(nameless.status, 400);
+    assert.equal(nameless.body.message, "Paket minimal berisi 1 menu.");
+
+    for (const category of [promo, black, white]) {
+      assert.equal((await request("DELETE", `/api/category/${category.id}`, { as: "admin" })).status, 200);
+    }
+  });
+
   it("keeps a line discount: the charged price, the percent and the rupiah taken off", async () => {
     const [[menu]] = await db.query(
       `SELECT mi.id, mi.category_id FROM menu_items mi

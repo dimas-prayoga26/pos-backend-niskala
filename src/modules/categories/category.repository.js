@@ -132,15 +132,23 @@ const updateBestSellerGroups = async (groups) => {
   return findAll({ includeInactive: true });
 };
 
-const remove = async (id) => {
-  const [result] = await pool.query("DELETE FROM categories WHERE id = ?", [
-    id,
-  ]);
-  return result.affectedRows > 0;
-};
+// A package's choice of this category that lists its own menus keeps working
+// without it: the category's name stays as the choice's label.
+const remove = async (id) =>
+  withTransaction(async (connection) => {
+    await connection.query(
+      `UPDATE menu_item_bundle_choices bc
+       JOIN categories c ON c.id = bc.category_id
+       SET bc.label = c.name
+       WHERE bc.category_id = ? AND bc.label IS NULL`,
+      [id]
+    );
+    const [result] = await connection.query("DELETE FROM categories WHERE id = ?", [id]);
+    return result.affectedRows > 0;
+  });
 
-// Packages of other categories that contain a menu of this category or offer
-// a choice of it; they block deleting it (the menus go with the category).
+// Packages of other categories that contain or offer a menu of this category;
+// they block deleting it (the menus go with the category).
 const findBundleNamesUsing = async (id) => {
   const [rows] = await pool.query(
     `SELECT b.name
@@ -150,11 +158,28 @@ const findBundleNamesUsing = async (id) => {
      WHERE m.category_id = ? AND b.category_id <> ?
      UNION
      SELECT b.name
+     FROM menu_item_bundle_choice_menus bcm
+     JOIN menu_items m ON m.id = bcm.menu_item_id
+     JOIN menu_item_bundle_choices bc ON bc.id = bcm.bundle_choice_id
+     JOIN menu_items b ON b.id = bc.bundle_menu_item_id
+     WHERE m.category_id = ? AND b.category_id <> ?
+     ORDER BY name ASC`,
+    [id, id, id, id]
+  );
+  return rows.map((row) => row.name);
+};
+
+// Packages whose choice of this category offers every menu of it (no menus
+// of its own); without the category it would offer nothing.
+const findWholeCategoryChoiceBundleNames = async (id) => {
+  const [rows] = await pool.query(
+    `SELECT DISTINCT b.name
      FROM menu_item_bundle_choices bc
      JOIN menu_items b ON b.id = bc.bundle_menu_item_id
      WHERE bc.category_id = ?
-     ORDER BY name ASC`,
-    [id, id, id]
+       AND NOT EXISTS (SELECT 1 FROM menu_item_bundle_choice_menus o WHERE o.bundle_choice_id = bc.id)
+     ORDER BY b.name ASC`,
+    [id]
   );
   return rows.map((row) => row.name);
 };
@@ -178,6 +203,7 @@ module.exports = {
   findAll,
   findBundleNamesUsing,
   findChoiceBundleNames,
+  findWholeCategoryChoiceBundleNames,
   remove,
   update,
   updateBestSellerGroups,

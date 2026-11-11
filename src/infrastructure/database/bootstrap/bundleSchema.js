@@ -43,10 +43,14 @@ const ensureBundleSchema = async (db) => {
       FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE RESTRICT
   ) ENGINE=InnoDB`);
 
+  // A choice is named after its category unless it has its own label. One
+  // with its own menus may offer menus of any category and outlives its
+  // category: deleting the category keeps the name as the label (SET NULL).
   await db.query(`CREATE TABLE IF NOT EXISTS menu_item_bundle_choices (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     bundle_menu_item_id INT UNSIGNED NOT NULL,
-    category_id INT UNSIGNED NOT NULL,
+    category_id INT UNSIGNED NULL,
+    label VARCHAR(100) NULL,
     quantity INT UNSIGNED NOT NULL DEFAULT 1,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -56,8 +60,34 @@ const ensureBundleSchema = async (db) => {
     CONSTRAINT fk_menu_item_bundle_choices_bundle
       FOREIGN KEY (bundle_menu_item_id) REFERENCES menu_items(id) ON DELETE CASCADE,
     CONSTRAINT fk_menu_item_bundle_choices_category
-      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
+      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
   ) ENGINE=InnoDB`);
+  const [labelColumns] = await db.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = DATABASE() AND table_name = 'menu_item_bundle_choices' AND column_name = 'label'`
+  );
+  if (!labelColumns.length) {
+    await db.query("ALTER TABLE menu_item_bundle_choices ADD COLUMN label VARCHAR(100) NULL AFTER category_id");
+  }
+  const [[categoryLink]] = await db.query(
+    `SELECT c.is_nullable AS is_nullable, r.delete_rule AS delete_rule
+     FROM information_schema.columns c
+     LEFT JOIN information_schema.referential_constraints r
+       ON r.constraint_schema = c.table_schema AND r.table_name = c.table_name
+      AND r.constraint_name = 'fk_menu_item_bundle_choices_category'
+     WHERE c.table_schema = DATABASE() AND c.table_name = 'menu_item_bundle_choices' AND c.column_name = 'category_id'`
+  );
+  if (categoryLink && (categoryLink.is_nullable !== "YES" || categoryLink.delete_rule !== "SET NULL")) {
+    if (categoryLink.delete_rule) {
+      await db.query("ALTER TABLE menu_item_bundle_choices DROP FOREIGN KEY fk_menu_item_bundle_choices_category");
+    }
+    await db.query(
+      `ALTER TABLE menu_item_bundle_choices
+       MODIFY category_id INT UNSIGNED NULL,
+       ADD CONSTRAINT fk_menu_item_bundle_choices_category
+         FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL`
+    );
+  }
 
   // The menus a choice offers (none: every menu of its category).
   await db.query(`CREATE TABLE IF NOT EXISTS menu_item_bundle_choice_menus (

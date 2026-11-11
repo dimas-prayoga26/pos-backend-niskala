@@ -222,6 +222,8 @@ const attachRecipes = async (menuItems) => {
       _id: row.id,
       id: row.id,
       categoryId: row.category_id,
+      // Its own name (null: named after the category); categoryName shows either.
+      label: row.label,
       categoryName: row.category_name,
       quantity: Number(row.quantity),
       // The menus it offers (none: every menu of the category).

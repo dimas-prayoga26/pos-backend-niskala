@@ -21,31 +21,38 @@ const normalizeBundleItems = (items) => {
   return [...byMenu].map(([menuItemId, quantity]) => ({ menuItemId, quantity }));
 };
 
-// [{ categoryId, quantity, menuItemIds }] with repeats summed, like
-// normalizeBundleItems. menuItemIds: the menus the choice offers (none: every
-// menu of its category).
+// [{ categoryId, label, quantity, menuItemIds }] with repeats summed, like
+// normalizeBundleItems. menuItemIds: the menus the choice offers, of any
+// category (none: every menu of its category). label: its own name (null:
+// the category's). A choice without a category (deleted) needs a label and
+// its menus.
 const normalizeBundleChoices = (choices) => {
-  const byCategory = new Map();
+  const byKey = new Map();
 
   (Array.isArray(choices) ? choices : []).forEach((choice) => {
     const categoryId = Number(choice?.categoryId || choice?.category_id) || 0;
+    const label = String(choice?.label ?? "").trim().replace(/\s+/g, " ").slice(0, 100) || null;
     const quantity = Math.round(Number(choice?.quantity ?? 1));
-    if (categoryId <= 0 || !Number.isFinite(quantity) || quantity < 1) return;
-
-    const current = byCategory.get(categoryId) || { quantity: 0, menuItemIds: new Set() };
-    current.quantity += quantity;
-    (Array.isArray(choice?.menuItemIds) ? choice.menuItemIds : [])
+    const menuItemIds = (Array.isArray(choice?.menuItemIds) ? choice.menuItemIds : [])
       .map(Number)
-      .filter((id) => Number.isInteger(id) && id > 0)
-      .forEach((id) => current.menuItemIds.add(id));
-    byCategory.set(categoryId, current);
+      .filter((id) => Number.isInteger(id) && id > 0);
+    if (!Number.isFinite(quantity) || quantity < 1) return;
+    if (categoryId <= 0 && !(label && menuItemIds.length)) return;
+
+    const key = categoryId > 0 ? `category:${categoryId}` : `label:${label.toLowerCase()}`;
+    const current = byKey.get(key) || {
+      categoryId: categoryId > 0 ? categoryId : null,
+      label,
+      quantity: 0,
+      menuItemIds: new Set(),
+    };
+    current.quantity += quantity;
+    current.label = current.label || label;
+    menuItemIds.forEach((id) => current.menuItemIds.add(id));
+    byKey.set(key, current);
   });
 
-  return [...byCategory].map(([categoryId, { quantity, menuItemIds }]) => ({
-    categoryId,
-    quantity,
-    menuItemIds: [...menuItemIds],
-  }));
+  return [...byKey.values()].map((choice) => ({ ...choice, menuItemIds: [...choice.menuItemIds] }));
 };
 
 const isBundleCategory = async (connection, categoryId) => {
@@ -88,19 +95,21 @@ const findBundleRows = async (connection, menuItemIds) => {
   return rows;
 };
 
-// Choices of packages (bundle_menu_item_id, category_id, quantity, category
-// name, menuItemIds offered; none: every menu of the category), in their order.
+// Choices of packages (bundle_menu_item_id, category_id, label, quantity,
+// category_name: its label else its category's name, menuItemIds offered;
+// none: every menu of the category), in their order.
 const findBundleChoices = async (connection, bundleIds) => {
   if (!bundleIds.length) return [];
 
   const [rows] = await connection.query(
-    `SELECT bc.id, bc.bundle_menu_item_id, bc.category_id, bc.quantity, c.name AS category_name,
+    `SELECT bc.id, bc.bundle_menu_item_id, bc.category_id, bc.label, bc.quantity,
+            COALESCE(bc.label, c.name) AS category_name,
             GROUP_CONCAT(bcm.menu_item_id ORDER BY bcm.id) AS menu_item_ids
      FROM menu_item_bundle_choices bc
-     JOIN categories c ON c.id = bc.category_id
+     LEFT JOIN categories c ON c.id = bc.category_id
      LEFT JOIN menu_item_bundle_choice_menus bcm ON bcm.bundle_choice_id = bc.id
      WHERE bc.bundle_menu_item_id IN (?)
-     GROUP BY bc.id, bc.bundle_menu_item_id, bc.category_id, bc.quantity, c.name, bc.sort_order
+     GROUP BY bc.id, bc.bundle_menu_item_id, bc.category_id, bc.label, bc.quantity, c.name, bc.sort_order
      ORDER BY bc.sort_order ASC, bc.id ASC`,
     [bundleIds]
   );
@@ -133,11 +142,10 @@ const findBundleItems = async (connection, bundleIds) => {
 const assertBundleChoices = async (connection, choices) => {
   if (!choices.length) return;
 
-  const ids = choices.map((choice) => choice.categoryId);
-  const [rows] = await connection.query(
-    "SELECT id, name, is_bundle FROM categories WHERE id IN (?)",
-    [ids]
-  );
+  const ids = choices.map((choice) => choice.categoryId).filter(Boolean);
+  const [rows] = ids.length
+    ? await connection.query("SELECT id, name, is_bundle FROM categories WHERE id IN (?)", [ids])
+    : [[]];
   if (rows.length !== ids.length) {
     throw createHttpError(400, "Category pilihan paket tidak ditemukan.");
   }
@@ -149,8 +157,8 @@ const assertBundleChoices = async (connection, choices) => {
     );
   }
 
-  // The menus a choice offers are ordinary menus. The form offers those of the
-  // choice's category; a menu that later moved to another category stays.
+  // The menus a choice offers are ordinary menus, of any category (Pilihan
+  // Coffee: Black Coffee and White Coffee menus).
   const offered = [...new Set(choices.flatMap((choice) => choice.menuItemIds))];
   if (!offered.length) return;
 
@@ -248,9 +256,9 @@ const replaceBundleItems = async (connection, bundleId, { items = [], choices = 
   }
   for (const [index, choice] of choices.entries()) {
     const [result] = await connection.query(
-      `INSERT INTO menu_item_bundle_choices (bundle_menu_item_id, category_id, quantity, sort_order)
-       VALUES (?, ?, ?, ?)`,
-      [bundleId, choice.categoryId, choice.quantity, index + 1]
+      `INSERT INTO menu_item_bundle_choices (bundle_menu_item_id, category_id, label, quantity, sort_order)
+       VALUES (?, ?, ?, ?, ?)`,
+      [bundleId, choice.categoryId || null, choice.label || null, choice.quantity, index + 1]
     );
     if (choice.menuItemIds?.length) {
       await connection.query(

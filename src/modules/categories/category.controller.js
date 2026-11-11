@@ -190,6 +190,16 @@ const deleteCategory = asyncHandler(async (req, res, next) => {
     );
   }
 
+  const wholeChoiceNames = await Category.findWholeCategoryChoiceBundleNames(id);
+  if (wholeChoiceNames.length) {
+    return next(
+      createHttpError(
+        409,
+        `Category ini jadi pilihan di paket ${wholeChoiceNames.join(", ")}. Pilih menu pilihannya dulu di paket.`
+      )
+    );
+  }
+
   const deleted = await Category.remove(id);
 
   if (!deleted) {
