@@ -59,6 +59,8 @@ const connectDB = async () => {
   await runSafeMigration("UPDATE users SET role = 'Cashier' WHERE LOWER(role) = 'waiter'");
   await runSafeMigration("UPDATE users SET name = 'Cashier' WHERE LOWER(name) = 'waiter'");
 
+  // Default categories go only into a brand-new table; a deleted one stays deleted.
+  const isNewCategoryTable = !(await tableExists("categories"));
   await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -158,6 +160,9 @@ const connectDB = async () => {
 
   // Bahan baku. Was stock_items until bahan olahan moved to
   // stock_semi_items (2026-10-28); renaming keeps every row and foreign key.
+  // Default bahan go only into a brand-new table, so a hidden or edited one
+  // keeps what the admin set.
+  const isNewStockTable = !(await tableExists("stock_raw_items")) && !(await tableExists("stock_items"));
   if ((await tableExists("stock_items")) && !(await tableExists("stock_raw_items"))) {
     await pool.query("RENAME TABLE stock_items TO stock_raw_items");
   }
@@ -190,20 +195,14 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE stock_raw_items RENAME INDEX idx_stock_items_category TO idx_stock_raw_items_category");
   await runSafeMigration("ALTER TABLE stock_raw_items RENAME INDEX idx_stock_items_is_active TO idx_stock_raw_items_is_active");
 
-  await pool.query(
-    `INSERT INTO stock_raw_items
-      (name, category, unit, stock, minimum_stock, supplier, is_unlimited)
-     VALUES ?
-     ON DUPLICATE KEY UPDATE
-       name = VALUES(name),
-       category = VALUES(category),
-       unit = VALUES(unit),
-       minimum_stock = VALUES(minimum_stock),
-       supplier = VALUES(supplier),
-       is_unlimited = VALUES(is_unlimited),
-       is_active = TRUE`,
-    [seedStockItems]
-  );
+  if (isNewStockTable || isNewMenuCatalog) {
+    await pool.query(
+      `INSERT IGNORE INTO stock_raw_items
+        (name, category, unit, stock, minimum_stock, supplier, is_unlimited)
+       VALUES ?`,
+      [seedStockItems]
+    );
+  }
 
   // Bahan olahan (e.g. Nasi cooked from Beras), counted in portions.
   // Their composition and cooking live in stock_semi_item_* (semiItemsSchema).
@@ -288,13 +287,9 @@ const connectDB = async () => {
   // Menu costing is stored in menu_item_prices now; the 30% overhead view is gone.
   await runSafeMigration("DROP VIEW IF EXISTS menu_costs");
 
-  await pool.query(
-    `INSERT INTO categories (name, icon)
-     VALUES ?
-     ON DUPLICATE KEY UPDATE
-       icon = COALESCE(NULLIF(icon, ''), VALUES(icon))`,
-    [seedCategories]
-  );
+  if (isNewCategoryTable || isNewMenuCatalog) {
+    await pool.query("INSERT IGNORE INTO categories (name, icon) VALUES ?", [seedCategories]);
+  }
   await runSafeMigration(`
     UPDATE categories
     SET sort_order = CASE name

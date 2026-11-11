@@ -508,6 +508,30 @@ describe("regressions", () => {
     assert.deepEqual(codes.map((row) => row.order_code), ["2601-0001", "2601-0002"]);
   });
 
+  it("keeps a deleted default category and an edited default bahan as the admin left them across a restart", async () => {
+    const [[addOns]] = await db.query("SELECT * FROM categories WHERE name = 'Add Ons'");
+    const [[espresso]] = await db.query("SELECT is_active FROM stock_raw_items WHERE name = 'ESPRESSO'");
+    const [[cup]] = await db.query("SELECT category, minimum_stock FROM stock_raw_items WHERE name = 'CUP'");
+    const removed = await request("DELETE", `/api/category/${addOns.id}`, { as: "admin" });
+    assert.equal(removed.status, 200);
+    await db.query("UPDATE stock_raw_items SET is_active = FALSE WHERE name = 'ESPRESSO'");
+    await db.query("UPDATE stock_raw_items SET category = 'Kemasan', minimum_stock = 25 WHERE name = 'CUP'");
+
+    await restartServer();
+
+    const [categories] = await db.query("SELECT name FROM categories WHERE name = 'Add Ons'");
+    assert.deepEqual(categories, [], "a deleted default category must not come back");
+    const [[hidden]] = await db.query("SELECT is_active FROM stock_raw_items WHERE name = 'ESPRESSO'");
+    assert.equal(Number(hidden.is_active), 0);
+    const [[edited]] = await db.query("SELECT category, minimum_stock FROM stock_raw_items WHERE name = 'CUP'");
+    assert.deepEqual([edited.category, Number(edited.minimum_stock)], ["Kemasan", 25]);
+
+    // Put them back for the tests after this one.
+    await db.query("INSERT INTO categories SET ?", [addOns]);
+    await db.query("UPDATE stock_raw_items SET is_active = ? WHERE name = 'ESPRESSO'", [espresso.is_active]);
+    await db.query("UPDATE stock_raw_items SET category = ?, minimum_stock = ? WHERE name = 'CUP'", [cup.category, cup.minimum_stock]);
+  });
+
   it("rescales recipe quantities when a stock item switches to a convertible unit", async () => {
     const stock = await request("POST", "/api/stock-item", {
       as: "admin",
