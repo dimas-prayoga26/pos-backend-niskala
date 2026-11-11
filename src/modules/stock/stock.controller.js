@@ -2,6 +2,7 @@ const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
 const { isDuplicateEntryError } = require("../../shared/utils/dbErrors");
+const { toTitleName } = require("../../shared/utils/names");
 const StockItem = require("./stock.repository");
 const { isSupplyItemName } = require("./supply.repository");
 
@@ -15,7 +16,7 @@ const rethrowDuplicateName = (name) => (error) => {
 };
 
 const normalizeStockPayload = (body) => ({
-  name: String(body.name || "").trim(),
+  name: toTitleName(body.name),
   category: String(body.category || "").trim(),
   unit: String(body.unit || "").trim(),
   stock: toNonNegativeNumber(body.stock),

@@ -1889,8 +1889,14 @@ describe("regressions", () => {
 
     const duplicate = await request("POST", "/api/stock-item", { as: "admin", body: { ...body, name: "sirup uji" } });
     assert.equal(duplicate.status, 409);
-    assert.equal(duplicate.body.message, "Bahan sirup uji sudah ada di Stok → Bahan Baku.");
+    assert.equal(duplicate.body.message, "Bahan Sirup Uji sudah ada di Stok → Bahan Baku.");
     assert.equal((await request("POST", "/api/stock-item", { as: "cashier", body: { ...body, name: "Kasir Uji" } })).status, 403);
+
+    // Names are saved in Title Case, however they are typed.
+    const typed = await request("POST", "/api/stock-item", { as: "admin", body: { ...body, name: "  cabe MERAH   uji " } });
+    assert.equal(typed.status, 201);
+    assert.equal(typed.body.data.name, "Cabe Merah Uji");
+    await db.query("DELETE FROM stock_raw_items WHERE id = ?", [typed.body.data.id]);
   });
 
   it("keeps perlengkapan apart from bahan baku and buys them on the same nota form", async () => {

@@ -3,6 +3,7 @@ const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
 const { roundRecipeQuantity } = require("../menu/menu.options");
+const { toTitleName } = require("../../shared/utils/names");
 const { dateKey, todayKey } = require("../../shared/utils/validate");
 const SemiItem = require("./semi.repository");
 const { readWasteInput } = require("./wastes");
@@ -32,7 +33,7 @@ const sumByStockItem = (lines) => {
 // (a quantity sent here is kept as the next one's suggestion). unit and
 // portionSize left out keep the item's own.
 const normalizeSemiPayload = (body) => ({
-  name: String(body.name || "").trim(),
+  name: toTitleName(body.name),
   category: String(body.category || "").trim() || "Olahan",
   unit: String(body.unit || "").trim() || null,
   portionSize: body.portionSize === undefined ? null : roundRecipeQuantity(toNonNegativeNumber(body.portionSize)),

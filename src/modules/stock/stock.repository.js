@@ -106,12 +106,13 @@ const reactivateByName = async ({ name, category, minimumStock = 0, supplier, is
   const [result] = await pool.query(
     `UPDATE stock_raw_items
      SET is_active = TRUE,
+         name = ?,
          category = ?,
          minimum_stock = ?,
          supplier = COALESCE(NULLIF(?, ''), supplier),
          is_recipe_ingredient = ?
      WHERE name = ? AND is_active = FALSE`,
-    [category, minimumStock, supplier || "", isRecipeIngredient ? 1 : 0, name]
+    [name, category, minimumStock, supplier || "", isRecipeIngredient ? 1 : 0, name]
   );
   if (!result.affectedRows) return null;
 

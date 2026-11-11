@@ -1,6 +1,7 @@
 // Input normalization for purchases. Every helper throws http-errors 400.
 const createError = require("http-errors");
 const { areConvertible, convertBetweenUnits } = require("../../shared/utils/units");
+const { toTitleName } = require("../../shared/utils/names");
 const { clean, dateKey, number } = require("../../shared/utils/validate");
 const { SUPPLY_CATEGORIES } = require("../stock/supply.repository");
 
@@ -105,7 +106,11 @@ const normalizeLine = (item, idKey, { unitRequired = true } = {}) => ({
   unitPrice: number(item?.unitPrice, 0, 999999999999.99, 2, "Harga satuan"),
   ...totalOf(item),
 });
-const normalizePurchase = (body, options) => normalizeNota(body, item => normalizeLine(item, "stockItemId"), options);
+// A new bahan baku (itemName) is saved in Title Case.
+const normalizePurchase = (body, options) => normalizeNota(body, item => {
+  const line = normalizeLine(item, "stockItemId");
+  return line.itemName ? { ...line, itemName: toTitleName(line.itemName) } : line;
+}, options);
 // Barang Lainnya need no unit; a new one (itemName) needs its category.
 const normalizeSupplyPurchase = (body, options) => normalizeNota(body, item => {
   const line = normalizeLine(item, "supplyItemId", { unitRequired: false });
