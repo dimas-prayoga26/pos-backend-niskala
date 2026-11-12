@@ -226,7 +226,9 @@ const save = (id, { name, category, unit, portionSize, defaultPortions, minimumS
 
 // The default of Catat Masak, saved without cooking: the takaran standar of
 // each bahan of the composition (one left out: none) and the portions they
-// make. No stock moves. Returns false when the item is not found.
+// make. No stock moves; with no portions in stock its COGS becomes the HPP
+// standar at once, and its menus' HPP follows (refreshMenuCosts). Returns
+// false when the item is not found.
 const saveStandard = (semiId, { items, portionQuantity }) =>
   withTransaction(async (connection) => {
     const [[item]] = await connection.query(
@@ -259,6 +261,7 @@ const saveStandard = (semiId, { items, portionQuantity }) =>
       roundStock(portionQuantity),
       semiId,
     ]);
+    await refreshMenuCosts(connection, { semiItemIds: [semiId] });
     return true;
   });
 

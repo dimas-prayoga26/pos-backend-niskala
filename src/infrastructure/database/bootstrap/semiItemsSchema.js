@@ -272,7 +272,7 @@ const ensureSemiItemsSchema = async (db) => {
   // quantities makes. Catat Masak starts from it; with the composition it
   // gives the HPP standar per porsi before any cooking.
   await db
-    .query("ALTER TABLE stock_semi_items ADD COLUMN default_portions DECIMAL(12,2) NULL AFTER reset_daily")
+    .query("ALTER TABLE stock_semi_items ADD COLUMN default_portions DECIMAL(12,2) NULL")
     .catch(() => {});
 
   // Portions thrown away (leftover at closing, spoiled, spilled, a lower

@@ -40,7 +40,7 @@ let testPool, created = false, receiptDir;
     supplier VARCHAR(150),
     is_active BOOLEAN DEFAULT TRUE, is_unlimited BOOLEAN DEFAULT FALSE
   ) ENGINE=InnoDB`);
-  await testPool.query("CREATE TABLE stock_semi_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL UNIQUE, unit_cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
+  await testPool.query("CREATE TABLE stock_semi_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(150) NOT NULL UNIQUE, stock DECIMAL(12,2) NOT NULL DEFAULT 0, unit_cost INT NOT NULL DEFAULT 0) ENGINE=InnoDB");
   // Minimal menu tables: purchases refresh recipe costs and menu HPP.
   await testPool.query("CREATE TABLE menu_items (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, category_id INT UNSIGNED NULL, name VARCHAR(150) NOT NULL) ENGINE=InnoDB");
   await testPool.query("CREATE TABLE menu_item_prices (menu_item_id INT UNSIGNED PRIMARY KEY, regular_price DECIMAL(12,2) NOT NULL, hpp_cost DECIMAL(12,2) NOT NULL DEFAULT 0, gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0) ENGINE=InnoDB");

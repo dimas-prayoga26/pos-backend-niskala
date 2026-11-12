@@ -1431,11 +1431,19 @@ describe("regressions", () => {
       portionQuantity: 25,
     });
     assert.equal(savedDefault.status, 200, JSON.stringify(savedDefault.body));
-    assert.equal(savedDefault.body.message, "Takaran standar Sambal Minus disimpan.");
-    // (300 x 50 + 50 x 20) / 25
+    // 20 cooked portions in stock keep their cooking's COGS (725).
+    assert.equal(
+      savedDefault.body.message,
+      "Takaran standar Sambal Minus disimpan. COGS tetap dari porsi yang sudah dimasak sampai stoknya habis."
+    );
     assert.deepEqual(
-      [savedDefault.body.data.components.map((c) => c.quantity), savedDefault.body.data.defaultPortions, savedDefault.body.data.standardUnitCost],
-      [[300, 50], 25, 640]
+      [
+        savedDefault.body.data.components.map((c) => c.quantity),
+        savedDefault.body.data.defaultPortions,
+        savedDefault.body.data.standardUnitCost,
+        savedDefault.body.data.averageCost,
+      ],
+      [[300, 50], 25, 640, 725]
     );
     assert.deepEqual([await rawRow(cabeId), await rawRow(minyakId)], before);
     assert.equal((await standard("cashier", { items: [], portionQuantity: 25 })).body.message, "Isi jumlah bahan baku yang dipakai.");
@@ -1468,6 +1476,29 @@ describe("regressions", () => {
     assert.equal(undone.status, 200, JSON.stringify(undone.body));
     assert.deepEqual(await rawRow(cabeId), [100, 5000]);
     assert.deepEqual(await rawRow(minyakId), [1000, 20000]);
+
+    // No portions left: Simpan Takaran Standar sets the COGS at once,
+    // (300 x 50 + 50 x 20) / 25 = 640, and a menu's HPP follows.
+    const atZero = await standard("cashier", {
+      items: [{ stockItemId: cabeId, quantity: 300 }, { stockItemId: minyakId, quantity: 50 }],
+      portionQuantity: 25,
+    });
+    assert.equal(atZero.body.message, "Takaran standar Sambal Minus disimpan. COGS jadi Rp 640 / porsi.");
+    assert.equal(atZero.body.data.averageCost, 640);
+    const [[category]] = await db.query("SELECT id FROM categories WHERE is_bundle = FALSE ORDER BY id LIMIT 1");
+    const menu = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: { categoryId: category.id, name: "Ayam Sambal Minus", price: 20000, ingredients: [{ semiItemId: sambal.id, quantity: 2 }] },
+    });
+    assert.equal(menu.status, 201, JSON.stringify(menu.body));
+    const hppOf = async () =>
+      Number((await db.query("SELECT hpp_cost FROM menu_item_prices WHERE menu_item_id = ?", [menu.body.data.id]))[0][0].hpp_cost);
+    assert.equal(await hppOf(), 1280);
+    // A new cabe price moves the COGS and the HPP: (300 x 60 + 50 x 20) / 25 = 760.
+    await request("PATCH", `/api/stock-item/${cabeId}/cogs`, { as: "admin", body: { averageCost: 60 } });
+    assert.equal(Number((await db.query("SELECT unit_cost FROM stock_semi_items WHERE id = ?", [sambal.id]))[0][0].unit_cost), 760);
+    assert.equal(await hppOf(), 1520);
+    assert.equal((await request("DELETE", `/api/menu-item/${menu.body.data.id}`, { as: "admin" })).status, 200);
 
     // Leave the lists as the next tests expect them.
     assert.equal((await request("DELETE", `/api/stock-item/semi/${sambal.id}`, { as: "admin" })).status, 200);

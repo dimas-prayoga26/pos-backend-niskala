@@ -183,8 +183,13 @@ const saveStandard = asyncHandler(async (req, res, next) => {
   }
 
   const item = await SemiItem.findById(semiId);
+  // With no portions in stock the HPP standar is its COGS now.
+  const cogs =
+    Number(item.stock) <= 0
+      ? ` COGS jadi Rp ${new Intl.NumberFormat("id-ID").format(item.averageCost)} / ${item.unit}.`
+      : " COGS tetap dari porsi yang sudah dimasak sampai stoknya habis.";
   emitStockChanged("semi-item-standard", semiId);
-  res.status(200).json({ success: true, message: `Takaran standar ${item.name} disimpan.`, data: item });
+  res.status(200).json({ success: true, message: `Takaran standar ${item.name} disimpan.${cogs}`, data: item });
 });
 
 const getProductions = asyncHandler(async (req, res) => {

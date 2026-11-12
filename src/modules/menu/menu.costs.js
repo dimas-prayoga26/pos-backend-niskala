@@ -6,6 +6,9 @@
 //                                   (stock_semi_items) for a menu's semi lines
 //   stock_semi_item_recipes.cost  = quantity x bahan baku unit_cost for a semi
 //                                   item's composition
+//   stock_semi_items.unit_cost    = with no portions in stock, its takaran
+//                                   standar: that composition over
+//                                   default_portions
 //   menu_item_prices.hpp_cost     = sum of the menu's menu_item_recipes and semi lines
 //   gross_profit                  = regular_price - hpp_cost
 //   a package (Kategori Promo)    hpp_cost = 0: each sale counts the HPP of
@@ -23,6 +26,33 @@ const refreshSemiRecipeCosts = (connection, stockItemIds) =>
      ${stockItemIds ? "WHERE sr.stock_item_id IN (?)" : ""}`,
     stockItemIds ? [stockItemIds] : []
   );
+
+// A bahan olahan with no portions in stock costs its takaran standar: its
+// composition at today's prices over default_portions (Catat Masak's
+// default). Portions in stock keep their cooking's cost. Limited to the semi
+// items given or made of the raw items given (null: all). Returns the ids
+// whose cost changed.
+const refreshStandardSemiCosts = async (connection, { stockItemIds = null, semiItemIds = null } = {}) => {
+  const limits = [];
+  const params = [];
+  if (stockItemIds || semiItemIds) {
+    limits.push(`(ss.id IN (?) OR ss.id IN (SELECT semi_item_id FROM stock_semi_item_recipes WHERE stock_item_id IN (?)))`);
+    params.push(semiItemIds?.length ? semiItemIds : [0], stockItemIds?.length ? stockItemIds : [0]);
+  }
+  const [rows] = await connection.query(
+    `SELECT ss.id, ss.unit_cost, ROUND(SUM(sr.cost) / ss.default_portions) AS standard_cost
+     FROM stock_semi_items ss
+     JOIN stock_semi_item_recipes sr ON sr.semi_item_id = ss.id
+     WHERE ss.stock <= 0 AND ss.default_portions > 0 ${limits.map((limit) => `AND ${limit}`).join(" ")}
+     GROUP BY ss.id, ss.unit_cost, ss.default_portions`,
+    params
+  );
+  const changed = rows.filter((row) => Number(row.standard_cost) !== Number(row.unit_cost));
+  for (const row of changed) {
+    await connection.query("UPDATE stock_semi_items SET unit_cost = ? WHERE id = ?", [row.standard_cost, row.id]);
+  }
+  return changed.map((row) => row.id);
+};
 
 // Packages have no HPP of their own (see above); their gross profit stays.
 const clearBundleCosts = (connection) =>
@@ -44,10 +74,12 @@ const refreshMenuCosts = async (
 
   if (stockItemIds || semiItemIds) {
     const rawIds = stockItemIds || [];
-    const semiIds = semiItemIds || [];
+    let semiIds = semiItemIds || [];
     if (!rawIds.length && !semiIds.length) return;
 
     if (rawIds.length) await refreshSemiRecipeCosts(connection, rawIds);
+    const standardIds = await refreshStandardSemiCosts(connection, { stockItemIds: rawIds, semiItemIds: semiIds });
+    semiIds = [...new Set([...semiIds, ...standardIds])];
 
     const [rows] = await connection.query(
       `SELECT menu_item_id FROM menu_item_recipes WHERE stock_item_id IN (?)
@@ -58,6 +90,7 @@ const refreshMenuCosts = async (
     menuIds = rows.map((row) => row.menu_item_id);
   } else if (!menuItemIds) {
     await refreshSemiRecipeCosts(connection, null);
+    await refreshStandardSemiCosts(connection);
   }
 
   if (menuIds && !menuIds.length) return;
