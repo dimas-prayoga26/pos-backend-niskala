@@ -1362,6 +1362,62 @@ describe("regressions", () => {
     assert.equal((await request("GET", photo.url, { as: "cashier" })).status, 404);
   });
 
+  it("cooks with a bahan baku short of stock and takes it below 0", async () => {
+    const addRaw = async (name, unit, stock, averageCost) => {
+      const created = await request("POST", "/api/stock-item", {
+        as: "admin",
+        body: { name, category: "Bahan", unit, stock },
+      });
+      await request("PATCH", `/api/stock-item/${created.body.data.id}/cogs`, {
+        as: "admin",
+        body: { averageCost },
+      });
+      return created.body.data.id;
+    };
+    const rawRow = async (id) => {
+      const [[row]] = await db.query("SELECT stock, stock_value FROM stock_raw_items WHERE id = ?", [id]);
+      return [Number(row.stock), Number(row.stock_value)];
+    };
+    const cabeId = await addRaw("Cabe Minus", "gr", 100, 50);
+    const minyakId = await addRaw("Minyak Minus", "ml", 1000, 20);
+    const created = await request("POST", "/api/stock-item/semi", {
+      as: "admin",
+      body: {
+        name: "Sambal Minus",
+        unit: "porsi",
+        components: [{ stockItemId: cabeId, quantity: 250 }, { stockItemId: minyakId, quantity: 100 }],
+      },
+    });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const sambal = created.body.data;
+
+    // 250 gr cabe with 100 gr in stock: saved, cabe goes to -150 gr.
+    const cooked = await request("POST", `/api/stock-item/semi/${sambal.id}/productions`, {
+      as: "cashier",
+      body: { items: [{ stockItemId: cabeId, quantity: 250 }, { stockItemId: minyakId, quantity: 100 }], portionQuantity: 20 },
+    });
+    assert.equal(cooked.status, 201, JSON.stringify(cooked.body));
+    assert.deepEqual(await rawRow(cabeId), [-150, 0]);
+    assert.deepEqual(await rawRow(minyakId), [900, 18000]);
+    // The cooking costs every gram used: 250 x 50 + 100 x 20.
+    const [[semi]] = await db.query("SELECT stock, stock_value, unit_cost FROM stock_semi_items WHERE id = ?", [sambal.id]);
+    assert.deepEqual([Number(semi.stock), Number(semi.stock_value), semi.unit_cost], [20, 14500, 725]);
+
+    // Undoing it gives back the stock and only the value cabe had.
+    const [[production]] = await db.query(
+      "SELECT id FROM stock_semi_item_productions WHERE semi_item_id = ? ORDER BY id DESC LIMIT 1",
+      [sambal.id]
+    );
+    const undone = await request("DELETE", `/api/stock-item/semi/productions/${production.id}`, { as: "admin" });
+    assert.equal(undone.status, 200, JSON.stringify(undone.body));
+    assert.deepEqual(await rawRow(cabeId), [100, 5000]);
+    assert.deepEqual(await rawRow(minyakId), [1000, 20000]);
+
+    // Leave the lists as the next tests expect them.
+    assert.equal((await request("DELETE", `/api/stock-item/semi/${sambal.id}`, { as: "admin" })).status, 200);
+    await db.query("DELETE FROM stock_raw_items WHERE id IN (?)", [[cabeId, minyakId]]);
+  });
+
   it("cooks bahan olahan from bahan baku and sells their portions", async () => {
     const addRaw = async (name, unit, stock, averageCost) => {
       const created = await request("POST", "/api/stock-item", {
@@ -1505,12 +1561,6 @@ describe("regressions", () => {
     );
     assert.equal(Number(mixedPrice.hpp_cost), 1800);
 
-    const tooMuch = await request("POST", `/api/stock-item/semi/${nasi.id}/productions`, {
-      as: "cashier",
-      body: { items: [{ stockItemId: berasId, quantity: 10 }], outputWeight: 24000 },
-    });
-    assert.equal(tooMuch.status, 409);
-    assert.match(tooMuch.body.message, /Beras Olahan butuh 10 kg, sisa 5 kg/);
     // Catat Masak needs the bahan used, and only bahan of its composition.
     const cook = (body) =>
       request("POST", `/api/stock-item/semi/${nasi.id}/productions`, { as: "cashier", body });

@@ -514,30 +514,8 @@ const recordProduction = (
         const unitCost = Number(component.unit_cost) || 0;
         return { ...component, quantity, unitCost, cost: roundCurrency(quantity * unitCost) };
       });
-    const shortages = usedItems.filter(
-      (used) => !used.is_unlimited && used.quantity > Number(used.stock)
-    );
-    if (shortages.length) {
-      throw createHttpError(
-        409,
-        `Stok bahan tidak mencukupi: ${shortages
-          .map((used) => `${used.name} butuh ${formatQuantity(used.quantity, used.unit)}, sisa ${formatQuantity(used.stock, used.unit)}`)
-          .join("; ")}. Catat belanjanya dulu.`,
-        {
-          details: {
-            insufficientStock: shortages.map((used) => ({
-              stockItemId: used.stock_item_id,
-              name: used.name,
-              stock: Number(used.stock),
-              required: used.quantity,
-              shortage: used.quantity - Number(used.stock),
-              unit: used.unit,
-            })),
-          },
-        }
-      );
-    }
-
+    // A bahan baku short of stock does not block the cooking: its stock goes
+    // below 0 until the next belanja, which settles it at the purchase price.
     // Same stock_value rule as selling a menu (stock.movements).
     for (const used of usedItems) {
       if (used.is_unlimited) continue;
@@ -704,13 +682,19 @@ const deleteProduction = (productionId) =>
       "SELECT * FROM stock_semi_item_production_items WHERE production_id = ? AND stock_item_id IS NOT NULL",
       [productionId]
     );
+    // A cooking that took a bahan below 0 only took the value it had (never
+    // below 0): what comes back is the stock left over at its unit cost.
     for (const used of usedItems) {
       await connection.query(
         `UPDATE stock_raw_items
-         SET stock = CASE WHEN is_unlimited = TRUE THEN stock ELSE stock + ? END,
-             stock_value = CASE WHEN is_unlimited = TRUE THEN stock_value ELSE stock_value + ? END
+         SET stock_value = CASE
+               WHEN is_unlimited = TRUE THEN stock_value
+               WHEN stock < 0 THEN ROUND(GREATEST(stock + ?, 0) * unit_cost, 2)
+               ELSE stock_value + ?
+             END,
+             stock = CASE WHEN is_unlimited = TRUE THEN stock ELSE stock + ? END
          WHERE id = ?`,
-        [Number(used.quantity), Number(used.cost), used.stock_item_id]
+        [Number(used.quantity), Number(used.cost), Number(used.quantity), used.stock_item_id]
       );
     }
 
