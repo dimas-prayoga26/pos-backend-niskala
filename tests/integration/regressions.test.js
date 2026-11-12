@@ -1385,11 +1385,14 @@ describe("regressions", () => {
       body: {
         name: "Sambal Minus",
         unit: "porsi",
+        defaultPortions: 20,
         components: [{ stockItemId: cabeId, quantity: 250 }, { stockItemId: minyakId, quantity: 100 }],
       },
     });
     assert.equal(created.status, 201, JSON.stringify(created.body));
     const sambal = created.body.data;
+    // Takaran standar before any cooking: HPP standar (250 x 50 + 100 x 20) / 20.
+    assert.deepEqual([sambal.defaultPortions, sambal.recipeCost, sambal.standardUnitCost], [20, 14500, 725]);
 
     // 250 gr cabe with 100 gr in stock: saved, cabe goes to -150 gr.
     const cooked = await request("POST", `/api/stock-item/semi/${sambal.id}/productions`, {
@@ -1402,6 +1405,59 @@ describe("regressions", () => {
     // The cooking costs every gram used: 250 x 50 + 100 x 20.
     const [[semi]] = await db.query("SELECT stock, stock_value, unit_cost FROM stock_semi_items WHERE id = ?", [sambal.id]);
     assert.deepEqual([Number(semi.stock), Number(semi.stock_value), semi.unit_cost], [20, 14500, 725]);
+
+    // A cooking with other quantities leaves the takaran standar as it is.
+    const other = await request("POST", `/api/stock-item/semi/${sambal.id}/productions`, {
+      as: "cashier",
+      body: { items: [{ stockItemId: minyakId, quantity: 50 }], portionQuantity: 5 },
+    });
+    assert.equal(other.status, 201, JSON.stringify(other.body));
+    assert.deepEqual(other.body.data.components.map((c) => c.quantity), [250, 100]);
+    assert.equal(other.body.data.defaultPortions, 20);
+    const undoOther = await db.query(
+      "SELECT id FROM stock_semi_item_productions WHERE semi_item_id = ? ORDER BY id DESC LIMIT 1",
+      [sambal.id]
+    );
+    assert.equal(
+      (await request("DELETE", `/api/stock-item/semi/productions/${undoOther[0][0].id}`, { as: "admin" })).status,
+      200
+    );
+
+    // "Simpan Takaran Standar" at Catat Masak: new takaran and porsi, no stock moved.
+    const standard = (as, body) => request("PUT", `/api/stock-item/semi/${sambal.id}/standard`, { as, body });
+    const before = [await rawRow(cabeId), await rawRow(minyakId)];
+    const savedDefault = await standard("cashier", {
+      items: [{ stockItemId: cabeId, quantity: 300 }, { stockItemId: minyakId, quantity: 50 }],
+      portionQuantity: 25,
+    });
+    assert.equal(savedDefault.status, 200, JSON.stringify(savedDefault.body));
+    assert.equal(savedDefault.body.message, "Takaran standar Sambal Minus disimpan.");
+    // (300 x 50 + 50 x 20) / 25
+    assert.deepEqual(
+      [savedDefault.body.data.components.map((c) => c.quantity), savedDefault.body.data.defaultPortions, savedDefault.body.data.standardUnitCost],
+      [[300, 50], 25, 640]
+    );
+    assert.deepEqual([await rawRow(cabeId), await rawRow(minyakId)], before);
+    assert.equal((await standard("cashier", { items: [], portionQuantity: 25 })).body.message, "Isi jumlah bahan baku yang dipakai.");
+    assert.equal(
+      (await standard("cashier", { items: [{ stockItemId: cabeId, quantity: 1 }] })).body.message,
+      "Isi jumlah porsi jadi."
+    );
+    const [[outsider]] = await db.query("SELECT id FROM stock_raw_items WHERE id NOT IN (?) LIMIT 1", [[cabeId, minyakId]]);
+    const notComposed = await standard("cashier", { items: [{ stockItemId: outsider.id, quantity: 1 }], portionQuantity: 5 });
+    assert.equal(notComposed.status, 400);
+    assert.match(notComposed.body.message, /bukan komposisi Sambal Minus/);
+
+    // Ubah Bahan Olahan sends no takaran or porsi: the default stays. Through
+    // the API a quantity changes it; defaultPortions empty clears it.
+    const save = (body) => request("PUT", `/api/stock-item/semi/${sambal.id}`, { as: "admin", body: { name: "Sambal Minus", ...body } });
+    const renamed = await save({ resetDaily: false, components: [{ stockItemId: cabeId }, { stockItemId: minyakId }] });
+    assert.equal(renamed.status, 200, JSON.stringify(renamed.body));
+    assert.deepEqual([renamed.body.data.components.map((c) => c.quantity), renamed.body.data.defaultPortions], [[300, 50], 25]);
+    const kept = await save({ components: [{ stockItemId: cabeId, quantity: 200 }, { stockItemId: minyakId }] });
+    assert.deepEqual([kept.body.data.components.map((c) => c.quantity), kept.body.data.defaultPortions], [[200, 50], 25]);
+    const cleared = await save({ defaultPortions: "", components: [{ stockItemId: cabeId }, { stockItemId: minyakId }] });
+    assert.deepEqual([cleared.body.data.defaultPortions, cleared.body.data.standardUnitCost], [null, 0]);
 
     // Undoing it gives back the stock and only the value cabe had.
     const [[production]] = await db.query(
@@ -1471,6 +1527,8 @@ describe("regressions", () => {
     assert.deepEqual(nasi.components.map((c) => [c.name, c.quantity, c.unit, c.cost]), [
       ["Beras Olahan", 1, "kg", 14000],
     ]);
+    // No portions yet: no HPP standar.
+    assert.deepEqual([nasi.defaultPortions, nasi.standardUnitCost], [null, 0]);
 
     // Separate lists, and names unique across both tables.
     const rawList = await request("GET", "/api/stock-item", { as: "cashier" });
@@ -1535,8 +1593,10 @@ describe("regressions", () => {
     assert.deepEqual(await semiRow(nasi.id), {
       stock: 80, stockValue: 70000, unitCost: 875, yieldQuantity: 80,
     });
-    // The beras used is the next Catat Masak's suggestion.
-    assert.deepEqual(cooked.body.data.components.map((c) => [c.quantity, c.cost]), [[5, 70000]]);
+    // The takaran standar (1 kg) stays; the portions it lacked come from this
+    // cooking, so the HPP standar is 14.000 / 80.
+    assert.deepEqual(cooked.body.data.components.map((c) => [c.quantity, c.cost]), [[1, 14000]]);
+    assert.deepEqual([cooked.body.data.defaultPortions, cooked.body.data.standardUnitCost], [80, 175]);
     assert.deepEqual(await rawRow(berasId), { stock: 5, stockValue: 70000, unitCost: 14000 });
     assert.equal(await menuHpp(), 875);
 
@@ -1640,7 +1700,7 @@ describe("regressions", () => {
       "SELECT cost FROM stock_semi_item_recipes WHERE semi_item_id = ?",
       [nasi.id]
     );
-    assert.equal(component.cost, 80000, "the latest 5 kg at the new price");
+    assert.equal(component.cost, 16000, "the takaran standar (1 kg) at the new price");
     assert.equal((await semiRow(nasi.id)).unitCost, 875);
 
     // Counted directly: 1 kg, 15 portions. 68.250 + 16.000 over 93 portions.

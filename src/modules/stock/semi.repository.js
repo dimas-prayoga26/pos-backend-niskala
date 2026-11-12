@@ -6,8 +6,10 @@
 // the raw items (stock_raw_items) lose the quantities used at their unit cost,
 // the semi item gains the portions counted (or weighed: output weight /
 // portion size) and its unit cost becomes the moving average, as in belanja.
-// The composition (stock_semi_item_recipes) lists the bahan baku; its
-// quantities are the latest cooking's, Catat Masak's suggestion.
+// The composition (stock_semi_item_recipes) lists the bahan baku with their
+// takaran standar (set on the form, else the first cooking's) and
+// default_portions the portions it makes: Catat Masak starts from them, and
+// they give the HPP standar per porsi. A cooking does not change them.
 const createHttpError = require("http-errors");
 const { pool, withTransaction } = require("../../infrastructure/database/pool");
 const { roundCost, roundCurrency } = require("../../shared/utils/money");
@@ -34,6 +36,7 @@ const mapSemiItem = (row) => ({
   stockValue: Number(row.stock_value || 0),
   portionSize: Number(row.portion_size || 0),
   yieldQuantity: Number(row.yield_quantity || 0),
+  defaultPortions: row.default_portions == null ? null : Number(row.default_portions),
   resetDaily: Boolean(row.reset_daily),
   // No minimum stock for semi items (an older minimum_stock is ignored):
   // they need cooking only once empty.
@@ -58,9 +61,9 @@ const mapProduction = (row) => ({
   userName: row.user_name || "",
 });
 
-// Adds to each semi item its composition (each raw item with the quantity of
-// the latest cooking, in its own unit), that cost at current prices and its
-// latest cooking.
+// Adds to each semi item its composition (each raw item with its takaran
+// standar, in its own unit), that cost at current prices, the HPP standar
+// per porsi (that cost over default_portions) and its latest cooking.
 const attachDetails = async (semiItems) => {
   if (!semiItems.length) return semiItems;
 
@@ -102,10 +105,12 @@ const attachDetails = async (semiItems) => {
         cost: Number(row.cost || 0),
       }));
 
+    const recipeCost = components.reduce((total, component) => total + component.cost, 0);
     return {
       ...item,
       components,
-      recipeCost: components.reduce((total, component) => total + component.cost, 0),
+      recipeCost,
+      standardUnitCost: item.defaultPortions > 0 ? roundCost(recipeCost / item.defaultPortions) : 0,
       lastProduction: latestByItemId.get(item.id) || null,
     };
   });
@@ -151,9 +156,10 @@ const isRawItemName = async (name) => {
 };
 
 // Creates or updates a semi item and replaces its composition. A bahan kept
-// on it keeps its latest quantity unless one is sent; unit and portionSize
-// null keep the item's own. Returns the item id, or null when id is not found.
-const save = (id, { name, category, unit, portionSize, minimumStock, resetDaily, components }) =>
+// on it keeps its takaran standar unless one is sent; unit and portionSize
+// null, defaultPortions undefined keep the item's own (null clears it).
+// Returns the item id, or null when id is not found.
+const save = (id, { name, category, unit, portionSize, defaultPortions, minimumStock, resetDaily, components }) =>
   withTransaction(async (connection) => {
     let semiId = id;
 
@@ -161,16 +167,26 @@ const save = (id, { name, category, unit, portionSize, minimumStock, resetDaily,
       const [result] = await connection.query(
         `UPDATE stock_semi_items
          SET name = ?, category = ?, unit = COALESCE(?, unit), portion_size = COALESCE(?, portion_size),
-             minimum_stock = ?, reset_daily = ?
+             default_portions = IF(?, ?, default_portions), minimum_stock = ?, reset_daily = ?
          WHERE id = ?`,
-        [name, category, unit, portionSize, minimumStock, resetDaily ? 1 : 0, id]
+        [
+          name,
+          category,
+          unit,
+          portionSize,
+          defaultPortions !== undefined,
+          defaultPortions ?? null,
+          minimumStock,
+          resetDaily ? 1 : 0,
+          id,
+        ]
       );
       if (!result.affectedRows) return null;
     } else {
       const [result] = await connection.query(
-        `INSERT INTO stock_semi_items (name, category, unit, minimum_stock, portion_size, reset_daily)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [name, category, unit || "porsi", minimumStock, portionSize || 0, resetDaily ? 1 : 0]
+        `INSERT INTO stock_semi_items (name, category, unit, minimum_stock, portion_size, default_portions, reset_daily)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [name, category, unit || "porsi", minimumStock, portionSize || 0, defaultPortions ?? null, resetDaily ? 1 : 0]
       );
       semiId = result.insertId;
     }
@@ -206,6 +222,44 @@ const save = (id, { name, category, unit, portionSize, minimumStock, resetDaily,
     );
 
     return semiId;
+  });
+
+// The default of Catat Masak, saved without cooking: the takaran standar of
+// each bahan of the composition (one left out: none) and the portions they
+// make. No stock moves. Returns false when the item is not found.
+const saveStandard = (semiId, { items, portionQuantity }) =>
+  withTransaction(async (connection) => {
+    const [[item]] = await connection.query(
+      "SELECT id, name FROM stock_semi_items WHERE id = ? AND is_active = TRUE FOR UPDATE",
+      [semiId]
+    );
+    if (!item) return false;
+
+    const [components] = await connection.query(
+      "SELECT stock_item_id FROM stock_semi_item_recipes WHERE semi_item_id = ?",
+      [semiId]
+    );
+    const composed = new Set(components.map((component) => component.stock_item_id));
+    if (items.some((used) => !composed.has(used.stockItemId))) {
+      throw createHttpError(400, `Ada bahan baku yang bukan komposisi ${item.name}. Muat ulang daftar bahan.`);
+    }
+
+    const quantityById = new Map(items.map((used) => [used.stockItemId, roundRecipeQuantity(used.quantity)]));
+    for (const stockItemId of composed) {
+      const quantity = quantityById.get(stockItemId) || 0;
+      await connection.query(
+        `UPDATE stock_semi_item_recipes sr
+         JOIN stock_raw_items si ON si.id = sr.stock_item_id
+         SET sr.quantity = ?, sr.cost = ROUND(? * si.unit_cost)
+         WHERE sr.semi_item_id = ? AND sr.stock_item_id = ?`,
+        [quantity, quantity, semiId, stockItemId]
+      );
+    }
+    await connection.query("UPDATE stock_semi_items SET default_portions = ? WHERE id = ?", [
+      roundStock(portionQuantity),
+      semiId,
+    ]);
+    return true;
   });
 
 // Menus whose recipe uses the semi item; they block deleting it (ON DELETE RESTRICT).
@@ -548,16 +602,18 @@ const recordProduction = (
     }
     await connection.query(
       `UPDATE stock_semi_items
-       SET stock = ?, stock_value = ?, unit_cost = ?, yield_quantity = ?, portion_size = ?
+       SET stock = ?, stock_value = ?, unit_cost = ?, yield_quantity = ?, portion_size = ?,
+           default_portions = COALESCE(default_portions, ?)
        WHERE id = ?`,
-      [nextStock, nextValue, nextUnitCost, portions, gramsPerPortion, semiId]
+      [nextStock, nextValue, nextUnitCost, portions, gramsPerPortion, portions, semiId]
     );
-    // The quantities used become the next Catat Masak's suggestion.
+    // The takaran standar stays; a bahan without one takes this cooking's.
     for (const used of usedItems) {
       await connection.query(
-        `UPDATE stock_semi_item_recipes SET quantity = ?, cost = ROUND(? * ?)
+        `UPDATE stock_semi_item_recipes
+         SET quantity = IF(quantity > 0, quantity, ?), cost = ROUND(quantity * ?)
          WHERE semi_item_id = ? AND stock_item_id = ?`,
-        [used.quantity, used.quantity, used.unitCost, semiId, used.stock_item_id]
+        [used.quantity, used.unitCost, semiId, used.stock_item_id]
       );
     }
 
@@ -750,4 +806,5 @@ module.exports = {
   recordWaste,
   remove,
   save,
+  saveStandard,
 };

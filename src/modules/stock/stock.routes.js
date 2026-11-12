@@ -21,6 +21,7 @@ const {
   getWastes,
   recordProduction,
   recordWaste,
+  saveStandard,
   updateSemiItem,
 } = require("./semi.controller");
 const {
@@ -74,6 +75,8 @@ router.put("/semi/:id", authenticate, adminOnly, requireNumericId(), updateSemiI
 router.delete("/semi/:id", authenticate, adminOnly, requireNumericId(), deleteSemiItem);
 router.get("/semi/:id/productions", authenticate, requireNumericId(), getProductions);
 router.post("/semi/:id/productions", authenticate, requireNumericId(), staffOnly, recordProduction);
+// Catat Masak's default (takaran standar and porsi jadi), without cooking.
+router.put("/semi/:id/standard", authenticate, requireNumericId(), staffOnly, saveStandard);
 
 // Buang (Modul 3): Riwayat Kerugian of bahan baku and bahan olahan,
 // bukti foto, and bahan baku thrown away (history_stock_raw_wastes).

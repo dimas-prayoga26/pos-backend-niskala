@@ -268,6 +268,12 @@ const ensureSemiItemsSchema = async (db) => {
   await db
     .query("ALTER TABLE stock_semi_items ADD COLUMN reset_daily BOOLEAN NOT NULL DEFAULT TRUE AFTER yield_quantity")
     .catch(() => {});
+  // Takaran standar: the portions one cooking of the composition's standard
+  // quantities makes. Catat Masak starts from it; with the composition it
+  // gives the HPP standar per porsi before any cooking.
+  await db
+    .query("ALTER TABLE stock_semi_items ADD COLUMN default_portions DECIMAL(12,2) NULL AFTER reset_daily")
+    .catch(() => {});
 
   // Portions thrown away (leftover at closing, spoiled, spilled, a lower
   // stock count) with their value at that time: the kerugian of bahan

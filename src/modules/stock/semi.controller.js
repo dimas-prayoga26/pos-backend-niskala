@@ -29,14 +29,18 @@ const sumByStockItem = (lines) => {
   return [...quantityByStockItemId].map(([stockItemId, quantity]) => ({ stockItemId, quantity }));
 };
 
-// The semi item's bahan baku. Their quantities are filled at Catat Masak
-// (a quantity sent here is kept as the next one's suggestion). unit and
-// portionSize left out keep the item's own.
+// The semi item's bahan baku with their takaran standar (0: keep the one it
+// has), and defaultPortions the portions they make (left out: keep it,
+// empty: none). unit and portionSize left out keep the item's own.
 const normalizeSemiPayload = (body) => ({
   name: toTitleName(body.name),
   category: String(body.category || "").trim() || "Olahan",
   unit: String(body.unit || "").trim() || null,
   portionSize: body.portionSize === undefined ? null : roundRecipeQuantity(toNonNegativeNumber(body.portionSize)),
+  defaultPortions:
+    body.defaultPortions === undefined
+      ? undefined
+      : Math.round(toNonNegativeNumber(body.defaultPortions) * 100) / 100 || null,
   minimumStock: toNonNegativeNumber(body.minimumStock),
   // Leftover written off at the daily recap (Nasi); off for items that keep.
   resetDaily: body.resetDaily === undefined ? true : Boolean(body.resetDaily),
@@ -164,6 +168,25 @@ const recordProduction = asyncHandler(async (req, res, next) => {
   });
 });
 
+// "Simpan Takaran Standar" at Catat Masak: the quantities and portions typed
+// become the next cooking's starting values and the HPP standar, without
+// cooking.
+const saveStandard = asyncHandler(async (req, res, next) => {
+  const items = sumByStockItem(req.body.items).filter((used) => used.quantity > 0);
+  const portionQuantity = toNonNegativeNumber(req.body.portionQuantity);
+  if (!items.length) return next(createHttpError(400, "Isi jumlah bahan baku yang dipakai."));
+  if (portionQuantity <= 0) return next(createHttpError(400, "Isi jumlah porsi jadi."));
+
+  const semiId = Number(req.params.id);
+  if (!(await SemiItem.saveStandard(semiId, { items, portionQuantity }))) {
+    return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
+  }
+
+  const item = await SemiItem.findById(semiId);
+  emitStockChanged("semi-item-standard", semiId);
+  res.status(200).json({ success: true, message: `Takaran standar ${item.name} disimpan.`, data: item });
+});
+
 const getProductions = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
@@ -228,6 +251,7 @@ module.exports = {
   getSemiItems,
   getWastes,
   recordProduction,
+  saveStandard,
   recordWaste,
   updateSemiItem,
 };
