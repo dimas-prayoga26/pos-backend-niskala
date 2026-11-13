@@ -40,13 +40,15 @@ const normalizeDailyPayload = (body, createdBy) => {
   const cashIn = parseNumber(body.cashIn);
   const qrisIn = parseNumber(body.qrisIn);
   const transferIn = parseNumber(body.transferIn);
+  // Saldo online masuk: paid out by the online platforms (after their fee).
+  const onlineIn = parseNumber(body.onlineIn);
   const totalRevenue =
     parseNumber(body.totalRevenue, NaN) ||
     offlineRevenue + onlineRevenue + cateringRevenue;
   const grossProfit = parseNumber(body.grossProfit, NaN) || totalRevenue - hppTotal;
   const cashDifference =
     parseNumber(body.cashDifference, NaN) ||
-    cashIn + qrisIn + transferIn - totalRevenue;
+    cashIn + qrisIn + transferIn + onlineIn - totalRevenue;
   const payload = {
     recapDate,
     shiftOfficer: String(body.shiftOfficer || "").trim(),
@@ -62,6 +64,7 @@ const normalizeDailyPayload = (body, createdBy) => {
     cashIn,
     qrisIn,
     transferIn,
+    onlineIn,
     cashDifference,
     bestMenu: String(body.bestMenuName || body.bestMenu || "").trim(),
     bestMenuItemId: body.bestMenuItemId || null,

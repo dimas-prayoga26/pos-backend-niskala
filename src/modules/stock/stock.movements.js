@@ -7,6 +7,7 @@ const createHttpError = require("http-errors");
 const { roundCurrency } = require("../../shared/utils/money");
 const { findRecipeLines } = require("../menu/menu.recipeLines");
 const { findBundleRows } = require("../menu/menu.bundles");
+const { findSemiRowsById, swapRecipeRows } = require("../menu/menu.ingredientSwaps");
 
 const createStockValidationError = (insufficientStock) =>
   createHttpError(409, "Stok bahan tidak mencukupi.", {
@@ -71,11 +72,19 @@ const buildStockDeductions = async (connection, items = []) => {
 
   if (!ingredientRows.length) return new Map();
 
+  // Bahan olahan swapped in an item (Nasi Daun Jeruk for Nasi Putih) are
+  // taken from the substitute instead.
+  const substituteRowsById = await findSemiRowsById(
+    connection,
+    orderItems.flatMap((item) => (item.ingredientSwaps || []).map((swap) => swap.toSemiItemId))
+  );
   const deductions = new Map();
 
   for (const orderItem of orderItems) {
-    const matchingIngredients = ingredientRows.filter(
-      (ingredient) => Number(ingredient.menu_item_id) === orderItem.menuItemId
+    const matchingIngredients = swapRecipeRows(
+      ingredientRows.filter((ingredient) => Number(ingredient.menu_item_id) === orderItem.menuItemId),
+      orderItem.ingredientSwaps,
+      substituteRowsById
     );
 
     for (const ingredient of matchingIngredients) {

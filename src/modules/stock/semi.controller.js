@@ -192,6 +192,31 @@ const saveStandard = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, message: `Takaran standar ${item.name} disimpan.${cogs}`, data: item });
 });
 
+// Pengganti: bahan olahan a menu may be sold with instead of this one
+// ([{ semiItemId, extraPrice }]); every menu using it offers them at the kasir.
+const saveSubstitutes = asyncHandler(async (req, res, next) => {
+  const substitutes = [];
+  for (const line of Array.isArray(req.body.substitutes) ? req.body.substitutes : []) {
+    const semiItemId = Number(line?.semiItemId) || 0;
+    if (semiItemId <= 0 || substitutes.some((substitute) => substitute.semiItemId === semiItemId)) continue;
+    substitutes.push({ semiItemId, extraPrice: Math.round(toNonNegativeNumber(line?.extraPrice)) });
+  }
+
+  const semiId = Number(req.params.id);
+  if (!(await SemiItem.saveSubstitutes(semiId, substitutes))) {
+    return next(createHttpError(404, "Bahan olahan tidak ditemukan."));
+  }
+
+  emitStockChanged("semi-item-substitutes", semiId);
+  // The kasir's menus offer the new choices.
+  emitRealtimeEvent("menu:changed", { action: "ingredient-choices-changed", semiItemId: semiId });
+  res.status(200).json({
+    success: true,
+    message: "Pengganti disimpan.",
+    data: await SemiItem.findById(semiId),
+  });
+});
+
 const getProductions = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
@@ -257,6 +282,7 @@ module.exports = {
   getWastes,
   recordProduction,
   saveStandard,
+  saveSubstitutes,
   recordWaste,
   updateSemiItem,
 };

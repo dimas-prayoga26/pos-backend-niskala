@@ -4,6 +4,7 @@
 const { parseNominal } = require("../../shared/utils/money");
 const { findBundleRows } = require("../menu/menu.bundles");
 const { findRecipeLines } = require("../menu/menu.recipeLines");
+const { findSemiRowsById, swapRecipeRows } = require("../menu/menu.ingredientSwaps");
 
 const round4 = (value) => Math.round(value * 10000) / 10000;
 
@@ -59,10 +60,12 @@ const findBundleSnapshot = async (connection, bundleId, bundleRows) => {
 };
 
 // choices: the menus picked for the package's choices ({ menuItemId, name, quantity }).
+// swaps: bahan olahan swapped in the item ({ fromSemiItemId, toSemiItemId }),
+// priced at the substitute's cost.
 const findMenuItemSnapshot = async (
   connection,
   menuItemId,
-  { nested = false, choices = [] } = {}
+  { nested = false, choices = [], swaps = [] } = {}
 ) => {
   if (!menuItemId) return { menuItemId: null, hppCost: 0, costs: [] };
 
@@ -81,7 +84,11 @@ const findMenuItemSnapshot = async (
 
   // Bahan baku lines (menu_item_recipes) and bahan olahan lines
   // (stock_semi_item_menus) of the menu.
-  const recipeRows = await findRecipeLines(connection, [menuItemId]);
+  const recipeRows = swapRecipeRows(
+    await findRecipeLines(connection, [menuItemId]),
+    swaps,
+    await findSemiRowsById(connection, swaps.map((swap) => swap.toSemiItemId))
+  );
   const costs = recipeRows.map((row) => ({
     stockItemId: row.stock_item_id,
     semiItemId: row.semi_item_id,

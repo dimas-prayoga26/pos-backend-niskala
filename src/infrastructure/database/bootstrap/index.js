@@ -38,6 +38,7 @@ const { seedCogsSheet } = require("./cogsSeed");
 const { seedCogsCategories, seedSheetCategoryTabs } = require("./cogsCategorySeed");
 const { seedCogsMenuFill } = require("./cogsMenuFillSeed");
 const { ensureBundleSchema } = require("./bundleSchema");
+const { ensureIngredientSwapSchema } = require("./ingredientSwapSchema");
 
 const connectDB = async () => {
   await serverPool.query(
@@ -585,6 +586,8 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN total_revenue DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER catering_revenue");
   await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN gross_profit DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER hpp_total");
   await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN cash_difference DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER transfer_in");
+  // Saldo online masuk: what the online platforms (GoFood, Grab, ...) paid out.
+  await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN online_in DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER transfer_in");
   await runSafeMigration("CREATE UNIQUE INDEX uniq_daily_recaps_date ON daily_recaps (recap_date)");
 
   await pool.query(`
@@ -680,6 +683,8 @@ const bootstrapDatabase = async () => {
   await ensureDayClosingSchema(pool);
   // Kategori Promo: packages of menus (categories.is_bundle, menu_item_bundle_items).
   await ensureBundleSchema(pool);
+  // Bahan olahan a menu may be sold with instead (Nasi Daun Jeruk for Nasi Putih).
+  await ensureIngredientSwapSchema(pool);
   // Best Seller tab of each category (modules/categories/bestSeller): Makanan,
   // Minuman, Snack, '' (not shown) or NULL (not set yet: from its name).
   await runSafeMigration("ALTER TABLE categories ADD COLUMN best_seller_group VARCHAR(20) NULL AFTER is_bundle");

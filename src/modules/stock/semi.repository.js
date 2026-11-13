@@ -15,6 +15,7 @@ const { pool, withTransaction } = require("../../infrastructure/database/pool");
 const { roundCost, roundCurrency } = require("../../shared/utils/money");
 const { roundRecipeQuantity } = require("../menu/menu.options");
 const { refreshMenuCosts } = require("../menu/menu.costs");
+const { findSubstituteRows } = require("../menu/menu.ingredientSwaps");
 const { getStockStatus } = require("./stock.repository");
 const { allocateBatchCosts, dayOf } = require("../orders/order.hpp");
 const { photoFileNames, removePhotoFiles, savePhotos, withPhotoFiles, withPhotos } = require("./wastes");
@@ -92,6 +93,8 @@ const attachDetails = async (semiItems) => {
   const latestByItemId = new Map(
     productionRows.map((row) => [row.semi_item_id, mapProduction(row)])
   );
+  // Bahan olahan a menu may be sold with instead of this one (Pengganti).
+  const substituteRows = await findSubstituteRows(pool, ids);
 
   return semiItems.map((item) => {
     const components = componentRows
@@ -112,6 +115,13 @@ const attachDetails = async (semiItems) => {
       recipeCost,
       standardUnitCost: item.defaultPortions > 0 ? roundCost(recipeCost / item.defaultPortions) : 0,
       lastProduction: latestByItemId.get(item.id) || null,
+      substitutes: substituteRows
+        .filter((row) => row.semi_item_id === item.id)
+        .map((row) => ({
+          semiItemId: row.substitute_semi_item_id,
+          name: row.name,
+          extraPrice: Number(row.extra_price) || 0,
+        })),
     };
   });
 };
@@ -222,6 +232,39 @@ const save = (id, { name, category, unit, portionSize, defaultPortions, minimumS
     );
 
     return semiId;
+  });
+
+// Replaces the bahan olahan a menu may be sold with instead of this one
+// ([{ semiItemId, extraPrice }], in order). Returns false when the item is not
+// found; throws 400 for a substitute that is not another active bahan olahan.
+const saveSubstitutes = (semiId, substitutes) =>
+  withTransaction(async (connection) => {
+    const [[item]] = await connection.query("SELECT id FROM stock_semi_items WHERE id = ?", [semiId]);
+    if (!item) return false;
+
+    const ids = substitutes.map((substitute) => substitute.semiItemId);
+    if (ids.includes(Number(semiId))) {
+      throw createHttpError(400, "Bahan olahan tidak bisa jadi pengganti dirinya sendiri.");
+    }
+    if (ids.length) {
+      const [rows] = await connection.query(
+        "SELECT id FROM stock_semi_items WHERE id IN (?) AND is_active = TRUE",
+        [ids]
+      );
+      if (rows.length !== ids.length) {
+        throw createHttpError(400, "Ada pengganti yang tidak ditemukan. Muat ulang daftar bahan.");
+      }
+    }
+
+    await connection.query("DELETE FROM stock_semi_item_substitutes WHERE semi_item_id = ?", [semiId]);
+    if (substitutes.length) {
+      await connection.query(
+        `INSERT INTO stock_semi_item_substitutes (semi_item_id, substitute_semi_item_id, extra_price, sort_order)
+         VALUES ?`,
+        [substitutes.map((substitute, index) => [semiId, substitute.semiItemId, substitute.extraPrice, index + 1])]
+      );
+    }
+    return true;
   });
 
 // The default of Catat Masak, saved without cooking: the takaran standar of
@@ -810,4 +853,5 @@ module.exports = {
   remove,
   save,
   saveStandard,
+  saveSubstitutes,
 };

@@ -35,6 +35,7 @@ const mapDailyRecap = (row) => ({
   cashIn: toNumber(row.cash_in),
   qrisIn: toNumber(row.qris_in),
   transferIn: toNumber(row.transfer_in),
+  onlineIn: toNumber(row.online_in),
   cashDifference: toNumber(row.cash_difference),
   bestMenuItemId: row.best_menu_item_id,
   bestMenu: row.best_menu_name || row.best_menu_current_name,
@@ -208,10 +209,10 @@ const insertDaily = async (format, payload, { user, bestMenu, leastMenu }, conne
       (format_recap_id, recap_date, user_id, shift_officer, transaction_total,
        offline_revenue, online_revenue, catering_revenue, total_revenue,
        hpp_total, gross_profit, daily_expense, cash_in, qris_in,
-       transfer_in, cash_difference,
+       transfer_in, online_in, cash_difference,
        best_menu_item_id, best_menu_name, least_menu_item_id,
        least_menu_name, note, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       format.id,
       payload.recapDate,
@@ -228,6 +229,7 @@ const insertDaily = async (format, payload, { user, bestMenu, leastMenu }, conne
       payload.cashIn,
       payload.qrisIn,
       payload.transferIn,
+      payload.onlineIn || 0,
       payload.cashDifference,
       payload.bestMenuItemId || bestMenu?.id || null,
       payload.bestMenu || bestMenu?.name || null,
@@ -267,7 +269,7 @@ const addCashToDaily = ({ recapId, cashColumn, amount, kasNote }) =>
 
     await connection.query(
       `UPDATE daily_recaps
-       SET cash_difference = cash_in + qris_in + transfer_in - total_revenue
+       SET cash_difference = cash_in + qris_in + transfer_in + online_in - total_revenue
        WHERE id = ?`,
       [recapId]
     );

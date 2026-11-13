@@ -8,8 +8,9 @@ const CASH_COLUMN_BY_METHOD = {
   cash: "cash_in",
   qris: "qris_in",
   transfer: "transfer_in",
+  online: "online_in",
 };
-const CASH_LABEL_BY_METHOD = { qris: "QRIS", transfer: "Transfer" };
+const CASH_LABEL_BY_METHOD = { qris: "QRIS", transfer: "Transfer", online: "Saldo online" };
 
 const isValidPeriodType = (periodType) => ALLOWED_PERIOD_TYPES.includes(periodType);
 

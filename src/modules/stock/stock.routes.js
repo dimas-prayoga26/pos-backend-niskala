@@ -22,6 +22,7 @@ const {
   recordProduction,
   recordWaste,
   saveStandard,
+  saveSubstitutes,
   updateSemiItem,
 } = require("./semi.controller");
 const {
@@ -77,6 +78,8 @@ router.get("/semi/:id/productions", authenticate, requireNumericId(), getProduct
 router.post("/semi/:id/productions", authenticate, requireNumericId(), staffOnly, recordProduction);
 // Catat Masak's default (takaran standar and porsi jadi), without cooking.
 router.put("/semi/:id/standard", authenticate, requireNumericId(), staffOnly, saveStandard);
+// Pengganti (Nasi Daun Jeruk for Nasi Putih), offered in every menu using it.
+router.put("/semi/:id/substitutes", authenticate, adminOnly, requireNumericId(), saveSubstitutes);
 
 // Buang (Modul 3): Riwayat Kerugian of bahan baku and bahan olahan,
 // bukti foto, and bahan baku thrown away (history_stock_raw_wastes).

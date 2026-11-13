@@ -83,6 +83,8 @@ const mapItem = (row, hppOlahan = 0) => ({
   addOns: row.addOns || [],
   // Menus picked for a package's choices, per package.
   bundleChoices: row.bundleChoices || [],
+  // Bahan olahan swapped in it (Nasi Daun Jeruk for Nasi Putih).
+  ingredientSwaps: row.ingredientSwaps || [],
 });
 
 // Picked package menus by order item id: [{ menuItemId, name, quantity }].
@@ -110,6 +112,32 @@ const findBundleChoicesByOrderItemIds = async (db, orderItemIds) => {
   return choicesByOrderItemId;
 };
 
+// Bahan olahan swapped in each sold item, by order item id:
+// [{ fromSemiItemId, toSemiItemId, fromName, toName, extraPrice }].
+const findIngredientSwapsByOrderItemIds = async (db, orderItemIds) => {
+  const swapsByOrderItemId = new Map();
+  if (!orderItemIds.length) return swapsByOrderItemId;
+
+  const [rows] = await db.query(
+    `SELECT order_item_id, from_semi_item_id, to_semi_item_id, from_name, to_name, extra_price
+     FROM order_item_ingredient_swaps
+     WHERE order_item_id IN (?)
+     ORDER BY id ASC`,
+    [orderItemIds]
+  );
+  rows.forEach((row) => {
+    if (!swapsByOrderItemId.has(row.order_item_id)) swapsByOrderItemId.set(row.order_item_id, []);
+    swapsByOrderItemId.get(row.order_item_id).push({
+      fromSemiItemId: row.from_semi_item_id,
+      toSemiItemId: row.to_semi_item_id,
+      fromName: row.from_name,
+      toName: row.to_name,
+      extraPrice: Number(row.extra_price || 0),
+    });
+  });
+  return swapsByOrderItemId;
+};
+
 const findItemsByOrderIds = async (orderIds) => {
   if (!orderIds.length) return new Map();
 
@@ -130,6 +158,10 @@ const findItemsByOrderIds = async (orderIds) => {
     pool,
     rows.map((row) => row.id)
   );
+  const swapsByOrderItemId = await findIngredientSwapsByOrderItemIds(
+    pool,
+    rows.map((row) => row.id)
+  );
   const itemsByOrderId = new Map();
 
   rows.forEach((row) => {
@@ -138,7 +170,11 @@ const findItemsByOrderIds = async (orderIds) => {
     }
     itemsByOrderId.get(row.order_id).push(
       mapItem(
-        { ...row, bundleChoices: choicesByOrderItemId.get(row.id) || [] },
+        {
+          ...row,
+          bundleChoices: choicesByOrderItemId.get(row.id) || [],
+          ingredientSwaps: swapsByOrderItemId.get(row.id) || [],
+        },
         olahanByItemId.get(row.id)
       )
     );
@@ -432,6 +468,26 @@ const insertOrderItemBundleChoices = async (connection, orderItemId, choices = [
   );
 };
 
+const insertOrderItemIngredientSwaps = async (connection, orderItemId, swaps = []) => {
+  if (!swaps.length) return;
+
+  await connection.query(
+    `INSERT INTO order_item_ingredient_swaps
+      (order_item_id, from_semi_item_id, to_semi_item_id, from_name, to_name, extra_price)
+     VALUES ?`,
+    [
+      swaps.map((swap) => [
+        orderItemId,
+        swap.fromSemiItemId,
+        swap.toSemiItemId,
+        swap.fromName,
+        swap.toName,
+        swap.extraPrice || 0,
+      ]),
+    ]
+  );
+};
+
 const updateStatus = (connection, id, orderStatus) =>
   connection.query("UPDATE orders SET order_status = ? WHERE id = ?", [
     orderStatus,
@@ -495,14 +551,14 @@ const findItemsForStockRestore = async (connection, id) => {
      WHERE order_id = ?`,
     [id]
   );
-  const choicesByOrderItemId = await findBundleChoicesByOrderItemIds(
-    connection,
-    itemRows.map((row) => row.orderItemId)
-  );
+  const orderItemIds = itemRows.map((row) => row.orderItemId);
+  const choicesByOrderItemId = await findBundleChoicesByOrderItemIds(connection, orderItemIds);
+  const swapsByOrderItemId = await findIngredientSwapsByOrderItemIds(connection, orderItemIds);
 
   return itemRows.map((row) => ({
     ...row,
     bundleChoices: choicesByOrderItemId.get(row.orderItemId) || [],
+    ingredientSwaps: swapsByOrderItemId.get(row.orderItemId) || [],
   }));
 };
 
@@ -527,6 +583,7 @@ module.exports = {
   insertOrderItem,
   insertOrderItemBundleChoices,
   insertOrderItemCosts,
+  insertOrderItemIngredientSwaps,
   setHppStatus,
   insertOrderPlatform,
   orderExists,

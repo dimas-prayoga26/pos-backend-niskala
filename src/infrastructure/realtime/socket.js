@@ -1,5 +1,6 @@
 const { Server } = require("socket.io");
 const logger = require("../../shared/logger");
+const { triggerPusherEvent } = require("./pusher");
 
 let io;
 
@@ -20,13 +21,18 @@ const initSocket = (server, corsOptions) => {
   return io;
 };
 
+// Sent to the Socket.IO clients of this server and, when configured, to
+// Pusher Channels (see ./pusher), so either kind of client hears it.
 const emitRealtimeEvent = (event, payload = {}) => {
-  if (!io) return;
-
-  io.emit(event, {
+  const message = {
     ...payload,
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  triggerPusherEvent(event, message);
+  if (!io) return;
+
+  io.emit(event, message);
 };
 
 module.exports = { emitRealtimeEvent, initSocket };

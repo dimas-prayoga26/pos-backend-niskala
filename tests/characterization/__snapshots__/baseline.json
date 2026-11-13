@@ -4152,7 +4152,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 12,
@@ -4212,7 +4213,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 13,
@@ -4320,7 +4322,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 14,
@@ -4428,7 +4431,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 48,
@@ -4548,7 +4552,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 69,
@@ -4620,7 +4625,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 11,
@@ -4692,7 +4698,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 70,
@@ -4752,7 +4759,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 1,
@@ -4824,7 +4832,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 2,
@@ -4896,7 +4905,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 3,
@@ -4992,7 +5002,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 4,
@@ -5088,7 +5099,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 7,
@@ -5184,7 +5196,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 9,
@@ -5292,7 +5305,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 49,
@@ -5412,7 +5426,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 68,
@@ -5544,7 +5559,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 75,
@@ -5616,7 +5632,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 74,
@@ -5688,7 +5705,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 71,
@@ -5784,7 +5802,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 72,
@@ -5880,7 +5899,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 73,
@@ -5976,7 +5996,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 76,
@@ -6084,7 +6105,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 50,
@@ -6168,7 +6190,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 17,
@@ -6240,7 +6263,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 53,
@@ -6336,7 +6360,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 51,
@@ -6444,7 +6469,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 52,
@@ -6540,7 +6566,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 19,
@@ -6612,7 +6639,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 20,
@@ -6684,7 +6712,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 21,
@@ -6756,7 +6785,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 22,
@@ -6840,7 +6870,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 58,
@@ -6888,7 +6919,8 @@
        "position": 9
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 57,
@@ -6936,7 +6968,8 @@
        "position": 9
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 30,
@@ -7020,7 +7053,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 31,
@@ -7128,7 +7162,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 32,
@@ -7212,7 +7247,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 33,
@@ -7308,7 +7344,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 34,
@@ -7343,7 +7380,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 47,
@@ -7463,7 +7501,8 @@
        "position": 11
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 46,
@@ -7583,7 +7622,8 @@
        "position": 11
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 23,
@@ -7703,7 +7743,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 24,
@@ -7823,7 +7864,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 25,
@@ -7943,7 +7985,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 26,
@@ -8063,7 +8106,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 27,
@@ -8098,7 +8142,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 28,
@@ -8194,7 +8239,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 29,
@@ -8290,7 +8336,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 60,
@@ -8410,7 +8457,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 59,
@@ -8530,7 +8578,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 61,
@@ -8565,7 +8614,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 63,
@@ -8600,7 +8650,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 62,
@@ -8635,7 +8686,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 64,
@@ -8707,7 +8759,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 67,
@@ -8779,7 +8832,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 66,
@@ -8851,7 +8905,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 65,
@@ -8923,7 +8978,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 45,
@@ -8958,7 +9014,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 42,
@@ -8993,7 +9050,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 44,
@@ -9028,7 +9086,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 40,
@@ -9063,7 +9122,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 43,
@@ -9098,7 +9158,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 41,
@@ -9133,7 +9194,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 35,
@@ -9168,7 +9230,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 36,
@@ -9203,7 +9266,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 37,
@@ -9238,7 +9302,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 38,
@@ -9273,7 +9338,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 39,
@@ -9308,7 +9374,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 5,
@@ -9404,7 +9471,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 6,
@@ -9500,7 +9568,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 8,
@@ -9584,7 +9653,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 15,
@@ -9692,7 +9762,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 16,
@@ -9764,7 +9835,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 18,
@@ -9836,7 +9908,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 55,
@@ -9871,7 +9944,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 56,
@@ -9906,7 +9980,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 54,
@@ -9941,7 +10016,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      }
     ]
    },
@@ -10054,7 +10130,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 6,
@@ -10150,7 +10227,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 8,
@@ -10234,7 +10312,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 15,
@@ -10342,7 +10421,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      }
     ]
    },
@@ -10453,7 +10533,8 @@
       "position": 10
      },
      "createdAt": "<ts>",
-     "updatedAt": "<ts>"
+     "updatedAt": "<ts>",
+     "ingredientChoices": []
     }
    },
    "events": [
@@ -10530,7 +10611,8 @@
       "position": 10
      },
      "createdAt": "<ts>",
-     "updatedAt": "<ts>"
+     "updatedAt": "<ts>",
+     "ingredientChoices": []
     }
    },
    "events": [
@@ -10590,7 +10672,8 @@
       "position": 10
      },
      "createdAt": "<ts>",
-     "updatedAt": "<ts>"
+     "updatedAt": "<ts>",
+     "ingredientChoices": []
     }
    },
    "events": [
@@ -10703,7 +10786,8 @@
       "position": 10
      },
      "createdAt": "<ts>",
-     "updatedAt": "<ts>"
+     "updatedAt": "<ts>",
+     "ingredientChoices": []
     }
    },
    "events": [
@@ -10834,7 +10918,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 12,
@@ -10894,7 +10979,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 13,
@@ -11002,7 +11088,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 14,
@@ -11110,7 +11197,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 48,
@@ -11230,7 +11318,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 69,
@@ -11302,7 +11391,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 11,
@@ -11374,7 +11464,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 70,
@@ -11434,7 +11525,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 1,
@@ -11506,7 +11598,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 2,
@@ -11578,7 +11671,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 3,
@@ -11674,7 +11768,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 4,
@@ -11770,7 +11865,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 7,
@@ -11866,7 +11962,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 9,
@@ -11974,7 +12071,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 49,
@@ -12094,7 +12192,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 68,
@@ -12226,7 +12325,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 75,
@@ -12298,7 +12398,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 74,
@@ -12370,7 +12471,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 71,
@@ -12466,7 +12568,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 72,
@@ -12562,7 +12665,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 73,
@@ -12658,7 +12762,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 76,
@@ -12766,7 +12871,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 50,
@@ -12850,7 +12956,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 17,
@@ -12922,7 +13029,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 53,
@@ -13018,7 +13126,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 51,
@@ -13126,7 +13235,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 52,
@@ -13222,7 +13332,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 19,
@@ -13294,7 +13405,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 20,
@@ -13366,7 +13478,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 21,
@@ -13438,7 +13551,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 22,
@@ -13522,7 +13636,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 58,
@@ -13570,7 +13685,8 @@
        "position": 9
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 57,
@@ -13618,7 +13734,8 @@
        "position": 9
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 30,
@@ -13702,7 +13819,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 31,
@@ -13810,7 +13928,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 32,
@@ -13894,7 +14013,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 33,
@@ -13990,7 +14110,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 34,
@@ -14025,7 +14146,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 77,
@@ -14085,7 +14207,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 78,
@@ -14120,7 +14243,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 79,
@@ -14155,7 +14279,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 47,
@@ -14275,7 +14400,8 @@
        "position": 11
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 46,
@@ -14395,7 +14521,8 @@
        "position": 11
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 23,
@@ -14515,7 +14642,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 24,
@@ -14635,7 +14763,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 25,
@@ -14755,7 +14884,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 26,
@@ -14875,7 +15005,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 27,
@@ -14910,7 +15041,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 28,
@@ -15006,7 +15138,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 29,
@@ -15102,7 +15235,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 60,
@@ -15222,7 +15356,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 59,
@@ -15342,7 +15477,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 61,
@@ -15377,7 +15513,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 63,
@@ -15412,7 +15549,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 62,
@@ -15447,7 +15585,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 64,
@@ -15519,7 +15658,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 67,
@@ -15591,7 +15731,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 66,
@@ -15663,7 +15804,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 65,
@@ -15735,7 +15877,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 45,
@@ -15770,7 +15913,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 42,
@@ -15805,7 +15949,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 44,
@@ -15840,7 +15985,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 40,
@@ -15875,7 +16021,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 43,
@@ -15910,7 +16057,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 41,
@@ -15945,7 +16093,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 35,
@@ -15980,7 +16129,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 36,
@@ -16015,7 +16165,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 37,
@@ -16050,7 +16201,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 38,
@@ -16085,7 +16237,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 39,
@@ -16120,7 +16273,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 5,
@@ -16216,7 +16370,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 6,
@@ -16312,7 +16467,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 8,
@@ -16396,7 +16552,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 15,
@@ -16504,7 +16661,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 16,
@@ -16576,7 +16734,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 18,
@@ -16648,7 +16807,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 55,
@@ -16683,7 +16843,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 56,
@@ -16718,7 +16879,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 54,
@@ -16753,7 +16915,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      }
     ]
    },
@@ -16830,7 +16993,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 78,
@@ -16865,7 +17029,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 79,
@@ -16900,7 +17065,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      }
     ]
    },
@@ -19570,7 +19736,8 @@
        "discountAmount": 0,
        "price": 40000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       },
       {
        "id": "19-78",
@@ -19588,7 +19755,8 @@
        "discountAmount": 0,
        "price": 17000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       }
      ],
      "paymentMethod": "Cash",
@@ -19672,7 +19840,8 @@
        "discountAmount": 0,
        "price": 20000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       }
      ],
      "paymentMethod": "QRIS",
@@ -19790,7 +19959,8 @@
        "discountAmount": 0,
        "price": 30000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       }
      ],
      "paymentMethod": "Online",
@@ -21860,7 +22030,8 @@
         "discountAmount": 0,
         "price": 30000,
         "addOns": [],
-        "bundleChoices": []
+        "bundleChoices": [],
+        "ingredientSwaps": []
        }
       ],
       "paymentMethod": "Online",
@@ -21911,7 +22082,8 @@
         "discountAmount": 0,
         "price": 20000,
         "addOns": [],
-        "bundleChoices": []
+        "bundleChoices": [],
+        "ingredientSwaps": []
        }
       ],
       "paymentMethod": "QRIS",
@@ -21962,7 +22134,8 @@
         "discountAmount": 0,
         "price": 40000,
         "addOns": [],
-        "bundleChoices": []
+        "bundleChoices": [],
+        "ingredientSwaps": []
        },
        {
         "id": "19-78",
@@ -21980,7 +22153,8 @@
         "discountAmount": 0,
         "price": 17000,
         "addOns": [],
-        "bundleChoices": []
+        "bundleChoices": [],
+        "ingredientSwaps": []
        }
       ],
       "paymentMethod": "Cash",
@@ -22047,7 +22221,8 @@
        "discountAmount": 0,
        "price": 40000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       },
       {
        "id": "19-78",
@@ -22065,7 +22240,8 @@
        "discountAmount": 0,
        "price": 17000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       }
      ],
      "paymentMethod": "Cash",
@@ -22200,7 +22376,8 @@
        "discountAmount": 0,
        "price": 40000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       },
       {
        "id": "19-78",
@@ -22218,7 +22395,8 @@
        "discountAmount": 0,
        "price": 17000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       }
      ],
      "paymentMethod": "Cash",
@@ -22789,7 +22967,8 @@
        "discountAmount": 0,
        "price": 20000,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       }
      ],
      "paymentMethod": "Cash",
@@ -24559,7 +24738,8 @@
        "discountAmount": 0,
        "price": 1,
        "addOns": [],
-       "bundleChoices": []
+       "bundleChoices": [],
+       "ingredientSwaps": []
       }
      ],
      "paymentMethod": "Cash",
@@ -26617,6 +26797,7 @@
      "cashIn": 100000,
      "qrisIn": 26000,
      "transferIn": 0,
+     "onlineIn": 0,
      "cashDifference": -531000,
      "bestMenuItemId": 77,
      "bestMenu": "Kopi Uji",
@@ -26781,6 +26962,7 @@
      "cashIn": 100000,
      "qrisIn": 31000,
      "transferIn": 0,
+     "onlineIn": 0,
      "cashDifference": -526000,
      "bestMenuItemId": 77,
      "bestMenu": "Kopi Uji",
@@ -26838,6 +27020,7 @@
       "cashIn": 100000,
       "qrisIn": 31000,
       "transferIn": 0,
+      "onlineIn": 0,
       "cashDifference": -526000,
       "bestMenuItemId": 77,
       "bestMenu": "Kopi Uji",
@@ -27144,7 +27327,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 12,
@@ -27204,7 +27388,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 13,
@@ -27312,7 +27497,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 14,
@@ -27420,7 +27606,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 48,
@@ -27540,7 +27727,8 @@
        "position": 1
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 69,
@@ -27612,7 +27800,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 11,
@@ -27684,7 +27873,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 70,
@@ -27744,7 +27934,8 @@
        "position": 2
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 1,
@@ -27816,7 +28007,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 2,
@@ -27888,7 +28080,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 3,
@@ -27984,7 +28177,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 4,
@@ -28080,7 +28274,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 7,
@@ -28176,7 +28371,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 9,
@@ -28284,7 +28480,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 49,
@@ -28404,7 +28601,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 68,
@@ -28536,7 +28734,8 @@
        "position": 3
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 75,
@@ -28608,7 +28807,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 74,
@@ -28680,7 +28880,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 71,
@@ -28776,7 +28977,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 72,
@@ -28872,7 +29074,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 73,
@@ -28968,7 +29171,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 76,
@@ -29076,7 +29280,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 50,
@@ -29160,7 +29365,8 @@
        "position": 4
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 17,
@@ -29232,7 +29438,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 53,
@@ -29328,7 +29535,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 51,
@@ -29436,7 +29644,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 52,
@@ -29532,7 +29741,8 @@
        "position": 5
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 19,
@@ -29604,7 +29814,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 20,
@@ -29676,7 +29887,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 21,
@@ -29748,7 +29960,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 22,
@@ -29832,7 +30045,8 @@
        "position": 7
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 58,
@@ -29880,7 +30094,8 @@
        "position": 9
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 57,
@@ -29928,7 +30143,8 @@
        "position": 9
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 30,
@@ -30012,7 +30228,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 31,
@@ -30120,7 +30337,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 32,
@@ -30204,7 +30422,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 33,
@@ -30300,7 +30519,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 34,
@@ -30335,7 +30555,8 @@
        "position": 10
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 47,
@@ -30455,7 +30676,8 @@
        "position": 11
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 46,
@@ -30575,7 +30797,8 @@
        "position": 11
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 23,
@@ -30695,7 +30918,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 24,
@@ -30815,7 +31039,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 25,
@@ -30935,7 +31160,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 26,
@@ -31055,7 +31281,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 27,
@@ -31090,7 +31317,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 28,
@@ -31186,7 +31414,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 29,
@@ -31282,7 +31511,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 60,
@@ -31402,7 +31632,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 59,
@@ -31522,7 +31753,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 61,
@@ -31557,7 +31789,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 63,
@@ -31592,7 +31825,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 62,
@@ -31627,7 +31861,8 @@
        "position": 12
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 64,
@@ -31699,7 +31934,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 67,
@@ -31771,7 +32007,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 66,
@@ -31843,7 +32080,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 65,
@@ -31915,7 +32153,8 @@
        "position": 13
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 45,
@@ -31950,7 +32189,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 42,
@@ -31985,7 +32225,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 44,
@@ -32020,7 +32261,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 40,
@@ -32055,7 +32297,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 43,
@@ -32090,7 +32333,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 41,
@@ -32125,7 +32369,8 @@
        "position": 16
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 35,
@@ -32160,7 +32405,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 36,
@@ -32195,7 +32441,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 37,
@@ -32230,7 +32477,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 38,
@@ -32265,7 +32513,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 39,
@@ -32300,7 +32549,8 @@
        "position": 17
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 5,
@@ -32396,7 +32646,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 6,
@@ -32492,7 +32743,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 8,
@@ -32576,7 +32828,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 15,
@@ -32684,7 +32937,8 @@
        "position": 20
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 16,
@@ -32756,7 +33010,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 18,
@@ -32828,7 +33083,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 55,
@@ -32863,7 +33119,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 56,
@@ -32898,7 +33155,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      },
      {
       "_id": 54,
@@ -32933,7 +33191,8 @@
        "position": 30
       },
       "createdAt": "<ts>",
-      "updatedAt": "<ts>"
+      "updatedAt": "<ts>",
+      "ingredientChoices": []
      }
     ]
    },
@@ -32993,7 +33252,8 @@
         "discountAmount": 0,
         "price": 1,
         "addOns": [],
-        "bundleChoices": []
+        "bundleChoices": [],
+        "ingredientSwaps": []
        }
       ],
       "paymentMethod": "Cash",
@@ -33160,7 +33420,8 @@
         "discountAmount": 0,
         "price": 20000,
         "addOns": [],
-        "bundleChoices": []
+        "bundleChoices": [],
+        "ingredientSwaps": []
        }
       ],
       "paymentMethod": "QRIS",
@@ -33211,7 +33472,8 @@
         "discountAmount": 0,
         "price": 40000,
         "addOns": [],
-        "bundleChoices": []
+        "bundleChoices": [],
+        "ingredientSwaps": []
        },
        {
         "id": "19-78",
@@ -33229,7 +33491,8 @@
         "discountAmount": 0,
         "price": 17000,
         "addOns": [],
-        "bundleChoices": []
+        "bundleChoices": [],
+        "ingredientSwaps": []
        }
       ],
       "paymentMethod": "Cash",
@@ -33541,7 +33804,7 @@
     ]
    },
    "daily_recaps": {
-    "ddl": "CREATE TABLE `daily_recaps` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `format_recap_id` int unsigned NOT NULL,\n  `recap_date` date NOT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `shift_officer` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `transaction_total` int NOT NULL DEFAULT '0',\n  `offline_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `online_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `catering_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `total_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `hpp_total` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `daily_expense` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `cash_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `qris_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `transfer_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `cash_difference` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `best_menu_item_id` int unsigned DEFAULT NULL,\n  `best_menu_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `least_menu_item_id` int unsigned DEFAULT NULL,\n  `least_menu_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `note` text COLLATE utf8mb4_unicode_ci,\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_daily_recaps_date` (`recap_date`),\n  KEY `idx_daily_recaps_format_recap_id` (`format_recap_id`),\n  KEY `idx_daily_recaps_date` (`recap_date`),\n  KEY `idx_daily_recaps_user_id` (`user_id`),\n  KEY `fk_daily_recaps_best_menu_item` (`best_menu_item_id`),\n  KEY `fk_daily_recaps_least_menu_item` (`least_menu_item_id`),\n  KEY `fk_daily_recaps_created_by` (`created_by`),\n  CONSTRAINT `fk_daily_recaps_best_menu_item` FOREIGN KEY (`best_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_format` FOREIGN KEY (`format_recap_id`) REFERENCES `meta_data_format_recap` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_daily_recaps_least_menu_item` FOREIGN KEY (`least_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `daily_recaps` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `format_recap_id` int unsigned NOT NULL,\n  `recap_date` date NOT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `shift_officer` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `transaction_total` int NOT NULL DEFAULT '0',\n  `offline_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `online_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `catering_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `total_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `hpp_total` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `daily_expense` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `cash_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `qris_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `transfer_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `online_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `cash_difference` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `best_menu_item_id` int unsigned DEFAULT NULL,\n  `best_menu_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `least_menu_item_id` int unsigned DEFAULT NULL,\n  `least_menu_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `note` text COLLATE utf8mb4_unicode_ci,\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_daily_recaps_date` (`recap_date`),\n  KEY `idx_daily_recaps_format_recap_id` (`format_recap_id`),\n  KEY `idx_daily_recaps_date` (`recap_date`),\n  KEY `idx_daily_recaps_user_id` (`user_id`),\n  KEY `fk_daily_recaps_best_menu_item` (`best_menu_item_id`),\n  KEY `fk_daily_recaps_least_menu_item` (`least_menu_item_id`),\n  KEY `fk_daily_recaps_created_by` (`created_by`),\n  CONSTRAINT `fk_daily_recaps_best_menu_item` FOREIGN KEY (`best_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_format` FOREIGN KEY (`format_recap_id`) REFERENCES `meta_data_format_recap` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_daily_recaps_least_menu_item` FOREIGN KEY (`least_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -33560,6 +33823,7 @@
       "cash_in": "100000.00",
       "qris_in": "31000.00",
       "transfer_in": "0.00",
+      "online_in": "0.00",
       "cash_difference": "-526000.00",
       "best_menu_item_id": null,
       "best_menu_name": "Kopi Uji",
@@ -38679,6 +38943,10 @@
      }
     ]
    },
+   "order_item_ingredient_swaps": {
+    "ddl": "CREATE TABLE `order_item_ingredient_swaps` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_item_id` int unsigned NOT NULL,\n  `from_semi_item_id` int unsigned DEFAULT NULL,\n  `to_semi_item_id` int unsigned DEFAULT NULL,\n  `from_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `to_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `extra_price` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_item_ingredient_swaps_order_item_id` (`order_item_id`),\n  KEY `fk_order_item_ingredient_swaps_from` (`from_semi_item_id`),\n  KEY `fk_order_item_ingredient_swaps_to` (`to_semi_item_id`),\n  CONSTRAINT `fk_order_item_ingredient_swaps_from` FOREIGN KEY (`from_semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_item_ingredient_swaps_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_order_item_ingredient_swaps_to` FOREIGN KEY (`to_semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "order_items": {
     "ddl": "CREATE TABLE `order_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_id` int unsigned NOT NULL,\n  `item_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `menu_item_id` int unsigned DEFAULT NULL,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `variant` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `quantity` int NOT NULL,\n  `price_per_quantity` decimal(12,2) NOT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `discount_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `discount_amount` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `price` decimal(12,2) NOT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_items_order_id` (`order_id`),\n  KEY `idx_order_items_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_order_items_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -43752,6 +44020,10 @@
    },
    "stock_semi_item_recipes": {
     "ddl": "CREATE TABLE `stock_semi_item_recipes` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `semi_item_id` int unsigned NOT NULL,\n  `stock_item_id` int unsigned NOT NULL,\n  `quantity` double NOT NULL DEFAULT '0',\n  `cost` int NOT NULL DEFAULT '0',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_stock_semi_item_recipes_item_stock` (`semi_item_id`,`stock_item_id`),\n  KEY `idx_stock_semi_item_recipes_stock_item_id` (`stock_item_id`),\n  CONSTRAINT `fk_stock_semi_item_recipes_semi_item` FOREIGN KEY (`semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_stock_semi_item_recipes_stock_item` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_raw_items` (`id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "stock_semi_item_substitutes": {
+    "ddl": "CREATE TABLE `stock_semi_item_substitutes` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `semi_item_id` int unsigned NOT NULL,\n  `substitute_semi_item_id` int unsigned NOT NULL,\n  `extra_price` int NOT NULL DEFAULT '0',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_stock_semi_item_substitutes` (`semi_item_id`,`substitute_semi_item_id`),\n  KEY `idx_stock_semi_item_substitutes_substitute` (`substitute_semi_item_id`),\n  CONSTRAINT `fk_stock_semi_item_substitutes_semi` FOREIGN KEY (`semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_stock_semi_item_substitutes_substitute` FOREIGN KEY (`substitute_semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "stock_semi_items": {
@@ -44065,7 +44337,7 @@
     ]
    },
    "daily_recaps": {
-    "ddl": "CREATE TABLE `daily_recaps` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `format_recap_id` int unsigned NOT NULL,\n  `recap_date` date NOT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `shift_officer` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `transaction_total` int NOT NULL DEFAULT '0',\n  `offline_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `online_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `catering_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `total_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `hpp_total` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `daily_expense` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `cash_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `qris_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `transfer_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `cash_difference` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `best_menu_item_id` int unsigned DEFAULT NULL,\n  `best_menu_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `least_menu_item_id` int unsigned DEFAULT NULL,\n  `least_menu_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `note` text COLLATE utf8mb4_unicode_ci,\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_daily_recaps_date` (`recap_date`),\n  KEY `idx_daily_recaps_format_recap_id` (`format_recap_id`),\n  KEY `idx_daily_recaps_date` (`recap_date`),\n  KEY `idx_daily_recaps_user_id` (`user_id`),\n  KEY `fk_daily_recaps_best_menu_item` (`best_menu_item_id`),\n  KEY `fk_daily_recaps_least_menu_item` (`least_menu_item_id`),\n  KEY `fk_daily_recaps_created_by` (`created_by`),\n  CONSTRAINT `fk_daily_recaps_best_menu_item` FOREIGN KEY (`best_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_format` FOREIGN KEY (`format_recap_id`) REFERENCES `meta_data_format_recap` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_daily_recaps_least_menu_item` FOREIGN KEY (`least_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "ddl": "CREATE TABLE `daily_recaps` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `format_recap_id` int unsigned NOT NULL,\n  `recap_date` date NOT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `shift_officer` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `transaction_total` int NOT NULL DEFAULT '0',\n  `offline_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `online_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `catering_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `total_revenue` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `hpp_total` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `gross_profit` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `daily_expense` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `cash_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `qris_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `transfer_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `online_in` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `cash_difference` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `best_menu_item_id` int unsigned DEFAULT NULL,\n  `best_menu_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `least_menu_item_id` int unsigned DEFAULT NULL,\n  `least_menu_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `note` text COLLATE utf8mb4_unicode_ci,\n  `created_by` int unsigned DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_daily_recaps_date` (`recap_date`),\n  KEY `idx_daily_recaps_format_recap_id` (`format_recap_id`),\n  KEY `idx_daily_recaps_date` (`recap_date`),\n  KEY `idx_daily_recaps_user_id` (`user_id`),\n  KEY `fk_daily_recaps_best_menu_item` (`best_menu_item_id`),\n  KEY `fk_daily_recaps_least_menu_item` (`least_menu_item_id`),\n  KEY `fk_daily_recaps_created_by` (`created_by`),\n  CONSTRAINT `fk_daily_recaps_best_menu_item` FOREIGN KEY (`best_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_format` FOREIGN KEY (`format_recap_id`) REFERENCES `meta_data_format_recap` (`id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_daily_recaps_least_menu_item` FOREIGN KEY (`least_menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_daily_recaps_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
      {
       "id": 1,
@@ -44084,6 +44356,7 @@
       "cash_in": "100000.00",
       "qris_in": "31000.00",
       "transfer_in": "0.00",
+      "online_in": "0.00",
       "cash_difference": "-526000.00",
       "best_menu_item_id": null,
       "best_menu_name": "Kopi Uji",
@@ -49203,6 +49476,10 @@
      }
     ]
    },
+   "order_item_ingredient_swaps": {
+    "ddl": "CREATE TABLE `order_item_ingredient_swaps` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_item_id` int unsigned NOT NULL,\n  `from_semi_item_id` int unsigned DEFAULT NULL,\n  `to_semi_item_id` int unsigned DEFAULT NULL,\n  `from_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `to_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `extra_price` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_item_ingredient_swaps_order_item_id` (`order_item_id`),\n  KEY `fk_order_item_ingredient_swaps_from` (`from_semi_item_id`),\n  KEY `fk_order_item_ingredient_swaps_to` (`to_semi_item_id`),\n  CONSTRAINT `fk_order_item_ingredient_swaps_from` FOREIGN KEY (`from_semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_item_ingredient_swaps_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_order_item_ingredient_swaps_to` FOREIGN KEY (`to_semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "order_items": {
     "ddl": "CREATE TABLE `order_items` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `order_id` int unsigned NOT NULL,\n  `item_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `menu_item_id` int unsigned DEFAULT NULL,\n  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `variant` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `quantity` int NOT NULL,\n  `price_per_quantity` decimal(12,2) NOT NULL,\n  `hpp_cost` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `discount_percent` decimal(5,2) NOT NULL DEFAULT '0.00',\n  `discount_amount` decimal(12,2) NOT NULL DEFAULT '0.00',\n  `price` decimal(12,2) NOT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_order_items_order_id` (`order_id`),\n  KEY `idx_order_items_menu_item_id` (`menu_item_id`),\n  CONSTRAINT `fk_order_items_menu_item` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -54276,6 +54553,10 @@
    },
    "stock_semi_item_recipes": {
     "ddl": "CREATE TABLE `stock_semi_item_recipes` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `semi_item_id` int unsigned NOT NULL,\n  `stock_item_id` int unsigned NOT NULL,\n  `quantity` double NOT NULL DEFAULT '0',\n  `cost` int NOT NULL DEFAULT '0',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_stock_semi_item_recipes_item_stock` (`semi_item_id`,`stock_item_id`),\n  KEY `idx_stock_semi_item_recipes_stock_item_id` (`stock_item_id`),\n  CONSTRAINT `fk_stock_semi_item_recipes_semi_item` FOREIGN KEY (`semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_stock_semi_item_recipes_stock_item` FOREIGN KEY (`stock_item_id`) REFERENCES `stock_raw_items` (`id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
+   "stock_semi_item_substitutes": {
+    "ddl": "CREATE TABLE `stock_semi_item_substitutes` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `semi_item_id` int unsigned NOT NULL,\n  `substitute_semi_item_id` int unsigned NOT NULL,\n  `extra_price` int NOT NULL DEFAULT '0',\n  `sort_order` int NOT NULL DEFAULT '0',\n  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uniq_stock_semi_item_substitutes` (`semi_item_id`,`substitute_semi_item_id`),\n  KEY `idx_stock_semi_item_substitutes_substitute` (`substitute_semi_item_id`),\n  CONSTRAINT `fk_stock_semi_item_substitutes_semi` FOREIGN KEY (`semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_stock_semi_item_substitutes_substitute` FOREIGN KEY (`substitute_semi_item_id`) REFERENCES `stock_semi_items` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": []
    },
    "stock_semi_items": {

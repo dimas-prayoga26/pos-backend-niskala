@@ -23,6 +23,16 @@ let server;
 let db;
 const cookies = {};
 
+// Pusher keys for the test server (a real .env's are not used; tests send no
+// event to Pusher, see infrastructure/realtime/pusher).
+Object.assign(process.env, {
+  PUSHER_APP_ID: "1000001",
+  PUSHER_KEY: "test-key",
+  PUSHER_SECRET: "test-secret",
+  PUSHER_CLUSTER: "ap1",
+  PUSHER_CHANNEL: "private-pos-test",
+});
+
 // A Buang as multipart: its fields and photos (bukti foto).
 const wasteForm = (fields, photos = 1) => {
   const form = new FormData();
@@ -461,6 +471,62 @@ describe("regressions", () => {
       assert.equal(response.status, 400, method);
       assert.equal(response.body.message, "Metode kas tidak valid.");
     }
+  });
+
+  it("tells the frontend to listen on Pusher and lets only logged-in users into its private channel", async () => {
+    const realtime = await request("GET", "/api/realtime/config");
+    assert.equal(realtime.status, 200);
+    // Never the secret.
+    assert.deepEqual(realtime.body.data, {
+      provider: "pusher",
+      key: "test-key",
+      cluster: "ap1",
+      channel: "private-pos-test",
+    });
+
+    const auth = (as, body) => request("POST", "/api/realtime/pusher/auth", { as, body });
+    const subscription = { socket_id: "123.456", channel_name: "private-pos-test" };
+    assert.equal((await auth(undefined, subscription)).status, 401);
+
+    const signed = await auth("cashier", subscription);
+    assert.equal(signed.status, 200, JSON.stringify(signed.body));
+    const signature = require("node:crypto")
+      .createHmac("sha256", "test-secret")
+      .update("123.456:private-pos-test")
+      .digest("hex");
+    assert.deepEqual(signed.body, { auth: `test-key:${signature}` });
+
+    assert.equal((await auth("cashier", { ...subscription, channel_name: "private-other" })).status, 403);
+    assert.equal((await auth("cashier", { ...subscription, socket_id: "abc" })).status, 403);
+  });
+
+  it("keeps the saldo online masuk of a daily recap and counts it in the cash difference", async () => {
+    // Omzet 500.000: 300.000 tunai, 100.000 QRIS, 76.000 from the platforms (after their fee).
+    const daily = await request("POST", "/api/recap/daily", {
+      as: "admin",
+      body: {
+        recapDate: "2026-01-03",
+        offlineRevenue: 400000,
+        onlineRevenue: 100000,
+        cashIn: 300000,
+        qrisIn: 100000,
+        onlineIn: 76000,
+      },
+    });
+    assert.equal(daily.status, 201, JSON.stringify(daily.body));
+    assert.deepEqual(
+      [daily.body.data.onlineIn, daily.body.data.transferIn, daily.body.data.cashDifference],
+      [76000, 0, -24000]
+    );
+
+    // A payout that arrives later is added to that day.
+    const added = await request("PATCH", `/api/recap/daily/${daily.body.data.id}/cash`, {
+      as: "admin",
+      body: { method: "online", amount: 24000, note: "pencairan GoFood" },
+    });
+    assert.equal(added.status, 200, JSON.stringify(added.body));
+    assert.deepEqual([added.body.data.onlineIn, added.body.data.cashDifference], [100000, 0]);
+    assert.match(added.body.data.note, /Tambah kas Saldo online Rp 24000: pencairan GoFood/);
   });
 
   it("does not store an uploaded image when the user is not an admin", async () => {
@@ -1503,6 +1569,145 @@ describe("regressions", () => {
     // Leave the lists as the next tests expect them.
     assert.equal((await request("DELETE", `/api/stock-item/semi/${sambal.id}`, { as: "admin" })).status, 200);
     await db.query("DELETE FROM stock_raw_items WHERE id IN (?)", [[cabeId, minyakId]]);
+  });
+
+  it("sells a menu with a pengganti of its bahan olahan (Nasi Daun Jeruk for Nasi Putih)", async () => {
+    const addRaw = async (name, unit, stock, averageCost) => {
+      const created = await request("POST", "/api/stock-item", {
+        as: "admin",
+        body: { name, category: "Bahan", unit, stock },
+      });
+      await request("PATCH", `/api/stock-item/${created.body.data.id}/cogs`, {
+        as: "admin",
+        body: { averageCost },
+      });
+      return created.body.data.id;
+    };
+    const berasId = await addRaw("Beras Pengganti", "gr", 10000, 10);
+    const daunId = await addRaw("Daun Jeruk Pengganti", "gr", 1000, 50);
+    const addSemi = async (name, components) => {
+      const created = await request("POST", "/api/stock-item/semi", {
+        as: "admin",
+        body: { name, unit: "porsi", components: components.map(([stockItemId]) => ({ stockItemId })) },
+      });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      const cooked = await request("POST", `/api/stock-item/semi/${created.body.data.id}/productions`, {
+        as: "cashier",
+        body: { items: components.map(([stockItemId, quantity]) => ({ stockItemId, quantity })), portionQuantity: 10 },
+      });
+      assert.equal(cooked.status, 201, JSON.stringify(cooked.body));
+      return created.body.data;
+    };
+    // 1000 gr beras for 10 porsi: 1.000 / porsi; with 20 gr daun jeruk: 1.100.
+    const putih = await addSemi("Nasi Putih Pengganti", [[berasId, 1000]]);
+    const jeruk = await addSemi("Nasi Daun Jeruk Pengganti", [[berasId, 1000], [daunId, 20]]);
+    const semiStock = async (id) =>
+      Number((await db.query("SELECT stock FROM stock_semi_items WHERE id = ?", [id]))[0][0].stock);
+
+    // Pengganti is set once on the bahan olahan, by an admin.
+    const substitutes = (as, body) =>
+      request("PUT", `/api/stock-item/semi/${putih.id}/substitutes`, { as, body: { substitutes: body } });
+    assert.equal((await substitutes("cashier", [{ semiItemId: jeruk.id, extraPrice: 2000 }])).status, 403);
+    assert.equal((await substitutes("admin", [{ semiItemId: putih.id, extraPrice: 0 }])).status, 400);
+    assert.equal((await substitutes("admin", [{ semiItemId: 999999, extraPrice: 0 }])).status, 400);
+    const saved = await substitutes("admin", [{ semiItemId: jeruk.id, extraPrice: 2000 }]);
+    assert.equal(saved.status, 200, JSON.stringify(saved.body));
+    assert.deepEqual(saved.body.data.substitutes, [
+      { semiItemId: jeruk.id, name: "Nasi Daun Jeruk Pengganti", extraPrice: 2000 },
+    ]);
+
+    // Every menu with Nasi Putih offers it, with its extra price and HPP.
+    const [[category]] = await db.query("SELECT id FROM categories WHERE is_bundle = FALSE ORDER BY id LIMIT 1");
+    const menu = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: { categoryId: category.id, name: "Rice Bowl Pengganti", price: 25000, ingredients: [{ semiItemId: putih.id, quantity: 1 }] },
+    });
+    assert.equal(menu.status, 201, JSON.stringify(menu.body));
+    const menuItemId = menu.body.data.id;
+    const listed = (await request("GET", "/api/menu-item", { as: "cashier" })).body.data.find((item) => item.id === menuItemId);
+    assert.equal(listed.hppCost, 1000);
+    assert.deepEqual(listed.ingredientChoices, [{
+      semiItemId: putih.id,
+      name: "Nasi Putih Pengganti",
+      quantity: 1,
+      unit: "porsi",
+      options: [{ semiItemId: jeruk.id, name: "Nasi Daun Jeruk Pengganti", extraPrice: 2000, hppCost: 1100 }],
+    }]);
+
+    const orderBody = (quantity, ingredientSwaps) => ({
+      customerDetails: { name: "Pengganti" },
+      orderType: "Offline",
+      orderStatus: "In Progress",
+      bills: { total: 27000 * quantity, tax: 0, totalWithTax: 27000 * quantity },
+      items: [{
+        id: `${category.id}-${menuItemId}`,
+        sourceMenuItemId: menuItemId,
+        name: "Rice Bowl Pengganti",
+        quantity,
+        pricePerQuantity: 27000,
+        price: 27000 * quantity,
+        ingredientSwaps,
+      }],
+      paymentMethod: "Cash",
+    });
+
+    // Sold with Nasi Daun Jeruk: its portions are used and priced, Nasi Putih's are not.
+    const swapped = await request("POST", "/api/order", {
+      as: "cashier",
+      body: orderBody(2, [{ fromSemiItemId: putih.id, toSemiItemId: jeruk.id }]),
+    });
+    assert.equal(swapped.status, 201, JSON.stringify(swapped.body));
+    assert.deepEqual([await semiStock(putih.id), await semiStock(jeruk.id)], [10, 8]);
+    const [item] = swapped.body.data.items;
+    assert.equal(item.hppCost, 1100);
+    assert.deepEqual(item.ingredientSwaps, [{
+      fromSemiItemId: putih.id,
+      toSemiItemId: jeruk.id,
+      fromName: "Nasi Putih Pengganti",
+      toName: "Nasi Daun Jeruk Pengganti",
+      extraPrice: 2000,
+    }]);
+    const [costs] = await db.query(
+      `SELECT c.semi_item_id, c.stock_item_name, c.quantity, c.unit_cost, c.cost
+       FROM order_item_costs c JOIN order_items oi ON oi.id = c.order_item_id
+       WHERE oi.order_id = ?`,
+      [swapped.body.data.id]
+    );
+    assert.deepEqual(costs.map((row) => ({ ...row })), [
+      { semi_item_id: jeruk.id, stock_item_name: "Nasi Daun Jeruk Pengganti", quantity: 1, unit_cost: 1100, cost: 1100 },
+    ]);
+
+    // Without a swap it is still Nasi Putih.
+    const plain = await request("POST", "/api/order", { as: "cashier", body: orderBody(1) });
+    assert.equal(plain.status, 201, JSON.stringify(plain.body));
+    assert.deepEqual([await semiStock(putih.id), await semiStock(jeruk.id)], [9, 8]);
+    assert.deepEqual(plain.body.data.items[0].ingredientSwaps, []);
+
+    // A swap the menu does not offer is refused and nothing moves.
+    const refused = await request("POST", "/api/order", {
+      as: "cashier",
+      body: orderBody(1, [{ fromSemiItemId: jeruk.id, toSemiItemId: putih.id }]),
+    });
+    assert.equal(refused.status, 400);
+    assert.equal(refused.body.message, "Pilihan bahan tidak tersedia untuk menu ini. Muat ulang menu.");
+    assert.deepEqual([await semiStock(putih.id), await semiStock(jeruk.id)], [9, 8]);
+
+    // Deleting the order gives the Nasi Daun Jeruk portions back.
+    assert.equal((await request("DELETE", `/api/order/${swapped.body.data.id}`, { as: "admin" })).status, 200);
+    assert.deepEqual([await semiStock(putih.id), await semiStock(jeruk.id)], [9, 10]);
+
+    // Removing the pengganti removes the choice from the menu.
+    assert.equal((await substitutes("admin", [])).status, 200);
+    const unlisted = (await request("GET", "/api/menu-item", { as: "cashier" })).body.data.find((entry) => entry.id === menuItemId);
+    assert.deepEqual(unlisted.ingredientChoices, []);
+
+    // Leave the lists as the next tests expect them.
+    assert.equal((await request("DELETE", `/api/order/${plain.body.data.id}`, { as: "admin" })).status, 200);
+    assert.equal((await request("DELETE", `/api/menu-item/${menuItemId}`, { as: "admin" })).status, 200);
+    await db.query("DELETE FROM stock_semi_item_productions WHERE semi_item_id IN (?)", [[putih.id, jeruk.id]]);
+    assert.equal((await request("DELETE", `/api/stock-item/semi/${jeruk.id}`, { as: "admin" })).status, 200);
+    assert.equal((await request("DELETE", `/api/stock-item/semi/${putih.id}`, { as: "admin" })).status, 200);
+    await db.query("DELETE FROM stock_raw_items WHERE id IN (?)", [[berasId, daunId]]);
   });
 
   it("cooks bahan olahan from bahan baku and sells their portions", async () => {

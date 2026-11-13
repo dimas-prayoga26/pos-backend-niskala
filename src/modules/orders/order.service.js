@@ -2,6 +2,7 @@
 // same transaction; orders on a date that has a daily recap are read-only.
 const { pool } = require("../../infrastructure/database/pool");
 const { resolveOrderBundleChoices } = require("../menu/menu.bundles");
+const { resolveOrderIngredientSwaps } = require("../menu/menu.ingredientSwaps");
 const {
   deductIngredientStock,
   restoreIngredientStock,
@@ -85,15 +86,22 @@ const create = async (orderData) => {
       CLOSED_DAY_MESSAGE
     );
 
-    // Packages with choices carry the menus the cashier picked (checked here).
+    // Packages with choices carry the menus the cashier picked, and any menu
+    // the bahan olahan swapped (Nasi Daun Jeruk for Nasi Putih), checked here.
     const items = [];
     for (const item of requestedItems) {
+      const menuItemId = getSourceMenuItemId(item);
       const bundleChoices = await resolveOrderBundleChoices(
         connection,
-        getSourceMenuItemId(item),
+        menuItemId,
         item.bundleChoices
       );
-      items.push({ ...item, bundleChoices });
+      const ingredientSwaps = await resolveOrderIngredientSwaps(
+        connection,
+        menuItemId,
+        item.ingredientSwaps
+      );
+      items.push({ ...item, bundleChoices, ingredientSwaps });
     }
 
     await deductIngredientStock(connection, toRecipeLines(items), { allowNegativeStock });
@@ -147,7 +155,7 @@ const create = async (orderData) => {
       const menuItemSnapshot = await findMenuItemSnapshot(
         connection,
         getSourceMenuItemId(item),
-        { choices: item.bundleChoices }
+        { choices: item.bundleChoices, swaps: item.ingredientSwaps }
       );
 
       const orderItemId = await Order.insertOrderItem(connection, orderId, {
@@ -156,6 +164,7 @@ const create = async (orderData) => {
       });
       await Order.insertOrderItemCosts(connection, orderItemId, menuItemSnapshot.costs);
       await Order.insertOrderItemBundleChoices(connection, orderItemId, item.bundleChoices);
+      await Order.insertOrderItemIngredientSwaps(connection, orderItemId, item.ingredientSwaps);
       menuItemSnapshot.costs
         .filter((line) => line.isPending && line.semiItemId)
         .forEach((line) => batchIds.add(Number(line.semiItemId)));

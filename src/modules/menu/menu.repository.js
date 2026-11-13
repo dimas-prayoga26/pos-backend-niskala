@@ -6,6 +6,7 @@ const {
   toPriceRow,
 } = require("./menu.options");
 const { findRecipeLines } = require("./menu.recipeLines");
+const { buildIngredientChoices, findSubstituteRows } = require("./menu.ingredientSwaps");
 const { bestSellerGroupOf } = require("../categories/bestSeller");
 
 const toNullableNumber = (value) =>
@@ -169,6 +170,9 @@ const attachRecipes = async (menuItems) => {
 
   const ids = menuItems.map((item) => item.id);
   const ingredientRows = await findRecipeLines(pool, ids);
+  const substituteRows = await findSubstituteRows(pool, [
+    ...new Set(ingredientRows.filter((row) => row.kind === "semi").map((row) => row.semi_item_id)),
+  ]);
 
   const ingredientsByMenuItemId = new Map();
 
@@ -234,6 +238,13 @@ const attachRecipes = async (menuItems) => {
   return menuItems.map((item) => ({
     ...item,
     ingredients: ingredientsByMenuItemId.get(item.id) || [],
+    // Bahan olahan the cashier may swap (Nasi Putih -> Nasi Daun Jeruk), with
+    // the extra price and the menu's HPP with each option.
+    ingredientChoices: buildIngredientChoices(
+      item.hppCost,
+      ingredientRows.filter((row) => row.menu_item_id === item.id),
+      substituteRows
+    ),
     bundleItems: bundleItemsByMenuItemId.get(item.id) || [],
     bundleChoices: bundleChoicesByMenuItemId.get(item.id) || [],
   }));

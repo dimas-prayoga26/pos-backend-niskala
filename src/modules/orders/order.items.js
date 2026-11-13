@@ -33,12 +33,21 @@ const pickedBundleChoices = (item) => {
   return choices.length ? { bundleChoices: choices } : {};
 };
 
+// ingredientSwaps: bahan olahan swapped in this item (already checked).
+const pickedIngredientSwaps = (item) => {
+  const swaps = (item.ingredientSwaps || []).filter(
+    (swap) => Number(swap.fromSemiItemId) > 0 && Number(swap.toSemiItemId) > 0
+  );
+  return swaps.length ? { ingredientSwaps: swaps } : {};
+};
+
 const normalizeOrderItemsForStock = (items = []) =>
   items
     .map((item) => ({
       menuItemId: getSourceMenuItemId(item),
       quantity: Math.max(Number(item.quantity) || 0, 0),
       ...pickedBundleChoices(item),
+      ...pickedIngredientSwaps(item),
     }))
     .filter((item) => item.menuItemId && item.quantity > 0);
 

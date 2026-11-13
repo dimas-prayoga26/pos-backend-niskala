@@ -20,7 +20,16 @@ const config = Object.freeze({
         .split(",")
         .map((origin) => origin.trim())
         .filter(Boolean),
-    accessTokenSecret: process.env.JWT_SECRET
+    accessTokenSecret: process.env.JWT_SECRET,
+    // Realtime through Pusher Channels when set (else Socket.IO on this server).
+    pusher: Object.freeze({
+        appId: process.env.PUSHER_APP_ID || "",
+        key: process.env.PUSHER_KEY || "",
+        secret: process.env.PUSHER_SECRET || "",
+        cluster: process.env.PUSHER_CLUSTER || "",
+        // A private channel: only logged-in users are let in.
+        channel: process.env.PUSHER_CHANNEL || "private-pos",
+    }),
 });
 
 module.exports = config;
