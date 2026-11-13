@@ -324,11 +324,17 @@ const roundCents = (value) => Math.round(value * 100) / 100;
 
 // A line discount (0-100%) arrives priced in: price is what was charged. The
 // stored unit price is the charged one, so reports split revenue by it; the
-// discount keeps its percent and the rupiah taken off.
-const resolveLineDiscount = (item) => {
+// discount keeps its percent and the rupiah taken off. A free promo (Harga 0,
+// Diskon 100%) takes off the normal price of the menus it gave away
+// (freePromoValue, per package), so Total Promo shows what was given.
+const resolveLineDiscount = (item, freePromoValue = 0) => {
   const percent = Math.min(Math.max(Number(item.discountPercent) || 0, 0), 100);
   const quantity = Number(item.quantity) || 0;
   const listUnitPrice = Number(item.pricePerQuantity) || 0;
+
+  if (freePromoValue > 0 && quantity > 0 && !(Number(item.price) > 0)) {
+    return { percent: 100, amount: roundCents(freePromoValue * quantity), unitPrice: 0 };
+  }
 
   if (!percent || quantity <= 0) {
     return { percent: 0, amount: 0, unitPrice: item.pricePerQuantity };
@@ -343,7 +349,7 @@ const resolveLineDiscount = (item) => {
 };
 
 const insertOrderItem = async (connection, orderId, { item, menuItemSnapshot }) => {
-  const discount = resolveLineDiscount(item);
+  const discount = resolveLineDiscount(item, menuItemSnapshot.freePromoValue);
   const [result] = await connection.query(
     `INSERT INTO order_items
       (order_id, item_key, menu_item_id, name, variant, quantity,

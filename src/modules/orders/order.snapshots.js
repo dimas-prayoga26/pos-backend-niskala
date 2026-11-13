@@ -13,14 +13,19 @@ const round4 = (value) => Math.round(value * 10000) / 10000;
 // times its quantity. The lines of all menus are combined per bahan baku or
 // bahan olahan; a menu priced by its stored HPP alone adds one line in
 // portions, so the lines still add up to the HPP.
+// freePromoValue: for a free promo (Harga 0 and Diskon 100%), the normal price
+// of the menus it gave away (the picked Americano: Rp 15.000), the promo the
+// recap shows; else 0.
 const findBundleSnapshot = async (connection, bundleId, bundleRows) => {
   const lines = new Map();
   let hppCost = 0;
+  let contentsPrice = 0;
 
   for (const row of bundleRows) {
     const quantity = Number(row.quantity) || 0;
     const item = await findMenuItemSnapshot(connection, Number(row.menu_item_id), { nested: true });
     hppCost += item.hppCost * quantity;
+    contentsPrice += (item.regularPrice || 0) * quantity;
 
     for (const line of item.costs) {
       const key = line.semiItemId ? `semi:${line.semiItemId}` : `raw:${line.stockItemId}`;
@@ -56,7 +61,21 @@ const findBundleSnapshot = async (connection, bundleId, bundleRows) => {
     }
   }
 
-  return { menuItemId: bundleId, hppCost, costs: [...lines.values()] };
+  const [[bundlePrice]] = await connection.query(
+    "SELECT regular_price, discount_percent FROM menu_item_prices WHERE menu_item_id = ? LIMIT 1",
+    [bundleId]
+  );
+  const isFreePromo =
+    Boolean(bundlePrice) &&
+    Number(bundlePrice.regular_price) === 0 &&
+    Number(bundlePrice.discount_percent) === 100;
+
+  return {
+    menuItemId: bundleId,
+    hppCost,
+    costs: [...lines.values()],
+    freePromoValue: isFreePromo ? contentsPrice : 0,
+  };
 };
 
 // choices: the menus picked for the package's choices ({ menuItemId, name, quantity }).
@@ -104,7 +123,7 @@ const findMenuItemSnapshot = async (
   const recipeHpp = costs.reduce((total, line) => total + line.cost, 0);
 
   const [rows] = await connection.query(
-    `SELECT mi.id, COALESCE(mip.hpp_cost, 0) AS hpp_cost
+    `SELECT mi.id, COALESCE(mip.hpp_cost, 0) AS hpp_cost, COALESCE(mip.regular_price, 0) AS regular_price
      FROM menu_items mi
      LEFT JOIN menu_item_prices mip ON mip.menu_item_id = mi.id
      WHERE mi.id = ?
@@ -117,6 +136,7 @@ const findMenuItemSnapshot = async (
   return {
     menuItemId: rows[0].id,
     hppCost: recipeHpp > 0 ? recipeHpp : Number(rows[0].hpp_cost || 0),
+    regularPrice: Number(rows[0].regular_price) || 0,
     costs,
   };
 };

@@ -5,6 +5,14 @@ const dbTimeZone = /^[-+]\d{2}:\d{2}$/.test(process.env.DB_TIMEZONE || "")
     ? process.env.DB_TIMEZONE
     : "+07:00";
 
+// A whole number from the environment, or the fallback when unset or invalid.
+const numberFromEnv = (name, fallback) => {
+    const value = Number(process.env[name]);
+    return process.env[name] !== undefined && process.env[name] !== "" && Number.isInteger(value) && value >= 0
+        ? value
+        : fallback;
+};
+
 const config = Object.freeze({
     port: process.env.PORT || 8080,
     host: process.env.HOST || "0.0.0.0",
@@ -29,6 +37,17 @@ const config = Object.freeze({
         cluster: process.env.PUSHER_CLUSTER || "",
         // A private channel: only logged-in users are let in.
         channel: process.env.PUSHER_CHANNEL || "private-pos",
+    }),
+    // Socket.IO on this server: "on" or "off"; unset, it is off while Pusher
+    // carries realtime (each polling device holds an Entry Process).
+    realtimeSocketIo: process.env.REALTIME_SOCKET_IO || "",
+    // Requests to /api per device a minute, and wrong passwords per account
+    // and device in 15 minutes (0: no limit).
+    // Konsumsi Crew (order type Crew) opens at this hour, Jakarta time.
+    crewMealStartHour: numberFromEnv("CREW_MEAL_START_HOUR", 12),
+    rateLimit: Object.freeze({
+        apiPerMinute: numberFromEnv("RATE_LIMIT_API_PER_MINUTE", 1000),
+        loginFailures: numberFromEnv("RATE_LIMIT_LOGIN_FAILURES", 10),
     }),
 });
 

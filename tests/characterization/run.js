@@ -26,6 +26,9 @@ const BASELINE_FILE = path.join(SNAPSHOT_DIR, "baseline.json");
 const CURRENT_FILE = path.join(SNAPSHOT_DIR, "current.json");
 const UPLOAD_DIR = path.join(BACKEND_DIR, "uploads", "menu");
 const UPDATE = process.argv.includes("--update");
+// The realtime events are recorded through Socket.IO, which is off by default
+// while Pusher is configured.
+process.env.REALTIME_SOCKET_IO = "on";
 
 const pad = (value) => String(value).padStart(2, "0");
 const now = new Date();

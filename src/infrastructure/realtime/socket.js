@@ -1,10 +1,22 @@
 const { Server } = require("socket.io");
+const config = require("../../config/env");
 const logger = require("../../shared/logger");
-const { triggerPusherEvent } = require("./pusher");
+const { isPusherEnabled, triggerPusherEvent } = require("./pusher");
 
 let io;
 
+// Socket.IO is off while Pusher carries realtime: a device polling it holds an
+// Entry Process of the shared hosting, and too many of them make the hosting
+// answer 508 to everything. REALTIME_SOCKET_IO=on|off overrides this.
+const isSocketIoEnabled =
+  config.realtimeSocketIo === "on" || (config.realtimeSocketIo !== "off" && !isPusherEnabled);
+
 const initSocket = (server, corsOptions) => {
+  if (!isSocketIoEnabled) {
+    logger.info("Socket.IO off: realtime goes through Pusher");
+    return null;
+  }
+
   io = new Server(server, {
     cors: corsOptions,
     perMessageDeflate: false,
@@ -35,4 +47,4 @@ const emitRealtimeEvent = (event, payload = {}) => {
   io.emit(event, message);
 };
 
-module.exports = { emitRealtimeEvent, initSocket };
+module.exports = { emitRealtimeEvent, initSocket, isSocketIoEnabled };

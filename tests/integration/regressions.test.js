@@ -31,6 +31,10 @@ Object.assign(process.env, {
   PUSHER_SECRET: "test-secret",
   PUSHER_CLUSTER: "ap1",
   PUSHER_CHANNEL: "private-pos-test",
+  // Only requests with an X-Forwarded-For address count (see rateLimit).
+  RATE_LIMIT_API_PER_MINUTE: "30",
+  // Konsumsi Crew open all day here (the 12:00 rule: tests/unit/crewOrder).
+  CREW_MEAL_START_HOUR: "0",
 });
 
 // A Buang as multipart: its fields and photos (bukti foto).
@@ -498,6 +502,149 @@ describe("regressions", () => {
 
     assert.equal((await auth("cashier", { ...subscription, channel_name: "private-other" })).status, 403);
     assert.equal((await auth("cashier", { ...subscription, socket_id: "abc" })).status, 403);
+  });
+
+  it("records a free promo (Harga 0, Diskon 100%) at the normal price of the menus it gave", async () => {
+    const categoryOf = async (body) => (await request("POST", "/api/category", { as: "admin", body })).body.data;
+    const promo = await categoryOf({ name: "Promo Gratis", icon: "🏷️", isBundle: true });
+    const minuman = await categoryOf({ name: "Minuman Gratis", icon: "🥤" });
+    const menuOf = async (body) => {
+      const created = await request("POST", "/api/menu-item", { as: "admin", body });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      return created.body.data;
+    };
+    const americano = await menuOf({ categoryId: minuman.id, name: "Americano Gratis", price: 15000, hppCost: 3000 });
+    const lemonTea = await menuOf({ categoryId: minuman.id, name: "Lemon Tea Gratis", price: 13000, hppCost: 2000 });
+    const croissant = await menuOf({ categoryId: minuman.id, name: "Croissant Gratis", price: 12000, hppCost: 4000 });
+    // A Croissant, plus Americano or Lemon Tea.
+    const contents = {
+      bundleItems: [{ menuItemId: croissant.id, quantity: 1 }],
+      bundleChoices: [{ categoryId: null, label: "Minuman", quantity: 1, menuItemIds: [americano.id, lemonTea.id] }],
+    };
+    const free = await menuOf({ categoryId: promo.id, name: "Review Gratis", price: 0, discountPercent: 100, ...contents });
+    const paid = await menuOf({ categoryId: promo.id, name: "Review Berharga", price: 15000, discountPercent: 100, ...contents });
+
+    const order = await request("POST", "/api/order", {
+      as: "cashier",
+      body: {
+        customerDetails: { name: "Gratis" },
+        orderType: "Offline",
+        orderStatus: "In Progress",
+        bills: { total: 0, tax: 0, totalWithTax: 0 },
+        items: [free, paid].map((menu, index) => ({
+          id: `${promo.id}-${menu.id}-gratis`,
+          sourceMenuItemId: menu.id,
+          name: menu.name,
+          quantity: 2,
+          pricePerQuantity: menu.regularPrice ?? menu.price,
+          price: 0,
+          discountPercent: 100,
+          bundleChoices: [{ menuItemId: index ? americano.id : lemonTea.id, quantity: 1 }],
+        })),
+        paymentMethod: "Cash",
+      },
+    });
+    assert.equal(order.status, 201, JSON.stringify(order.body));
+    const lines = order.body.data.items.map(({ name, price, discountPercent, discountAmount }) => ({
+      name, price, discountPercent, discountAmount,
+    }));
+    assert.deepEqual(lines, [
+      // 2 x (Croissant 12.000 + the picked Lemon Tea 13.000).
+      { name: "Review Gratis", price: 0, discountPercent: 100, discountAmount: 50000 },
+      // A priced promo keeps its own price as the discount.
+      { name: "Review Berharga", price: 0, discountPercent: 100, discountAmount: 30000 },
+    ]);
+  });
+
+  it("records a Konsumsi Crew: free for the crew member, stock and HPP as usual, its value apart", async () => {
+    const category = (await request("POST", "/api/category", { as: "admin", body: { name: "Crew Cat", icon: "x" } })).body.data;
+    const created = await request("POST", "/api/menu-item", {
+      as: "admin",
+      body: { categoryId: category.id, name: "Kopi Crew", price: 15000, hppCost: 4000 },
+    });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const kopi = created.body.data;
+    const crewOrder = (name) =>
+      request("POST", "/api/order", {
+        as: "cashier",
+        body: {
+          customerDetails: { name, phone: "0812" },
+          orderType: "Crew",
+          orderStatus: "In Progress",
+          bills: { total: 30000, tax: 0, totalWithTax: 30000 },
+          items: [{
+            id: `${category.id}-${kopi.id}`,
+            sourceMenuItemId: kopi.id,
+            name: "Kopi Crew",
+            quantity: 2,
+            pricePerQuantity: 15000,
+            price: 30000,
+          }],
+          paymentMethod: "Tunai",
+        },
+      });
+
+    const unnamed = await crewOrder("Guest");
+    assert.equal(unnamed.status, 400);
+    assert.equal(unnamed.body.message, "Isi nama crew.");
+
+    const order = await crewOrder("Budi");
+    assert.equal(order.status, 201, JSON.stringify(order.body));
+    const saved = order.body.data;
+    assert.deepEqual(
+      [saved.orderType, saved.customerDetails.name, saved.paymentMethod, saved.bills.totalWithTax],
+      ["Crew", "Budi", "Crew", 0]
+    );
+    const [line] = saved.items;
+    // Free, its normal price kept as what was given; HPP as for a sale.
+    assert.deepEqual(
+      [line.price, line.discountPercent, line.discountAmount, Number(line.hppCost)],
+      [0, 100, 30000, 4000]
+    );
+  });
+
+  it("keeps Socket.IO off while Pusher carries realtime, answering old pages at once", async () => {
+    const polling = await fetch(`${server.baseUrl}/socket.io/?EIO=4&transport=polling`);
+    assert.equal(polling.status, 410);
+  });
+
+  it("holds back an account's logins after 10 wrong passwords, and only those", async () => {
+    const email = "tebak@regression.test";
+    await request("POST", "/api/user/register", {
+      body: { name: "tebak", phone: "1", email, password: "secret-pass", role: "cashier" },
+    });
+    const login = (password) => request("POST", "/api/user/login", { body: { email, password } });
+
+    // Right passwords do not count.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      assert.equal((await login("secret-pass")).status, 200);
+    }
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      assert.notEqual((await login("salah")).status, 429);
+    }
+    const held = await login("secret-pass");
+    assert.equal(held.status, 429);
+    assert.match(held.body.message, /^Terlalu banyak percobaan login gagal\. Coba lagi dalam 15 menit\.$/);
+
+    // Other accounts log in as usual.
+    const other = await request("POST", "/api/user/login", {
+      body: { email: "cashier@regression.test", password: "secret-pass" },
+    });
+    assert.equal(other.status, 200);
+  });
+
+  it("holds back a device that loops on the API, each device on its own", async () => {
+    const fromDevice = (ip) =>
+      fetch(`${server.baseUrl}/api/realtime/config`, { headers: { "X-Forwarded-For": ip } });
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      assert.equal((await fromDevice("203.0.113.9")).status, 200);
+    }
+    const held = await fromDevice("203.0.113.9");
+    assert.equal(held.status, 429);
+    assert.ok(Number(held.headers.get("retry-after")) > 0);
+    // The address the web server wrote (the last one) counts, not one a client sends.
+    assert.equal((await fromDevice("203.0.113.9, 198.51.100.7")).status, 200);
+    assert.equal((await fromDevice("198.51.100.8")).status, 200);
   });
 
   it("keeps the saldo online masuk of a daily recap and counts it in the cash difference", async () => {

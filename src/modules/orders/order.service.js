@@ -12,6 +12,7 @@ const {
   createMonthlyOrderCode,
   releaseMonthlyOrderCodeLock,
 } = require("./order.code");
+const { CREW_ORDER_TYPE, toCrewOrder } = require("./order.crew");
 const { getSourceMenuItemId, toRecipeLines } = require("./order.items");
 const {
   assertNoDailyRecapForDate,
@@ -48,7 +49,10 @@ const buildCateringPayment = (cateringDetails, bills) => {
   return { cateringDetails, paymentPlan, dpReceived, isPaid };
 };
 
-const create = async (orderData) => {
+const create = async (requestedOrder) => {
+  // Konsumsi Crew is checked and made free before anything is touched.
+  const orderData =
+    requestedOrder?.orderType === CREW_ORDER_TYPE ? toCrewOrder(requestedOrder) : requestedOrder;
   const connection = await pool.getConnection();
   let orderCodeLockName = null;
 
