@@ -9,10 +9,23 @@ const authCookieOptions = {
   secure: config.nodeEnv === "production",
 };
 
+// req.user: the logged-in requester, if any (see optionalAuthenticate).
 const register = asyncHandler(async (req, res) => {
-  const newUser = await userService.register(req.body);
+  const newUser = await userService.register(req.body, req.user);
 
   res.status(201).json({ success: true, message: "New user created!", data: newUser });
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+  const user = await userService.update(req.params.id, req.body || {});
+
+  res.status(200).json({ success: true, message: "Akun berhasil diubah.", data: user });
+});
+
+const deleteUser = asyncHandler(async (req, res) => {
+  await userService.remove(req.params.id, req.user);
+
+  res.status(200).json({ success: true, message: "Akun berhasil dihapus." });
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -38,4 +51,4 @@ const logout = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "User logout successfully!" });
 });
 
-module.exports = { getUserData, getUsers, login, logout, register };
+module.exports = { deleteUser, getUserData, getUsers, login, logout, register, updateUser };

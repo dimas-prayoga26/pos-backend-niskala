@@ -5,6 +5,7 @@ const { isAdmin } = require("../../shared/middleware/authorize");
 const attachments = require("./shopping.attachments");
 const shopping = require("./shopping.service");
 const supplyShopping = require("./shopping.supply");
+const shoppingLogs = require("./shopping.logs");
 const shoppingSummary = require("./shopping.summary");
 
 const getSuppliers = asyncHandler(async (req, res) => {
@@ -19,6 +20,12 @@ const getMerks = asyncHandler(async (req, res) => {
 // The summary cards of the Belanja page for ?from=&to=.
 const getShoppingSummary = asyncHandler(async (req, res) => {
   res.json({ success: true, data: await shoppingSummary.summary(req.query) });
+});
+
+// History button of the Belanja page (admins): every line created, changed
+// or deleted, newest first, 10 a page (?page=&action=&search=).
+const getShoppingActivityLogs = asyncHandler(async (req, res) => {
+  res.json({ success: true, data: await shoppingLogs.activityLogs(req.query) });
 });
 
 // Explicit saves from Settings; the shopping form keeps new names local until purchase save.
@@ -154,6 +161,7 @@ module.exports = {
   getSupplyPurchaseNotas: supply.listNotas,
   getSupplyPurchases: supply.list,
   getMerks,
+  getShoppingActivityLogs,
   getShoppingSummary,
   getSuppliers,
   updatePurchaseDraft: raw.updateDraft,

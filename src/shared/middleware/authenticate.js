@@ -24,4 +24,20 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+// Like authenticate, but lets a request without a valid token through
+// (req.user stays unset): for endpoints that also serve visitors.
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const { accessToken } = req.cookies || {};
+    if (accessToken) {
+      const decodedToken = userService.verifyAccessToken(accessToken);
+      req.user = (await userService.findById(decodedToken._id)) || undefined;
+    }
+  } catch {
+    req.user = undefined;
+  }
+  next();
+};
+
 module.exports = authenticate;
+module.exports.optionalAuthenticate = optionalAuthenticate;

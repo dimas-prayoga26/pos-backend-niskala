@@ -76,6 +76,49 @@
    "events": []
   },
   {
+   "step": "register cashier without admin",
+   "request": "POST /api/user/register",
+   "status": 403,
+   "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": null,
+    "x-robots-tag": null,
+    "set-cookie": null
+   },
+   "body": {
+    "status": 403,
+    "message": "Hanya admin yang bisa membuat akun.",
+    "errorStack": ""
+   },
+   "events": []
+  },
+  {
+   "step": "login admin to make accounts",
+   "request": "POST /api/user/login",
+   "status": 200,
+   "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": null,
+    "x-robots-tag": null,
+    "set-cookie": "accessToken=<jwt>; Max-Age=2592000; Path=/; Expires=<date>; HttpOnly; SameSite=Lax"
+   },
+   "body": {
+    "success": true,
+    "message": "User login successfully!",
+    "data": {
+     "_id": 1,
+     "id": 1,
+     "name": "Admin Uji",
+     "phone": "0811",
+     "email": "admin@test.local",
+     "role": "Admin",
+     "createdAt": "<ts>",
+     "updatedAt": "<ts>"
+    }
+   },
+   "events": []
+  },
+  {
    "step": "register cashier",
    "request": "POST /api/user/register",
    "status": 201,

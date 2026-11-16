@@ -24,6 +24,7 @@ const {
   getSupplyPurchaseDrafts,
   getSupplyPurchaseNotas,
   getSupplyPurchases,
+  getShoppingActivityLogs,
   getShoppingSummary,
   getSuppliers,
   updatePurchaseDraft,
@@ -45,6 +46,8 @@ router.get("/suppliers", getSuppliers);
 router.get("/merks", getMerks);
 // Summary cards of the Belanja page (?from=&to=).
 router.get("/summary", getShoppingSummary);
+// History (admins): the activity log of every purchase line.
+router.get("/activity-logs", adminOnly, getShoppingActivityLogs);
 router.post("/suppliers", adminOnly, createSupplier);
 router.put("/suppliers/:id", adminOnly, updateSupplier);
 router.delete("/suppliers/:id", adminOnly, requireNumericId(), deleteSupplier);

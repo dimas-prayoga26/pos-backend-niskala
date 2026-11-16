@@ -1,9 +1,19 @@
 const express = require("express");
 const config = require("../../config/env");
 const authenticate = require("../../shared/middleware/authenticate");
+const { optionalAuthenticate } = require("../../shared/middleware/authenticate");
 const { requireRole } = require("../../shared/middleware/authorize");
 const { clientIpOf, createRateLimit } = require("../../shared/middleware/rateLimit");
-const { getUserData, getUsers, login, logout, register } = require("./user.controller");
+const { requireNumericId } = require("../../shared/middleware/validateParams");
+const {
+  deleteUser,
+  getUserData,
+  getUsers,
+  login,
+  logout,
+  register,
+  updateUser,
+} = require("./user.controller");
 
 const router = express.Router();
 
@@ -23,10 +33,15 @@ const loginLimit =
       })
     : (req, res, next) => next();
 
-router.post("/register", register);
+const adminOnly = requireRole("admin", "Hanya admin yang bisa mengelola akun.");
+
+// Only an admin makes accounts (the very first one excepted: see register).
+router.post("/register", optionalAuthenticate, register);
 router.post("/login", loginLimit, login);
 router.post("/logout", authenticate, logout);
 router.get("/all", authenticate, requireRole("admin", "Only admin can view users!"), getUsers);
 router.get("/", authenticate, getUserData);
+router.put("/:id", authenticate, adminOnly, requireNumericId(), updateUser);
+router.delete("/:id", authenticate, adminOnly, requireNumericId(), deleteUser);
 
 module.exports = router;

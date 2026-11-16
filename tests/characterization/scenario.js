@@ -26,11 +26,22 @@ module.exports = async function scenario(api) {
   await call("register admin", "POST", "/api/user/register", {
     body: { name: "Admin Uji", phone: "0811", email: "admin@test.local", password: "admin-pass", role: "ADMIN" },
   });
+  // After the first account, only an admin makes accounts.
+  await call("register cashier without admin", "POST", "/api/user/register", {
+    body: { name: "Kasir Uji", phone: "0812", email: "kasir@test.local", password: "kasir-pass", role: "cashier" },
+  });
+  await call("login admin to make accounts", "POST", "/api/user/login", {
+    body: { email: "admin@test.local", password: "admin-pass" },
+    as: "admin",
+    keepCookie: true,
+  });
   await call("register cashier", "POST", "/api/user/register", {
     body: { name: "Kasir Uji", phone: "0812", email: "kasir@test.local", password: "kasir-pass", role: "cashier" },
+    as: "admin",
   });
   await call("register duplicate", "POST", "/api/user/register", {
     body: { name: "Admin Uji", phone: "0811", email: "admin@test.local", password: "x", role: "admin" },
+    as: "admin",
   });
   await call("login missing fields", "POST", "/api/user/login", { body: { email: "admin@test.local" } });
   await call("login unknown user", "POST", "/api/user/login", {

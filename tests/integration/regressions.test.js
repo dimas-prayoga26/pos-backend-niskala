@@ -67,9 +67,11 @@ const request = async (method, urlPath, { as, body } = {}) => {
   return { status: response.status, body: json, setCookie: response.headers.get("set-cookie") };
 };
 
+// The first account needs nobody logged in; the admin makes the others.
 const signUp = async (as, role) => {
   const email = `${as}@regression.test`;
   await request("POST", "/api/user/register", {
+    as: cookies.admin ? "admin" : undefined,
     body: { name: as, phone: "1", email, password: "secret-pass", role },
   });
   const login = await request("POST", "/api/user/login", {
@@ -603,6 +605,102 @@ describe("regressions", () => {
     );
   });
 
+  it("lets only an admin make, change and delete accounts, keeping one admin", async () => {
+    const body = { name: "Kasir Baru", phone: "0813", email: "baru@regression.test", password: "secret-pass", role: "cashier" };
+    // Nobody logged in, or a cashier, makes no account (anyone could make an admin).
+    assert.equal((await request("POST", "/api/user/register", { body })).status, 403);
+    assert.equal((await request("POST", "/api/user/register", { as: "cashier", body })).status, 403);
+    const made = await request("POST", "/api/user/register", { as: "admin", body });
+    assert.equal(made.status, 201, JSON.stringify(made.body));
+    const id = made.body.data.id;
+
+    // An admin changes it, a new password included; a cashier cannot.
+    const change = { name: "Kasir Pagi", phone: "0814", email: "pagi@regression.test", role: "cashier", password: "pagi-pass" };
+    assert.equal((await request("PUT", `/api/user/${id}`, { as: "cashier", body: change })).status, 403);
+    const changed = await request("PUT", `/api/user/${id}`, { as: "admin", body: change });
+    assert.equal(changed.status, 200, JSON.stringify(changed.body));
+    assert.deepEqual(
+      [changed.body.data.name, changed.body.data.email, changed.body.data.role, changed.body.data.password],
+      ["Kasir Pagi", "pagi@regression.test", "Cashier", undefined]
+    );
+    const login = await request("POST", "/api/user/login", { body: { email: "pagi@regression.test", password: "pagi-pass" } });
+    assert.equal(login.status, 200);
+    const taken = await request("PUT", `/api/user/${id}`, {
+      as: "admin",
+      body: { ...change, email: "cashier@regression.test", password: "" },
+    });
+    assert.deepEqual([taken.status, taken.body.message], [400, "Email sudah dipakai akun lain."]);
+
+    // The only admin stays an admin and cannot delete their own account.
+    const [[admin]] = await db.query("SELECT id FROM users WHERE email = 'admin@regression.test'");
+    const demote = await request("PUT", `/api/user/${admin.id}`, {
+      as: "admin",
+      body: { name: "admin", phone: "1", email: "admin@regression.test", role: "cashier" },
+    });
+    assert.deepEqual([demote.status, demote.body.message], [400, "Minimal harus ada 1 admin."]);
+    const self = await request("DELETE", `/api/user/${admin.id}`, { as: "admin" });
+    assert.deepEqual([self.status, self.body.message], [400, "Tidak bisa menghapus akun sendiri."]);
+
+    assert.equal((await request("DELETE", `/api/user/${id}`, { as: "cashier" })).status, 403);
+    assert.equal((await request("DELETE", `/api/user/${id}`, { as: "admin" })).status, 200);
+    const [[gone]] = await db.query("SELECT COUNT(*) AS total FROM users WHERE id = ?", [id]);
+    assert.equal(gone.total, 0);
+  });
+
+  it("lists the History of Belanja to admins: lines made, changed and deleted, newest first", async () => {
+    const made = await request("POST", "/api/shopping/purchases", {
+      as: "admin",
+      body: {
+        requestId: "log-purchase-000001",
+        date: "2026-10-04",
+        suplierName: "Toko Log",
+        paymentMethod: "Cash",
+        // Tomat, and 10 more lines: more than a page of History.
+        items: [
+          { itemName: "Tomat Log", quantity: 500, unit: "gr", unitPrice: 20 },
+          ...Array.from({ length: 10 }, (_, index) => ({ itemName: `Bumbu Log ${index + 1}`, quantity: 10, unit: "gr", unitPrice: 5 })),
+        ],
+      },
+    });
+    assert.equal(made.status, 201, JSON.stringify(made.body));
+    const notas = await request("GET", "/api/shopping/purchases/notas?search=Tomat%20Log", { as: "admin" });
+    const line = notas.body.data.notas[0].items.find((item) => item.itemName === "Tomat Log");
+    const deleted = await request("DELETE", `/api/shopping/purchase-items/${line.id}`, { as: "admin" });
+    assert.equal(deleted.status, 200, JSON.stringify(deleted.body));
+
+    assert.equal((await request("GET", "/api/shopping/activity-logs", { as: "cashier" })).status, 403);
+    const logsOf = (query) => request("GET", `/api/shopping/activity-logs?${query}`, { as: "admin" });
+    const logs = await logsOf("search=Tomat%20Log");
+    assert.equal(logs.status, 200, JSON.stringify(logs.body));
+    // The deleted line keeps its log, with its toko; newest first.
+    assert.deepEqual(
+      logs.body.data.logs.map(({ kind, action, supplierName }) => [kind, action, supplierName]),
+      [
+        ["Bahan Baku", "delete", "Toko Log"],
+        ["Bahan Baku", "create", "Toko Log"],
+      ]
+    );
+    assert.equal(logs.body.data.total, 2);
+    assert.ok(logs.body.data.logs.every((log) => log.userName && log.createdAt));
+    // Filtered by action, and by toko.
+    assert.deepEqual((await logsOf("action=delete&search=Tomat")).body.data.logs.map((log) => log.itemName), ["Tomat Log"]);
+    // Toko Log: its 11 lines made and Tomat deleted.
+    assert.equal((await logsOf("search=Toko%20Log")).body.data.total, 12);
+    // A period of days (Jakarta): today has them, another day none.
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
+    assert.equal((await logsOf(`search=Toko%20Log&from=${today}&to=${today}`)).body.data.total, 12);
+    assert.equal((await logsOf("search=Toko%20Log&from=2000-01-01&to=2000-01-31")).body.data.total, 0);
+
+    // 10 a page, newest first across pages.
+    const first = (await logsOf("page=1")).body.data;
+    const second = (await logsOf("page=2")).body.data;
+    assert.equal(first.logs.length, Math.min(first.total, 10));
+    assert.equal(second.page, 2);
+    assert.ok(first.total > 10, `enough logs for two pages: ${first.total}`);
+    assert.ok(new Date(first.logs[9].createdAt) >= new Date(second.logs[0].createdAt));
+    assert.equal(new Set([...first.logs, ...second.logs].map((log) => log.id)).size, first.logs.length + second.logs.length);
+  });
+
   it("keeps Socket.IO off while Pusher carries realtime, answering old pages at once", async () => {
     const polling = await fetch(`${server.baseUrl}/socket.io/?EIO=4&transport=polling`);
     assert.equal(polling.status, 410);
@@ -611,6 +709,7 @@ describe("regressions", () => {
   it("holds back an account's logins after 10 wrong passwords, and only those", async () => {
     const email = "tebak@regression.test";
     await request("POST", "/api/user/register", {
+      as: "admin",
       body: { name: "tebak", phone: "1", email, password: "secret-pass", role: "cashier" },
     });
     const login = (password) => request("POST", "/api/user/login", { body: { email, password } });

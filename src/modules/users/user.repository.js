@@ -55,4 +55,42 @@ const create = async ({ name, phone, email, password, role }) => {
   return findById(result.insertId);
 };
 
-module.exports = { create, findAll, findByEmail, findByEmailForAuth, findById };
+const countAll = async () => {
+  const [[{ total }]] = await pool.query("SELECT COUNT(*) AS total FROM users");
+  return Number(total) || 0;
+};
+
+const countAdmins = async () => {
+  const [[{ total }]] = await pool.query("SELECT COUNT(*) AS total FROM users WHERE LOWER(role) = 'admin'");
+  return Number(total) || 0;
+};
+
+// fields: name, phone, email, role, and password (a hash) when it changes.
+const update = async (id, fields) => {
+  const columns = Object.keys(fields);
+  if (!columns.length) return findById(id);
+
+  await pool.query(
+    `UPDATE users SET ${columns.map((column) => `${column} = ?`).join(", ")} WHERE id = ?`,
+    [...columns.map((column) => fields[column]), id]
+  );
+  return findById(id);
+};
+
+// Records the user made keep their data; their user columns become NULL.
+const remove = async (id) => {
+  const [result] = await pool.query("DELETE FROM users WHERE id = ?", [id]);
+  return result.affectedRows > 0;
+};
+
+module.exports = {
+  countAdmins,
+  countAll,
+  create,
+  findAll,
+  findByEmail,
+  findByEmailForAuth,
+  findById,
+  remove,
+  update,
+};
