@@ -63,8 +63,7 @@ const createApp = () => {
   app.use("/api/payment-source", require("./modules/paymentSources/paymentSource.routes"));
   app.use("/api/recap", require("./modules/recaps/recap.routes"));
   app.use("/api/realtime", require("./modules/realtime/realtime.routes"));
-  // LOYALTY: dimatikan sementara di main (aktif di develop).
-  // app.use("/api/loyalty", require("./modules/loyalty/loyalty.routes"));
+  app.use("/api/loyalty", require("./modules/loyalty/loyalty.routes"));
 
   app.use(errorHandler);
 
