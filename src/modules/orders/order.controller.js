@@ -1,7 +1,8 @@
 const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
-const loyaltyService = require("../loyalty/loyalty.service");
+// LOYALTY: dimatikan sementara di main (aktif di develop).
+// const loyaltyService = require("../loyalty/loyalty.service");
 const orderService = require("./order.service");
 
 const ORDER_STATUSES = ["In Progress", "Completed"];
@@ -24,8 +25,9 @@ const addOrder = asyncHandler(async (req, res, next) => {
     action: "stock-deducted-by-order",
     orderId: order.id,
   });
+  // LOYALTY: dimatikan sementara di main (aktif di develop).
   // Not awaited: the order is saved whether or not loyalty answers.
-  loyaltyService.stampOrderInBackground(order, req.user?._id);
+  // loyaltyService.stampOrderInBackground(order, req.user?._id);
   res.status(201).json({ success: true, message: "Order created!", data: order });
 });
 
