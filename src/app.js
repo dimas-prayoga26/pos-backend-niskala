@@ -12,6 +12,10 @@ const { getLocalAccessUrls } = require("./shared/utils/networkAddresses");
 const createApp = () => {
   const app = express();
 
+  // External API for other websites: before the POS CORS, which would turn
+  // their origins away.
+  app.use("/api/public", require("./modules/public/public.routes"));
+
   app.use(cors(corsOptions));
   // Tablets still on an old page keep polling Socket.IO: answered at once
   // (their client waits a few seconds before trying again).
@@ -59,6 +63,7 @@ const createApp = () => {
   app.use("/api/payment-source", require("./modules/paymentSources/paymentSource.routes"));
   app.use("/api/recap", require("./modules/recaps/recap.routes"));
   app.use("/api/realtime", require("./modules/realtime/realtime.routes"));
+  app.use("/api/loyalty", require("./modules/loyalty/loyalty.routes"));
 
   app.use(errorHandler);
 

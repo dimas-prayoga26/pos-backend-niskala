@@ -53,6 +53,9 @@ const startServer = ({ database, port, timeoutMs = 60000 }) =>
         PORT: String(port),
         HOST: "127.0.0.1",
         NODE_ENV: "test",
+        // The loyalty app reads the dev database: test orders must not
+        // reach it (their ids mean other orders there).
+        LOYALTY_API_URL: "",
       },
       stdio: ["ignore", "pipe", "pipe"],
     });

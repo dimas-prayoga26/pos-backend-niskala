@@ -49,6 +49,22 @@ const config = Object.freeze({
         apiPerMinute: numberFromEnv("RATE_LIMIT_API_PER_MINUTE", 1000),
         loginFailures: numberFromEnv("RATE_LIMIT_LOGIN_FAILURES", 10),
     }),
+    // Loyalty stamp app (system-loyalty-niskala), called server to server.
+    // No URL: loyalty is off and orders don't ask for stamps.
+    loyalty: Object.freeze({
+        apiUrl: (process.env.LOYALTY_API_URL || "").trim().replace(/\/+$/, ""),
+        apiToken: process.env.LOYALTY_API_TOKEN || "",
+        timeoutMs: numberFromEnv("LOYALTY_TIMEOUT_MS", 3000),
+    }),
+    // External read-only API (/api/public/*), open to any website.
+    publicApi: Object.freeze({
+        // Set: callers must send it as X-API-Key. Empty: open to all.
+        key: process.env.PUBLIC_API_KEY || "",
+        // Base of image URLs (https://api.pos.coffeeniskala.com); empty: the
+        // address the request came in on.
+        baseUrl: (process.env.PUBLIC_BASE_URL || "").trim().replace(/\/+$/, ""),
+        perMinute: numberFromEnv("RATE_LIMIT_PUBLIC_PER_MINUTE", 120),
+    }),
 });
 
 module.exports = config;

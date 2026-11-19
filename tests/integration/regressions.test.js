@@ -706,6 +706,58 @@ describe("regressions", () => {
     assert.equal(polling.status, 410);
   });
 
+  it("gives any website the best-selling drinks, without login, crew meals left out", async () => {
+    const [drinkRows] = await db.query(
+      `SELECT mi.id, mi.name FROM menu_items mi
+       JOIN categories c ON c.id = mi.category_id
+       WHERE mi.is_available = TRUE AND c.is_active = TRUE AND c.name LIKE '%Coffee%'
+       ORDER BY mi.id`
+    );
+    const drinks = [...new Map(drinkRows.map((row) => [row.name, row])).values()].slice(0, 3);
+    assert.equal(drinks.length, 3);
+    const [first, second, crewFavourite] = drinks;
+
+    const addOrder = async (code, orderType, lines) => {
+      const [result] = await db.query(
+        `INSERT INTO orders (order_code, customer_name, order_type, order_status, total, tax, total_with_tax)
+         VALUES (?, 'Uji', ?, 'Completed', 0, 0, 0)`,
+        [code, orderType]
+      );
+      for (const [drink, quantity] of lines) {
+        await db.query(
+          `INSERT INTO order_items (order_id, menu_item_id, name, quantity, price_per_quantity, price)
+           VALUES (?, ?, ?, ?, 0, 0)`,
+          [result.insertId, drink.id, drink.name, quantity]
+        );
+      }
+      return result.insertId;
+    };
+    const orderIds = [
+      await addOrder("BEST-DRINK-1", "Offline", [[first, 5000], [second, 4000]]),
+      await addOrder("BEST-DRINK-2", "Crew", [[crewFavourite, 99999]]),
+    ];
+
+    try {
+      const response = await fetch(`${server.baseUrl}/api/public/best-drinks?limit=2`, {
+        headers: { Origin: "https://coffeeniskala.com" },
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("access-control-allow-origin"), "*");
+      assert.deepEqual(
+        body.data.map((drink) => [drink.rank, drink.name]),
+        [[1, first.name], [2, second.name]]
+      );
+      assert.deepEqual(Object.keys(body.data[0]).sort(), ["category", "id", "imageUrl", "name", "price", "rank"]);
+
+      const bad = await fetch(`${server.baseUrl}/api/public/best-drinks?limit=0`);
+      assert.equal(bad.status, 400);
+    } finally {
+      await db.query("DELETE FROM orders WHERE id IN (?)", [orderIds]);
+    }
+  });
+
   it("holds back an account's logins after 10 wrong passwords, and only those", async () => {
     const email = "tebak@regression.test";
     await request("POST", "/api/user/register", {
