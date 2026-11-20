@@ -1,13 +1,18 @@
 const assert = require("node:assert/strict");
 const { describe, it } = require("node:test");
 const { LoyaltyRefusedError, LoyaltyUnavailableError } = require("../../src/modules/loyalty/loyalty.client");
-const { prepareRewardOrder, redeemClaims } = require("../../src/modules/loyalty/loyalty.rewards");
+const {
+  assertLoyaltyPromoMenu,
+  prepareRewardOrder,
+  redeemClaims,
+} = require("../../src/modules/loyalty/loyalty.rewards");
 
-const DRINK = { stamps: 5, label: "Minuman gratis", count: 1 };
-// Promo menu 50 is the reward for stamp 5; 60 for stamp 10.
+// Program Promo links stamp 5 to Promo loyalty menu 50 (stamp 10 to 60).
+const DRINK = { stamps: 5, label: "Minuman gratis", count: 1, promo_menu_item_id: 50 };
+// The Promo loyalty menus (menu_items.is_loyalty_promo).
 const REWARD_MENUS = new Map([
-  [50, { name: "Loyalty Minuman Gratis", stamps: 5 }],
-  [60, { name: "Loyalty Makanan Gratis", stamps: 10 }],
+  [50, { name: "Loyalty Minuman Gratis" }],
+  [60, { name: "Loyalty Makanan Gratis" }],
 ]);
 
 const paidLine = { id: "3-40", sourceMenuItemId: 40, name: "Salted Creamy Latte", quantity: 1, price: 25000 };
@@ -96,11 +101,43 @@ describe("loyalty rewards in an order", () => {
       message: "Loyalty Minuman Gratis belum bisa ditukar.",
     });
 
-    // Flagged, but its menu is not a reward.
+    // Flagged, but its menu is not a Promo loyalty menu.
     const { deps } = fakeDeps();
     await assert.rejects(prepareRewardOrder(order([{ ...paidLine, loyaltyReward: { stamps: 5 } }]), deps), {
       status: 422,
-      message: "Salted Creamy Latte bukan menu hadiah loyalty.",
+      message: "Salted Creamy Latte bukan menu Promo loyalty.",
+    });
+  });
+
+  it("counts a Promo loyalty menu only for the ready reward Program Promo links it to", async () => {
+    // Stamp 5 is ready but linked to another promo menu (70).
+    const otherLink = fakeDeps({ customer: { registered: true, ready_rewards: [{ ...DRINK, promo_menu_item_id: 70 }] } });
+    await assert.rejects(prepareRewardOrder(order([rewardLine()]), otherLink.deps), {
+      status: 422,
+      message: "Minuman gratis belum bisa ditukar.",
+    });
+
+    // Not linked to any menu yet.
+    const unlinked = fakeDeps({ customer: { registered: true, ready_rewards: [{ ...DRINK, promo_menu_item_id: null }] } });
+    await assert.rejects(prepareRewardOrder(order([rewardLine()]), unlinked.deps), { status: 422 });
+  });
+
+  it("lets Program Promo link only a Promo loyalty menu", async () => {
+    const { deps } = fakeDeps();
+
+    await assertLoyaltyPromoMenu(50, deps);
+    await assert.rejects(assertLoyaltyPromoMenu(40, deps), {
+      status: 400,
+      message: "Pilih menu PROMO yang jenisnya Promo loyalty.",
+    });
+  });
+
+  it("refuses a reward while the stamp card is switched off", async () => {
+    const off = fakeDeps({ customer: { program_active: false, registered: true, ready_rewards: [DRINK] } });
+
+    await assert.rejects(prepareRewardOrder(order([rewardLine()]), off.deps), {
+      status: 422,
+      message: "Program Stamp Card sedang tidak aktif.",
     });
   });
 

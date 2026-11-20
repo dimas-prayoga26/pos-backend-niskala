@@ -34,34 +34,31 @@ const toMenuItemRecord = (input) => {
   };
 };
 
-// Hadiah loyalty: a free promo (Harga 0, Diskon 100%) of a Kategori Promo,
-// given for a reward's stamp (5: Minuman gratis, 10: Makanan gratis) when the
-// cashier taps Tukar, and hidden from the POS grid. One menu per reward.
-// null for any other menu.
-const resolveLoyaltyRewardStamps = async (connection, input, bundle, id = null) => {
-  const stamps = Math.trunc(Number(input.loyaltyRewardStamps) || 0);
-  if (stamps <= 0) return null;
+// Promo loyalty (Jenis promo in the menu form): a free promo (Harga 0,
+// Diskon 100%) of a Kategori Promo, given by Tukar for a loyalty reward and
+// hidden from the POS grid. Which reward uses it is set in Program
+// Promo (the loyalty app). false for any other menu.
+const resolveLoyaltyPromo = (input, bundle) => {
+  const flag = input.isLoyaltyPromo;
+  if (!(flag === true || flag === "true" || flag === 1 || flag === "1")) return false;
 
   if (!bundle) {
-    throw createHttpError(400, "Hadiah loyalty hanya untuk menu Kategori Promo.");
-  }
-  if (stamps > 255) {
-    throw createHttpError(400, "Stamp hadiah loyalty tidak valid.");
+    throw createHttpError(400, "Promo loyalty hanya untuk menu Kategori Promo.");
   }
   const price = Number(input.regularPrice ?? input.price);
   if (price !== 0 || Number(bundle.discountPercent) !== 100) {
-    throw createHttpError(400, "Menu hadiah loyalty harus Harga 0 dan Diskon 100%.");
+    throw createHttpError(400, "Promo loyalty harus Harga 0 dan Diskon 100%.");
   }
 
-  const [[taken]] = await connection.query(
-    "SELECT name FROM menu_items WHERE loyalty_reward_stamps = ? AND id <> ? LIMIT 1",
-    [stamps, Number(id) || 0]
-  );
-  if (taken) {
-    throw createHttpError(400, `Hadiah stamp ke-${stamps} sudah dipakai menu ${taken.name}.`);
-  }
+  return true;
+};
 
-  return stamps;
+// Marks the record Promo loyalty or not. A reward's gross profit is kept at
+// 0: it is given away, and each Tukar still records the HPP of the menu
+// picked (order snapshot).
+const applyLoyaltyPromo = (record, input, bundle) => {
+  record.isLoyaltyPromo = resolveLoyaltyPromo(input, bundle);
+  if (record.isLoyaltyPromo) record.profitFields = { ...record.profitFields, grossProfit: 0 };
 };
 
 // A package (bundle { items, choices } set) has no recipe of its own: selling
@@ -83,7 +80,7 @@ const create = async (input) => {
   const record = toMenuItemRecord(input);
   const id = await withTransaction(async (connection) => {
     const bundle = await resolveBundleItems(connection, input);
-    record.loyaltyRewardStamps = await resolveLoyaltyRewardStamps(connection, input, bundle);
+    applyLoyaltyPromo(record, input, bundle);
     const insertId = await MenuItem.insertMenuItem(connection, record);
     await writePriceAndRecipe(connection, insertId, record, bundle);
     await refreshMenuCosts(connection, { menuItemIds: [insertId] });
@@ -100,7 +97,7 @@ const update = async (id, input) => {
 
   await withTransaction(async (connection) => {
     const bundle = await resolveBundleItems(connection, input, id);
-    record.loyaltyRewardStamps = await resolveLoyaltyRewardStamps(connection, input, bundle, id);
+    applyLoyaltyPromo(record, input, bundle);
     await MenuItem.updateMenuItem(connection, id, record);
     await writePriceAndRecipe(connection, id, record, bundle);
     await refreshMenuCosts(connection, { menuItemIds: [id] });

@@ -688,9 +688,19 @@ const bootstrapDatabase = async () => {
   // Best Seller tab of each category (modules/categories/bestSeller): Makanan,
   // Minuman, Snack, '' (not shown) or NULL (not set yet: from its name).
   await runSafeMigration("ALTER TABLE categories ADD COLUMN best_seller_group VARCHAR(20) NULL AFTER is_bundle");
-  // Hadiah loyalty: a Kategori Promo menu given for a reward's stamp (5, 10)
-  // when the cashier taps Tukar; NULL for every other menu.
-  await runSafeMigration("ALTER TABLE menu_items ADD COLUMN loyalty_reward_stamps TINYINT UNSIGNED NULL AFTER is_available");
+  // Promo loyalty: a Kategori Promo menu given (free) by Tukar for a loyalty
+  // reward, never sold from the grid. Which reward uses it is set in the
+  // loyalty app (Program Promo). The first time, menus marked
+  // by the older loyalty_reward_stamps (left in place, unused) become one.
+  const menuColumns = await getColumnNames("menu_items");
+  if (!menuColumns.has("is_loyalty_promo")) {
+    await pool.query(
+      "ALTER TABLE menu_items ADD COLUMN is_loyalty_promo BOOLEAN NOT NULL DEFAULT FALSE AFTER is_available"
+    );
+    if (menuColumns.has("loyalty_reward_stamps")) {
+      await pool.query("UPDATE menu_items SET is_loyalty_promo = TRUE WHERE loyalty_reward_stamps IS NOT NULL");
+    }
+  }
   // Bahan, menus and recipes of the COGS sheet, once per database (add-only).
   await seedCogsSheet();
   // Its menus into the sheet's tabs as categories (Black Coffee ... Roti), once.
