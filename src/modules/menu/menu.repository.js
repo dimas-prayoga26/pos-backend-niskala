@@ -30,6 +30,8 @@ const mapMenuItem = (row) => {
     onlinePrice: toNullableNumber(row.online_price),
     // Kategori Promo: the package costs its menus' price less this percent.
     discountPercent: Number(row.discount_percent || 0),
+    // Hadiah loyalty: the reward's stamp (5, 10) this promo is given for.
+    loyaltyRewardStamps: row.loyalty_reward_stamps ? Number(row.loyalty_reward_stamps) : null,
     includeOnlinePlatform: Boolean(row.include_online_platform),
     hppCost,
     hpp: hppCost,
@@ -373,18 +375,19 @@ const countImagePathReferences = async (imagePath) => {
 
 const insertMenuItem = async (
   connection,
-  { categoryId, name, shouldIncludeOnlinePlatform, imagePath, isAvailable }
+  { categoryId, name, shouldIncludeOnlinePlatform, imagePath, isAvailable, loyaltyRewardStamps = null }
 ) => {
   const [result] = await connection.query(
     `INSERT INTO menu_items
-      (category_id, name, include_online_platform, image_path, is_available)
-     VALUES (?, ?, ?, ?, ?)`,
+      (category_id, name, include_online_platform, image_path, is_available, loyalty_reward_stamps)
+     VALUES (?, ?, ?, ?, ?, ?)`,
     [
       categoryId,
       name,
       shouldIncludeOnlinePlatform ? 1 : 0,
       imagePath || null,
       isAvailable ? 1 : 0,
+      loyaltyRewardStamps || null,
     ]
   );
 
@@ -394,7 +397,7 @@ const insertMenuItem = async (
 const updateMenuItem = async (
   connection,
   id,
-  { categoryId, name, shouldIncludeOnlinePlatform, imagePath, isAvailable }
+  { categoryId, name, shouldIncludeOnlinePlatform, imagePath, isAvailable, loyaltyRewardStamps = null }
 ) => {
   await connection.query(
     `UPDATE menu_items
@@ -402,7 +405,8 @@ const updateMenuItem = async (
          name = ?,
          include_online_platform = ?,
          image_path = ?,
-         is_available = ?
+         is_available = ?,
+         loyalty_reward_stamps = ?
      WHERE id = ?`,
     [
       categoryId,
@@ -410,6 +414,7 @@ const updateMenuItem = async (
       shouldIncludeOnlinePlatform ? 1 : 0,
       imagePath || null,
       isAvailable ? 1 : 0,
+      loyaltyRewardStamps || null,
       id,
     ]
   );

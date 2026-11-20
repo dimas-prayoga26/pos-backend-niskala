@@ -1,6 +1,7 @@
 const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
+const loyaltyRewards = require("../loyalty/loyalty.rewards");
 const loyaltyService = require("../loyalty/loyalty.service");
 const orderService = require("./order.service");
 
@@ -18,15 +19,26 @@ const addOrder = asyncHandler(async (req, res, next) => {
     return next(createHttpError(400, "Online order platform is required!"));
   }
 
-  const order = await orderService.create(req.body);
+  // Loyalty rewards in the cart (a free coffee / rice bowl) are checked
+  // first and made free; they are redeemed once the order is saved.
+  const { orderData, claims } = await loyaltyRewards.prepareRewardOrder(req.body);
+  const order = await orderService.create(orderData);
   emitOrderChanged("created", order.id);
   emitRealtimeEvent("stock:changed", {
     action: "stock-deducted-by-order",
     orderId: order.id,
   });
+  const loyalty = claims.length
+    ? await loyaltyRewards.redeemClaims(order, claims, req.user?._id)
+    : null;
   // Not awaited: the order is saved whether or not loyalty answers.
   loyaltyService.stampOrderInBackground(order, req.user?._id);
-  res.status(201).json({ success: true, message: "Order created!", data: order });
+  res.status(201).json({
+    success: true,
+    message: "Order created!",
+    data: order,
+    ...(loyalty ? { loyalty } : {}),
+  });
 });
 
 // The list response has no `success` flag; the frontend reads `data` only.

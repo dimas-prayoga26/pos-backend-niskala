@@ -16,11 +16,20 @@ const lookupCustomer = async (phone, deps) => {
   return data;
 };
 
-const redeemReward = async ({ phone, rewardStamps, cashierId }, deps) => {
+// orderId / menuItemId / menuName: the order the reward went out with and
+// the menu given, when it is claimed in the POS.
+const redeemReward = async ({ phone, rewardStamps, cashierId, orderId, menuItemId, menuName }, deps) => {
   const { data } = await client.request(
     "POST",
     "/redemptions",
-    { phone, reward_stamps: rewardStamps, cashier_id: cashierId ?? null },
+    {
+      phone,
+      reward_stamps: rewardStamps,
+      cashier_id: cashierId ?? null,
+      ...(orderId ? { order_id: orderId } : {}),
+      ...(menuItemId ? { menu_item_id: menuItemId } : {}),
+      ...(menuName ? { menu_name: menuName } : {}),
+    },
     deps
   );
   return data;

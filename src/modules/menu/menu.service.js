@@ -34,6 +34,36 @@ const toMenuItemRecord = (input) => {
   };
 };
 
+// Hadiah loyalty: a free promo (Harga 0, Diskon 100%) of a Kategori Promo,
+// given for a reward's stamp (5: Minuman gratis, 10: Makanan gratis) when the
+// cashier taps Tukar, and hidden from the POS grid. One menu per reward.
+// null for any other menu.
+const resolveLoyaltyRewardStamps = async (connection, input, bundle, id = null) => {
+  const stamps = Math.trunc(Number(input.loyaltyRewardStamps) || 0);
+  if (stamps <= 0) return null;
+
+  if (!bundle) {
+    throw createHttpError(400, "Hadiah loyalty hanya untuk menu Kategori Promo.");
+  }
+  if (stamps > 255) {
+    throw createHttpError(400, "Stamp hadiah loyalty tidak valid.");
+  }
+  const price = Number(input.regularPrice ?? input.price);
+  if (price !== 0 || Number(bundle.discountPercent) !== 100) {
+    throw createHttpError(400, "Menu hadiah loyalty harus Harga 0 dan Diskon 100%.");
+  }
+
+  const [[taken]] = await connection.query(
+    "SELECT name FROM menu_items WHERE loyalty_reward_stamps = ? AND id <> ? LIMIT 1",
+    [stamps, Number(id) || 0]
+  );
+  if (taken) {
+    throw createHttpError(400, `Hadiah stamp ke-${stamps} sudah dipakai menu ${taken.name}.`);
+  }
+
+  return stamps;
+};
+
 // A package (bundle { items, choices } set) has no recipe of its own: selling
 // it sells the recipes of its menus. An ordinary menu loses any package contents.
 const writePriceAndRecipe = async (connection, id, record, bundle) => {
@@ -53,6 +83,7 @@ const create = async (input) => {
   const record = toMenuItemRecord(input);
   const id = await withTransaction(async (connection) => {
     const bundle = await resolveBundleItems(connection, input);
+    record.loyaltyRewardStamps = await resolveLoyaltyRewardStamps(connection, input, bundle);
     const insertId = await MenuItem.insertMenuItem(connection, record);
     await writePriceAndRecipe(connection, insertId, record, bundle);
     await refreshMenuCosts(connection, { menuItemIds: [insertId] });
@@ -69,6 +100,7 @@ const update = async (id, input) => {
 
   await withTransaction(async (connection) => {
     const bundle = await resolveBundleItems(connection, input, id);
+    record.loyaltyRewardStamps = await resolveLoyaltyRewardStamps(connection, input, bundle, id);
     await MenuItem.updateMenuItem(connection, id, record);
     await writePriceAndRecipe(connection, id, record, bundle);
     await refreshMenuCosts(connection, { menuItemIds: [id] });

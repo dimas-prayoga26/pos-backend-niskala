@@ -31,11 +31,13 @@ const findSales = async ({ days = null } = {}) => {
     since = "AND o.order_date >= DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)";
     params.push(days);
   }
+  // A loyalty reward (line key loyalty-...) is given free, not sold.
   const [rows] = await pool.query(
     `SELECT oi.menu_item_id, oi.name, SUM(oi.quantity) AS quantity
      FROM order_items oi
      JOIN orders o ON o.id = oi.order_id
-     WHERE o.order_type NOT IN (?) ${since}
+     WHERE o.order_type NOT IN (?)
+       AND (oi.item_key IS NULL OR oi.item_key NOT LIKE 'loyalty-%') ${since}
      GROUP BY oi.menu_item_id, oi.name`,
     params
   );
