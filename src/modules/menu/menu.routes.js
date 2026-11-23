@@ -5,7 +5,9 @@ const { requireNumericId } = require("../../shared/middleware/validateParams");
 const {
   addMenuItem,
   deleteMenuItem,
+  getMenuItemSales,
   getMenuItems,
+  setMenuItemAvailability,
   updateMenuItem,
   uploadMenuImage,
 } = require("./menu.controller");
@@ -19,6 +21,9 @@ router.post("/", authenticate, adminOnly, addMenuItem);
 // The role check runs before multer so rejected uploads never touch the disk.
 router.post("/upload-image", authenticate, adminOnly, receiveImage, uploadMenuImage);
 router.put("/:id", authenticate, adminOnly, requireNumericId(), updateMenuItem);
+// Menu → Promo card: on/off (Tersedia) and Riwayat (who bought it).
+router.patch("/:id/availability", authenticate, adminOnly, requireNumericId(), setMenuItemAvailability);
+router.get("/:id/sales", authenticate, adminOnly, requireNumericId(), getMenuItemSales);
 router.delete("/:id", authenticate, adminOnly, requireNumericId(), deleteMenuItem);
 
 module.exports = router;

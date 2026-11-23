@@ -38,6 +38,38 @@ const updateMenuItem = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, message: "Menu item updated!", data: menuItem });
 });
 
+// { isAvailable }: the switch on a promo card (Menu → Promo).
+const setMenuItemAvailability = asyncHandler(async (req, res, next) => {
+  const menuItem = await menuService.setAvailable(req.params.id, req.body?.isAvailable);
+
+  if (!menuItem) {
+    return next(createHttpError(404, "Menu item not found!"));
+  }
+
+  emitRealtimeEvent("menu:changed", {
+    action: "menu-item-updated",
+    menuItemId: menuItem.id,
+  });
+  res.status(200).json({ success: true, message: "Menu item updated!", data: menuItem });
+});
+
+// Riwayat of a promo card: ?page=&perPage= (newest first).
+const getMenuItemSales = asyncHandler(async (req, res, next) => {
+  const page = Number(req.query.page) || 1;
+  const perPage = Number(req.query.perPage) || 20;
+  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(perPage) || perPage < 1 || perPage > 100) {
+    return next(createHttpError(400, "Halaman riwayat tidak valid."));
+  }
+
+  const sales = await menuService.listSales(req.params.id, { page, perPage });
+  if (!sales) {
+    return next(createHttpError(404, "Menu item not found!"));
+  }
+
+  res.set("Cache-Control", "no-store");
+  res.status(200).json({ success: true, data: sales });
+});
+
 const deleteMenuItem = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const deleted = await menuService.remove(id);
@@ -70,7 +102,9 @@ const uploadMenuImage = asyncHandler(async (req, res, next) => {
 module.exports = {
   addMenuItem,
   deleteMenuItem,
+  getMenuItemSales,
   getMenuItems,
+  setMenuItemAvailability,
   updateMenuItem,
   uploadMenuImage,
 };

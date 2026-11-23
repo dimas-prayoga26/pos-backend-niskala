@@ -65,18 +65,22 @@ describe("loyalty client", () => {
     );
   });
 
-  it("reads the redemption history page by page, searched by phone", async () => {
+  it("reads the redemption and stamp histories page by page, searched by phone", async () => {
     const history = { data: [{ id: 3 }], meta: { page: 2, per_page: 10, total: 11, last_page: 2 } };
     const { calls, deps } = fakeFetch(() => jsonResponse(200, history));
 
     assert.deepEqual(await loyalty.listRedemptions({ page: 2, perPage: 10, q: " 0812 " }, deps), history);
     await loyalty.listRedemptions({}, deps);
+    assert.deepEqual(await loyalty.listStamps({ page: 3, perPage: 5, q: "NSK" }, deps), history);
+    await loyalty.listStamps(undefined, deps);
 
     assert.deepEqual(
       calls.map((call) => [call.init.method, call.url]),
       [
         ["GET", "http://loyalty.test/api/pos/redemptions?page=2&per_page=10&q=0812"],
         ["GET", "http://loyalty.test/api/pos/redemptions?page=1&per_page=20"],
+        ["GET", "http://loyalty.test/api/pos/stamps?page=3&per_page=5&q=NSK"],
+        ["GET", "http://loyalty.test/api/pos/stamps?page=1&per_page=20"],
       ]
     );
   });

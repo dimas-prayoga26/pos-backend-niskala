@@ -428,6 +428,58 @@ const remove = async (id) => {
   return result.affectedRows > 0;
 };
 
+// The switch on a promo card: only whether it is sold, nothing else.
+const setAvailable = async (id, isAvailable) => {
+  const [result] = await pool.query("UPDATE menu_items SET is_available = ? WHERE id = ?", [
+    isAvailable ? 1 : 0,
+    id,
+  ]);
+  return result.affectedRows > 0;
+};
+
+// Riwayat of a promo card: the order lines of this menu, newest first, with
+// their order, and totals over all of them.
+const findSales = async (id, { page, perPage }) => {
+  const [[summary]] = await pool.query(
+    `SELECT COUNT(*) AS line_count, COUNT(DISTINCT order_id) AS order_count,
+            COALESCE(SUM(quantity), 0) AS quantity, COALESCE(SUM(price), 0) AS revenue
+     FROM order_items WHERE menu_item_id = ?`,
+    [id]
+  );
+  const [rows] = await pool.query(
+    `SELECT oi.id, oi.order_id, oi.quantity, oi.price, oi.variant,
+            o.order_code, o.order_date, o.customer_name, o.customer_phone, o.order_type, o.order_status
+     FROM order_items oi
+     JOIN orders o ON o.id = oi.order_id
+     WHERE oi.menu_item_id = ?
+     ORDER BY o.order_date DESC, oi.id DESC
+     LIMIT ? OFFSET ?`,
+    [id, perPage, (page - 1) * perPage]
+  );
+
+  return {
+    summary: {
+      lines: Number(summary.line_count),
+      orders: Number(summary.order_count),
+      quantity: Number(summary.quantity),
+      revenue: Number(summary.revenue),
+    },
+    rows: rows.map((row) => ({
+      id: row.id,
+      orderId: row.order_id,
+      orderCode: row.order_code,
+      orderDate: row.order_date,
+      customerName: row.customer_name || "",
+      customerPhone: row.customer_phone || "",
+      orderType: row.order_type || "",
+      orderStatus: row.order_status || "",
+      variant: row.variant || "",
+      quantity: Number(row.quantity),
+      price: Number(row.price),
+    })),
+  };
+};
+
 module.exports = {
   countImagePathReferences,
   findAll,
@@ -435,7 +487,9 @@ module.exports = {
   findById,
   insertMenuItem,
   remove,
+  findSales,
   replacePriceAndRecipe,
+  setAvailable,
   setDiscountPercent,
   updateMenuItem,
 };

@@ -33856,6 +33856,10 @@
  ],
  "database": {
   "afterScenario": {
+   "api_integrations": {
+    "ddl": "CREATE TABLE `api_integrations` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `base_url` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `api_key_sealed` text COLLATE utf8mb4_unicode_ci,\n  `api_key_hint` varchar(8) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `updated_by` int unsigned DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `code` (`code`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "business_day_closings": {
     "ddl": "CREATE TABLE `business_day_closings` (\n  `business_date` date NOT NULL,\n  `source` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `closed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`business_date`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [
@@ -44465,6 +44469,10 @@
    }
   },
   "afterRestart": {
+   "api_integrations": {
+    "ddl": "CREATE TABLE `api_integrations` (\n  `id` int unsigned NOT NULL AUTO_INCREMENT,\n  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `base_url` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',\n  `api_key_sealed` text COLLATE utf8mb4_unicode_ci,\n  `api_key_hint` varchar(8) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `is_active` tinyint(1) NOT NULL DEFAULT '1',\n  `updated_by` int unsigned DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `code` (`code`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    "rows": []
+   },
    "business_day_closings": {
     "ddl": "CREATE TABLE `business_day_closings` (\n  `business_date` date NOT NULL,\n  `source` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int unsigned DEFAULT NULL,\n  `closed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`business_date`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     "rows": [

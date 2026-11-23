@@ -23,7 +23,30 @@ class LoyaltyUnavailableError extends Error {
   }
 }
 
-const isConfigured = () => Boolean(config.loyalty.apiUrl && config.loyalty.apiToken);
+// Where to call and with which key: Pengaturan → API once the app registers
+// it (modules/integrations), else .env (unit tests, scripts).
+let connectionResolver = async () => ({ apiUrl: config.loyalty.apiUrl, apiToken: config.loyalty.apiToken });
+
+const setConnectionResolver = (resolver) => {
+  connectionResolver = resolver;
+};
+
+const getConnection = async () => {
+  try {
+    return (await connectionResolver()) || {};
+  } catch (error) {
+    throw new LoyaltyUnavailableError("Pengaturan loyalty tidak terbaca.", error);
+  }
+};
+
+const isConfigured = async () => {
+  try {
+    const { apiUrl, apiToken } = await getConnection();
+    return Boolean(apiUrl && apiToken);
+  } catch {
+    return false;
+  }
+};
 
 const readJson = async (response) => {
   try {
@@ -35,18 +58,20 @@ const readJson = async (response) => {
 
 // { status, data } for 2xx; LoyaltyRefusedError for a rule refusal (4xx
 // other than auth); LoyaltyUnavailableError for everything else.
-const request = async (method, path, body, { fetchImpl = globalThis.fetch } = {}) => {
-  if (!isConfigured()) {
+// connection: { apiUrl, apiToken } to try instead of the saved one (Tes koneksi).
+const request = async (method, path, body, { fetchImpl = globalThis.fetch, connection } = {}) => {
+  const { apiUrl, apiToken } = connection || (await getConnection());
+  if (!apiUrl || !apiToken) {
     throw new LoyaltyUnavailableError("Loyalty belum dikonfigurasi.");
   }
 
   let response;
   try {
-    response = await fetchImpl(`${config.loyalty.apiUrl}${path}`, {
+    response = await fetchImpl(`${String(apiUrl).replace(/\/+$/, "")}${path}`, {
       method,
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${config.loyalty.apiToken}`,
+        Authorization: `Bearer ${apiToken}`,
         ...(body ? { "Content-Type": "application/json" } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
@@ -75,4 +100,5 @@ module.exports = {
   LoyaltyUnavailableError,
   isConfigured,
   request,
+  setConnectionResolver,
 };

@@ -39,6 +39,7 @@ const { seedCogsCategories, seedSheetCategoryTabs } = require("./cogsCategorySee
 const { seedCogsMenuFill } = require("./cogsMenuFillSeed");
 const { ensureBundleSchema } = require("./bundleSchema");
 const { ensureIngredientSwapSchema } = require("./ingredientSwapSchema");
+const { ensureApiIntegrationsSchema } = require("./apiIntegrationsSchema");
 
 const connectDB = async () => {
   await serverPool.query(
@@ -701,6 +702,8 @@ const bootstrapDatabase = async () => {
       await pool.query("UPDATE menu_items SET is_loyalty_promo = TRUE WHERE loyalty_reward_stamps IS NOT NULL");
     }
   }
+  // Pengaturan → API: outside services and their keys (loyalty moved in from .env).
+  await ensureApiIntegrationsSchema(pool);
   // Bahan, menus and recipes of the COGS sheet, once per database (add-only).
   await seedCogsSheet();
   // Its menus into the sheet's tabs as categories (Black Coffee ... Roti), once.

@@ -7,6 +7,7 @@ const {
   getCustomer,
   getProgram,
   listRedemptions,
+  listStamps,
   redeemReward,
   updateProgram,
   updateReward,
@@ -17,7 +18,8 @@ const staff = ["admin", "cashier"];
 const adminOnly = requireRole(["admin"], "Hanya admin yang bisa mengatur Program Promo.");
 
 router.get("/customers/:phone", authenticate, getCustomer);
-// Program Promo → Riwayat: the rewards handed over.
+// Stamp Card → Riwayat: the stamps given and the rewards handed over.
+router.get("/stamps", authenticate, adminOnly, listStamps);
 router.get("/redemptions", authenticate, adminOnly, listRedemptions);
 router.post(
   "/redemptions",

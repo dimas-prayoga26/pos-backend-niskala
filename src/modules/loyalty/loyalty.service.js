@@ -69,13 +69,19 @@ const addReward = ({ stamps, label, short }, deps) =>
 const updateReward = (rewardId, patch, deps) =>
   programRequest("PUT", `/rewards/${encodeURIComponent(rewardId)}`, patch, deps);
 
-// Program Promo → Riwayat: the rewards handed over, newest first.
+// Pengaturan → Stamp Card → Riwayat, newest first:
 // { data, meta: { page, per_page, total, last_page } }; q: phone, code or name.
-const listRedemptions = async ({ page = 1, perPage = 20, q = "" } = {}, deps) => {
+const listHistory = async (path, { page = 1, perPage = 20, q = "" } = {}, deps) => {
   const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
   if (String(q).trim()) params.set("q", String(q).trim());
-  return (await client.request("GET", `/redemptions?${params}`, undefined, deps)).data;
+  return (await client.request("GET", `${path}?${params}`, undefined, deps)).data;
 };
+
+// The stamps given (with the order and cashier of each).
+const listStamps = (options, deps) => listHistory("/stamps", options, deps);
+
+// The rewards handed over.
+const listRedemptions = (options, deps) => listHistory("/redemptions", options, deps);
 
 // true / false; null when loyalty can't say, and the loyalty app's own
 // rules then decide.
@@ -101,16 +107,17 @@ const stampOrder = async (orderId, cashierId, deps) => {
 
 // Only Offline orders keep the customer's phone, so only they earn stamps.
 const shouldStamp = (order) =>
-  client.isConfigured() &&
   Boolean(order?.id) &&
   (order.orderType || STAMP_ORDER_TYPE) === STAMP_ORDER_TYPE &&
   Boolean(String(order.customerDetails?.phone || "").trim());
 
 // After an order is saved: asks for its stamp without holding up the
-// response; with the stamp card off it asks nothing. A lost call is picked
-// up by the loyalty app's loyalty:sync-stamps, so a failure is only logged.
+// response; with no loyalty key (Pengaturan → API) or the stamp card off it
+// asks nothing. A lost call is picked up by the loyalty app's
+// loyalty:sync-stamps, so a failure is only logged.
 const stampOrderInBackground = async (order, cashierId, deps) => {
   if (!shouldStamp(order)) return null;
+  if (!deps?.connection && !(await client.isConfigured())) return null;
   if ((await isProgramActive(deps)) === false) return null;
 
   try {
@@ -131,6 +138,7 @@ module.exports = {
   getProgram,
   isProgramActive,
   listRedemptions,
+  listStamps,
   lookupCustomer,
   redeemReward,
   setProgramActive,

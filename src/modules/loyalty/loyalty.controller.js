@@ -81,15 +81,19 @@ const addReward = withLoyalty((req) => {
   return loyaltyService.addReward({ stamps, label, short: String(req.body?.short || "").trim() });
 });
 
-// Program Promo → Riwayat: ?page=&perPage=&q= (phone, customer code or name).
-const listRedemptions = withLoyalty((req) => {
+// Stamp Card → Riwayat: ?page=&perPage=&q= (phone, customer code or name).
+const historyQuery = (req) => {
   const page = Number(req.query.page) || 1;
   const perPage = Number(req.query.perPage) || 20;
   if (!Number.isInteger(page) || page < 1 || !Number.isInteger(perPage) || perPage < 1 || perPage > 100) {
     throw createHttpError(400, "Halaman riwayat tidak valid.");
   }
-  return loyaltyService.listRedemptions({ page, perPage, q: String(req.query.q || "").slice(0, 50) });
-});
+  return { page, perPage, q: String(req.query.q || "").slice(0, 50) };
+};
+
+const listStamps = withLoyalty((req) => loyaltyService.listStamps(historyQuery(req)));
+
+const listRedemptions = withLoyalty((req) => loyaltyService.listRedemptions(historyQuery(req)));
 
 // promoMenuItemId: the Promo loyalty menu Tukar gives for the reward (null:
 // none yet), checked against the POS menus before loyalty keeps it.
@@ -119,6 +123,7 @@ module.exports = {
   getCustomer,
   getProgram,
   listRedemptions,
+  listStamps,
   redeemReward,
   updateProgram,
   updateReward,

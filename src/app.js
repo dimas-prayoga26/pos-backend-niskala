@@ -64,6 +64,11 @@ const createApp = () => {
   app.use("/api/recap", require("./modules/recaps/recap.routes"));
   app.use("/api/realtime", require("./modules/realtime/realtime.routes"));
   app.use("/api/loyalty", require("./modules/loyalty/loyalty.routes"));
+  // Pengaturan → API: the loyalty URL and key come from there.
+  require("./modules/loyalty/loyalty.client").setConnectionResolver(
+    require("./modules/integrations/integration.service").loyaltyConnection
+  );
+  app.use("/api/integrations", require("./modules/integrations/integration.routes"));
 
   app.use(errorHandler);
 

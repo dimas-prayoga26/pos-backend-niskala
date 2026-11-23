@@ -111,6 +111,29 @@ const update = async (id, input) => {
   return menuItem;
 };
 
+// Tersedia on/off alone (the switch on a promo card); null when not found.
+const setAvailable = async (id, isAvailable) => {
+  if (typeof isAvailable !== "boolean") {
+    throw createHttpError(400, "Status tersedia wajib diisi.");
+  }
+  if (!(await MenuItem.setAvailable(id, isAvailable))) return null;
+  return MenuItem.findById(id);
+};
+
+// Riwayat of a promo card: who bought it. { data, meta: { page, perPage,
+// total, lastPage }, summary: { orders, quantity, revenue } }; null when
+// the menu is not there.
+const listSales = async (id, { page = 1, perPage = 20 } = {}) => {
+  if (!(await MenuItem.findById(id))) return null;
+
+  const { summary, rows } = await MenuItem.findSales(id, { page, perPage });
+  return {
+    data: rows,
+    meta: { page, perPage, total: summary.lines, lastPage: Math.max(1, Math.ceil(summary.lines / perPage)) },
+    summary: { orders: summary.orders, quantity: summary.quantity, revenue: summary.revenue },
+  };
+};
+
 // A menu inside a package cannot be deleted (409) until it leaves the package.
 const remove = async (id) => {
   const menuItem = await MenuItem.findById(id);
@@ -136,6 +159,8 @@ module.exports = {
   create,
   findAll: MenuItem.findAll,
   findByCategoryId: MenuItem.findByCategoryId,
+  listSales,
   remove,
+  setAvailable,
   update,
 };
