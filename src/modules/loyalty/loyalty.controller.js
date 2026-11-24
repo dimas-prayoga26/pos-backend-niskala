@@ -30,6 +30,17 @@ const getCustomer = asyncHandler(async (req, res, next) => {
   }
 });
 
+// The cashier scanned a stamp card voucher QR (POS cart, Nomor Telepon).
+const getVoucher = asyncHandler(async (req, res, next) => {
+  try {
+    const data = await loyaltyService.lookupVoucher(req.params.code);
+    res.set("Cache-Control", "no-store");
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(toHttpError(error));
+  }
+});
+
 const redeemReward = asyncHandler(async (req, res, next) => {
   const phone = String(req.body?.phone || "").trim();
   const rewardStamps = Number(req.body?.rewardStamps);
@@ -95,6 +106,9 @@ const listStamps = withLoyalty((req) => loyaltyService.listStamps(historyQuery(r
 
 const listRedemptions = withLoyalty((req) => loyaltyService.listRedemptions(historyQuery(req)));
 
+// Stamp Card → Riwayat → Member: every member with all the stamps earned.
+const listMembers = withLoyalty((req) => loyaltyService.listMembers(historyQuery(req)));
+
 // promoMenuItemId: the Promo loyalty menu Tukar gives for the reward (null:
 // none yet), checked against the POS menus before loyalty keeps it.
 const updateReward = withLoyalty(async (req) => {
@@ -122,6 +136,8 @@ module.exports = {
   addReward,
   getCustomer,
   getProgram,
+  getVoucher,
+  listMembers,
   listRedemptions,
   listStamps,
   redeemReward,

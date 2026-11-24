@@ -33,6 +33,37 @@ describe("loyalty client", () => {
     assert.equal(calls[0].init.headers.Authorization, "Bearer unit-token");
   });
 
+  it("looks a scanned voucher QR up; anything else is refused without a call", async () => {
+    const voucher = { status: "ready", ready: true, reward: { stamps: 5 } };
+    const { calls, deps } = fakeFetch(jsonResponse(200, voucher));
+
+    assert.deepEqual(await loyalty.lookupVoucher(" NSKV1.NSK-000001-01.5.29872800.0123456789abcdef ", deps), voucher);
+    assert.equal(calls[0].url, "http://loyalty.test/api/pos/vouchers/NSKV1.NSK-000001-01.5.29872800.0123456789abcdef");
+    assert.equal(calls[0].init.method, "GET");
+
+    for (const code of ["", "https://example.com/x", "../program", "a b"]) {
+      await assert.rejects(loyalty.lookupVoucher(code, deps), (error) => {
+        assert.ok(error instanceof LoyaltyRefusedError);
+        assert.equal(error.statusCode, 404);
+        assert.equal(error.reason, "invalid_voucher");
+        return true;
+      });
+    }
+    assert.equal(calls.length, 1);
+  });
+
+  it("passes the loyalty app's 404 for an unknown voucher on as a refusal", async () => {
+    const { deps } = fakeFetch(
+      jsonResponse(404, { message: "QR ini bukan voucher Stamp Card Niskala.", reason: "invalid_voucher" })
+    );
+
+    await assert.rejects(loyalty.lookupVoucher("NSKV1.X.5.29872800.0000000000000000", deps), (error) => {
+      assert.ok(error instanceof LoyaltyRefusedError);
+      assert.equal(error.reason, "invalid_voucher");
+      return true;
+    });
+  });
+
   it("sends a stamp and a redemption with the cashier's POS user id", async () => {
     const { calls, deps } = fakeFetch(jsonResponse(201, { stamped: true }));
 
@@ -65,7 +96,7 @@ describe("loyalty client", () => {
     );
   });
 
-  it("reads the redemption and stamp histories page by page, searched by phone", async () => {
+  it("reads the redemption and stamp histories and the members page by page, searched by phone", async () => {
     const history = { data: [{ id: 3 }], meta: { page: 2, per_page: 10, total: 11, last_page: 2 } };
     const { calls, deps } = fakeFetch(() => jsonResponse(200, history));
 
@@ -73,6 +104,7 @@ describe("loyalty client", () => {
     await loyalty.listRedemptions({}, deps);
     assert.deepEqual(await loyalty.listStamps({ page: 3, perPage: 5, q: "NSK" }, deps), history);
     await loyalty.listStamps(undefined, deps);
+    assert.deepEqual(await loyalty.listMembers({ page: 2, perPage: 20, q: "Dimas" }, deps), history);
 
     assert.deepEqual(
       calls.map((call) => [call.init.method, call.url]),
@@ -81,6 +113,7 @@ describe("loyalty client", () => {
         ["GET", "http://loyalty.test/api/pos/redemptions?page=1&per_page=20"],
         ["GET", "http://loyalty.test/api/pos/stamps?page=3&per_page=5&q=NSK"],
         ["GET", "http://loyalty.test/api/pos/stamps?page=1&per_page=20"],
+        ["GET", "http://loyalty.test/api/pos/members?page=2&per_page=20&q=Dimas"],
       ]
     );
   });

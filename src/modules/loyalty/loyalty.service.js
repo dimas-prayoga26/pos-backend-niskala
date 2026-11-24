@@ -31,6 +31,24 @@ const lookupCustomer = async (phone, deps) => {
   return data;
 };
 
+// The QR on the back of a stamp card, scanned by the cashier:
+// { status, ready, message, customer: { code, name, phone }, card_number,
+// reward: { stamps, label, promo_menu_item_id } }. Not one of the loyalty
+// app's vouchers: LoyaltyRefusedError 404 (reason invalid_voucher).
+const VOUCHER_CODE = /^[A-Za-z0-9.-]{1,120}$/;
+
+const lookupVoucher = async (code, deps) => {
+  const trimmed = String(code || "").trim();
+  if (!VOUCHER_CODE.test(trimmed)) {
+    throw new client.LoyaltyRefusedError(404, {
+      message: "QR ini bukan voucher Stamp Card Niskala.",
+      reason: "invalid_voucher",
+    });
+  }
+  const { data } = await client.request("GET", `/vouchers/${encodeURIComponent(trimmed)}`, undefined, deps);
+  return data;
+};
+
 // orderId / menuItemId / menuName: the order the reward went out with and
 // the menu given, when it is claimed in the POS.
 const redeemReward = async ({ phone, rewardStamps, cashierId, orderId, menuItemId, menuName }, deps) => {
@@ -82,6 +100,10 @@ const listStamps = (options, deps) => listHistory("/stamps", options, deps);
 
 // The rewards handed over.
 const listRedemptions = (options, deps) => listHistory("/redemptions", options, deps);
+
+// The members, most stamps first: every stamp each has earned, their card
+// now, the rewards handed over and ready.
+const listMembers = (options, deps) => listHistory("/members", options, deps);
 
 // true / false; null when loyalty can't say, and the loyalty app's own
 // rules then decide.
@@ -137,9 +159,11 @@ module.exports = {
   forgetProgramState,
   getProgram,
   isProgramActive,
+  listMembers,
   listRedemptions,
   listStamps,
   lookupCustomer,
+  lookupVoucher,
   redeemReward,
   setProgramActive,
   updateReward,
