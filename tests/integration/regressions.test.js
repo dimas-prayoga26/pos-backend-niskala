@@ -827,18 +827,66 @@ describe("regressions", () => {
     assert.match(added.body.data.note, /Tambah kas Saldo online Rp 24000: pencairan GoFood/);
   });
 
-  it("does not store an uploaded image when the user is not an admin", async () => {
+  it("stores a kasir's menu photo but nothing uploaded without a login", async () => {
+    const photo = (name) => {
+      const form = new FormData();
+      form.append("image", new Blob([TINY_PNG], { type: "image/png" }), name);
+      return form;
+    };
     const before = new Set(fs.readdirSync(UPLOAD_DIR));
-    const form = new FormData();
-    form.append("image", new Blob([TINY_PNG], { type: "image/png" }), "kasir.png");
-
-    const response = await request("POST", "/api/menu-item/upload-image", { as: "cashier", body: form });
+    const anonymous = await request("POST", "/api/menu-item/upload-image", { body: photo("anon.png") });
+    const afterAnonymous = fs.readdirSync(UPLOAD_DIR).filter((file) => !before.has(file));
+    const kasir = await request("POST", "/api/menu-item/upload-image", { as: "cashier", body: photo("kasir.png") });
     const added = fs.readdirSync(UPLOAD_DIR).filter((file) => !before.has(file));
     added.forEach((file) => fs.unlinkSync(path.join(UPLOAD_DIR, file)));
 
-    assert.equal(response.status, 403);
-    assert.equal(response.body.message, "Only admin can manage menu items!");
-    assert.deepEqual(added, []);
+    assert.equal(anonymous.status, 401);
+    assert.deepEqual(afterAnonymous, []);
+    assert.equal(kasir.status, 201);
+    assert.match(kasir.body.data.imagePath, /^\/uploads\/menu\/\d+-kasir\.png$/);
+    assert.equal(added.length, 1);
+  });
+
+  it("lets kasir add menus, promos and categories, while changes stay with admins", async () => {
+    const categoryOf = async (body) => {
+      const created = await request("POST", "/api/category", { as: "cashier", body });
+      assert.equal(created.status, 201, JSON.stringify(created.body));
+      return created.body.data;
+    };
+    const minuman = await categoryOf({ name: "Minuman Kasir", icon: "🥤" });
+    const promo = await categoryOf({ name: "Promo Kasir", icon: "🏷️", isBundle: true });
+    assert.equal((await request("PUT", `/api/category/${minuman.id}`, { as: "cashier", body: { name: "Ganti" } })).status, 403);
+    assert.equal((await request("DELETE", `/api/category/${minuman.id}`, { as: "cashier" })).status, 403);
+
+    const added = await request("POST", "/api/menu-item", {
+      as: "cashier",
+      body: { categoryId: minuman.id, name: "Es Teh Kasir", price: 8000, hppCost: 1000, isAvailable: false },
+    });
+    assert.equal(added.status, 201, JSON.stringify(added.body));
+    // Menu → Menu Items shows kasir the unavailable menus too.
+    const listed = await request("GET", "/api/menu-item?includeUnavailable=true", { as: "cashier" });
+    assert.ok(listed.body.data.some((item) => item.id === added.body.data.id));
+
+    const promoAdded = await request("POST", "/api/menu-item", {
+      as: "cashier",
+      body: { categoryId: promo.id, name: "Paket Kasir", price: 10000, bundleItems: [{ menuItemId: added.body.data.id, quantity: 1 }] },
+    });
+    assert.equal(promoAdded.status, 201, JSON.stringify(promoAdded.body));
+    const promoId = promoAdded.body.data.id;
+    // A promo's Riwayat (who bought it) opens for kasir; its switch does not.
+    assert.equal((await request("GET", `/api/menu-item/${promoId}/sales`, { as: "cashier" })).status, 200);
+    const switched = await request("PATCH", `/api/menu-item/${promoId}/availability`, {
+      as: "cashier",
+      body: { isAvailable: false },
+    });
+    assert.equal(switched.status, 403);
+
+    const changed = await request("PUT", `/api/menu-item/${added.body.data.id}`, { as: "cashier", body: { name: "Ganti" } });
+    assert.equal(changed.status, 403);
+    const removed = await request("DELETE", `/api/menu-item/${added.body.data.id}`, { as: "cashier" });
+    assert.equal(removed.status, 403);
+    assert.equal((await request("DELETE", `/api/menu-item/${promoId}`, { as: "admin" })).status, 200);
+    assert.equal((await request("DELETE", `/api/menu-item/${added.body.data.id}`, { as: "admin" })).status, 200);
   });
 
   it("keeps non-seed stock items active and fills missing order codes across a restart", async () => {

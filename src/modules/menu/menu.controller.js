@@ -1,12 +1,14 @@
 const createHttpError = require("http-errors");
 const { emitRealtimeEvent } = require("../../infrastructure/realtime/socket");
 const asyncHandler = require("../../shared/http/asyncHandler");
-const { isAdmin } = require("../../shared/middleware/authorize");
+const { getUserRole } = require("../../shared/middleware/authorize");
 const menuService = require("./menu.service");
 
 const getMenuItems = asyncHandler(async (req, res) => {
   const { categoryId } = req.query;
-  const includeUnavailable = req.query.includeUnavailable === "true" && isAdmin(req);
+  // Menu → Menu Items lists the unavailable menus too (admins and kasir).
+  const includeUnavailable =
+    req.query.includeUnavailable === "true" && ["admin", "cashier"].includes(getUserRole(req));
   const menuItems = categoryId
     ? await menuService.findByCategoryId(categoryId, { includeUnavailable })
     : await menuService.findAll({ includeUnavailable });

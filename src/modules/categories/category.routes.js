@@ -13,9 +13,12 @@ const {
 
 const router = express.Router();
 const adminOnly = requireRole("admin", "Only admin can manage categories!");
+// Kasir add categories too (Menu → Tambah Category); changing, moving or
+// removing one stays with admins.
+const staffOnly = requireRole(["admin", "cashier"], "Only admin or cashier can add categories!");
 
 router.get("/", authenticate, getCategories);
-router.post("/", authenticate, adminOnly, addCategory);
+router.post("/", authenticate, staffOnly, addCategory);
 router.put("/positions", authenticate, adminOnly, updateCategoryPositions);
 router.put("/best-seller-groups", authenticate, adminOnly, updateBestSellerGroups);
 router.put("/:id", authenticate, adminOnly, requireNumericId(), updateCategory);

@@ -27,11 +27,12 @@ router.get(
   requireRole(staff, "Only admin or cashier can scan loyalty vouchers!"),
   getVoucher
 );
-// Stamp Card → Riwayat: the stamps given, the rewards handed over and the
-// members with all their stamps.
-router.get("/stamps", authenticate, adminOnly, listStamps);
-router.get("/redemptions", authenticate, adminOnly, listRedemptions);
-router.get("/members", authenticate, adminOnly, listMembers);
+// Member Stamp Card (admin and kasir): the stamps given, the rewards handed
+// over and the members with all their stamps.
+const staffOnly = requireRole(staff, "Only admin or cashier can view the stamp card members!");
+router.get("/stamps", authenticate, staffOnly, listStamps);
+router.get("/redemptions", authenticate, staffOnly, listRedemptions);
+router.get("/members", authenticate, staffOnly, listMembers);
 router.post(
   "/redemptions",
   authenticate,

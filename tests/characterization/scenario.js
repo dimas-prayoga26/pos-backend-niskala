@@ -69,7 +69,8 @@ module.exports = async function scenario(api) {
   // --- categories ---------------------------------------------------------
   await call("categories cashier", "GET", "/api/category", { as: "cashier" });
   await call("categories cashier includeInactive ignored", "GET", "/api/category?includeInactive=true", { as: "cashier" });
-  await call("category add as cashier", "POST", "/api/category", { as: "cashier", body: { name: "Nope" } });
+  // Kasir may add categories; without a name nothing is stored.
+  await call("category add as cashier", "POST", "/api/category", { as: "cashier", body: {} });
   await call("category add missing name", "POST", "/api/category", { as: "admin", body: { icon: "x" } });
   await call("category add bad tax", "POST", "/api/category", { as: "admin", body: { name: "Bad", taxRate: 150 } });
   const category = await call("category add", "POST", "/api/category", {
