@@ -11,7 +11,6 @@ const {
   toBluetoothPrintResponse,
 } = require("./thermalPrint.store");
 
-const DRAFT_ORDER_ID = 0;
 const PRINT_DOCUMENT_HEADERS = {
   "Cache-Control": "no-store, private",
   "Content-Type": "application/json; charset=utf-8",
@@ -30,9 +29,15 @@ const getRequestOrigin = (req) => {
   return `${protocol}://${host}`;
 };
 
-const sendPrintUrl = (req, res, next, buildPath) => {
+const createThermalPrintUrl = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const order = await orderService.findById(id);
+  if (!order) {
+    return next(createHttpError(404, "Order not found!"));
+  }
+
   const token = createThermalPrintJob({
-    orderId: req.params.id ?? DRAFT_ORDER_ID,
+    orderId: id,
     payload: req.body?.payload,
     userId: req.user?._id || req.user?.id,
   });
@@ -46,13 +51,13 @@ const sendPrintUrl = (req, res, next, buildPath) => {
     success: true,
     data: {
       expiresInSeconds: Math.floor(THERMAL_PRINT_TTL_MS / 1000),
-      url: `${origin}${buildPath(token)}`,
+      url: `${origin}/api/order/${id}/thermal-print/${token}`,
     },
   });
-};
+});
 
-const sendPrintDocument = (res, next, { orderId, token }) => {
-  const job = getThermalPrintJob({ orderId, token });
+const getThermalPrintDocument = asyncHandler(async (req, res, next) => {
+  const job = getThermalPrintJob({ orderId: req.params.id, token: req.params.token });
 
   if (!job) {
     return next(createHttpError(404, "Thermal print URL expired or invalid."));
@@ -60,35 +65,9 @@ const sendPrintDocument = (res, next, { orderId, token }) => {
 
   res.set(PRINT_DOCUMENT_HEADERS);
   return res.status(200).json(toBluetoothPrintResponse(job.payload));
-};
-
-const createThermalPrintUrl = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const order = await orderService.findById(id);
-
-  if (!order) {
-    return next(createHttpError(404, "Order not found!"));
-  }
-
-  return sendPrintUrl(req, res, next, (token) => `/api/order/${id}/thermal-print/${token}`);
 });
 
-const getThermalPrintDocument = asyncHandler(async (req, res, next) =>
-  sendPrintDocument(res, next, { orderId: req.params.id, token: req.params.token })
-);
-
-// Draft receipts are temporary print jobs; they never create orders or change stock.
-const createDraftThermalPrintUrl = asyncHandler(async (req, res, next) =>
-  sendPrintUrl(req, res, next, (token) => `/api/order/draft/thermal-print/${token}`)
-);
-
-const getDraftThermalPrintDocument = asyncHandler(async (req, res, next) =>
-  sendPrintDocument(res, next, { orderId: DRAFT_ORDER_ID, token: req.params.token })
-);
-
 module.exports = {
-  createDraftThermalPrintUrl,
   createThermalPrintUrl,
-  getDraftThermalPrintDocument,
   getThermalPrintDocument,
 };

@@ -6,6 +6,8 @@ const {
   addCateringPayment,
   addOrder,
   deleteOrder,
+  getCustomerName,
+  getCustomerSuggestions,
   getOrderById,
   getOrderItemCosts,
   getOrders,
@@ -13,9 +15,7 @@ const {
   updateOrder,
 } = require("./order.controller");
 const {
-  createDraftThermalPrintUrl,
   createThermalPrintUrl,
-  getDraftThermalPrintDocument,
   getThermalPrintDocument,
 } = require("./orderPrint.controller");
 
@@ -25,10 +25,11 @@ const staff = ["admin", "cashier"];
 
 router.post("/", authenticate, addOrder);
 router.get("/", authenticate, getOrders);
+const customerLookupAccess = requireRole(staff, "Hanya admin atau kasir yang bisa mencari pelanggan.");
+router.get("/customer-name", authenticate, customerLookupAccess, getCustomerName);
+router.get("/customer-suggestions", authenticate, customerLookupAccess, getCustomerSuggestions);
 
 // Thermal print documents are fetched by the RawBT app without a session.
-router.post("/draft/thermal-print-url", authenticate, createDraftThermalPrintUrl);
-router.get("/draft/thermal-print/:token", getDraftThermalPrintDocument);
 router.post("/:id/thermal-print-url", authenticate, validId, createThermalPrintUrl);
 router.get("/:id/thermal-print/:token", validId, getThermalPrintDocument);
 

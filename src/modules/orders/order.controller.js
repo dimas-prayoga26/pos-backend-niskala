@@ -47,6 +47,24 @@ const getOrders = asyncHandler(async (req, res) => {
   res.status(200).json({ data: orders });
 });
 
+const getCustomerName = asyncHandler(async (req, res) => {
+  const phone = req.query.phone;
+  if (typeof phone !== "string" || !/^\d{10,15}$/.test(phone)) {
+    throw createHttpError(400, "Nomor telepon tidak valid.");
+  }
+  const name = await orderService.findCustomerName(phone.replace(/^628/, "08"));
+  res.set("Cache-Control", "no-store").json({ data: { name } });
+});
+
+const getCustomerSuggestions = asyncHandler(async (req, res) => {
+  const { prefix } = req.query;
+  if (typeof prefix !== "string" || !/^\d{6,15}$/.test(prefix)) {
+    throw createHttpError(400, "Masukkan minimal 6 digit awal nomor telepon.");
+  }
+  const matches = await orderService.findCustomerSuggestions(prefix.replace(/^628/, "08"));
+  res.set("Cache-Control", "no-store").json({ data: matches });
+});
+
 const getOrderById = asyncHandler(async (req, res, next) => {
   const order = await orderService.findById(req.params.id);
 
@@ -151,6 +169,8 @@ module.exports = {
   addCateringPayment,
   addOrder,
   deleteOrder,
+  getCustomerName,
+  getCustomerSuggestions,
   getOrderById,
   getOrderItemCosts,
   getOrders,

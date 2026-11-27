@@ -43,7 +43,7 @@ const mapDailyRecap = (row) => ({
   leastMenu: row.least_menu_name || row.least_menu_current_name,
   note: row.note,
   createdBy: row.created_by,
-  createdByName: row.created_by_name,
+  createdByName: row.created_by_name || row.creator_name,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -69,7 +69,7 @@ const mapWeeklyRecap = (row) => ({
   actionPlan: row.action_plan,
   note: row.note,
   createdBy: row.created_by,
-  createdByName: row.created_by_name,
+  createdByName: row.created_by_name || row.creator_name,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -93,7 +93,7 @@ const mapMonthlyRecap = (row) => ({
   nextMonthStrategy: row.next_month_strategy,
   note: row.note,
   createdBy: row.created_by,
-  createdByName: row.created_by_name,
+  createdByName: row.created_by_name || row.creator_name,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -137,7 +137,7 @@ const findDailyRecaps = async () => {
       m.code AS format_code,
       m.label AS format_label,
       u.name AS user_name,
-      creator.name AS created_by_name,
+      creator.name AS creator_name,
       best_menu.name AS best_menu_current_name,
       least_menu.name AS least_menu_current_name
     FROM daily_recaps dr
@@ -158,7 +158,7 @@ const findWeeklyRecaps = async () => {
       wr.*,
       m.code AS format_code,
       m.label AS format_label,
-      creator.name AS created_by_name
+      creator.name AS creator_name
     FROM weekly_recaps wr
     INNER JOIN meta_data_format_recap m ON m.id = wr.format_recap_id
     LEFT JOIN users creator ON creator.id = wr.created_by
@@ -174,7 +174,7 @@ const findMonthlyRecaps = async () => {
       mr.*,
       m.code AS format_code,
       m.label AS format_label,
-      creator.name AS created_by_name
+      creator.name AS creator_name
     FROM monthly_recaps mr
     INNER JOIN meta_data_format_recap m ON m.id = mr.format_recap_id
     LEFT JOIN users creator ON creator.id = mr.created_by
@@ -182,6 +182,12 @@ const findMonthlyRecaps = async () => {
   `);
 
   return rows.map(mapMonthlyRecap);
+};
+
+const resolveUserName = async (executor, id) => {
+  if (!id) return null;
+  const [rows] = await executor.query("SELECT name FROM users WHERE id = ? LIMIT 1", [id]);
+  return rows[0]?.name || null;
 };
 
 const findByName = async (table, name) => {
@@ -204,6 +210,7 @@ const dailyRecapExistsForDate = async (recapDate) => {
 };
 
 const insertDaily = async (format, payload, { user, bestMenu, leastMenu }, connection = pool) => {
+  const createdByName = await resolveUserName(connection, payload.createdBy);
   const [result] = await connection.query(
     `INSERT INTO daily_recaps
       (format_recap_id, recap_date, user_id, shift_officer, transaction_total,
@@ -211,8 +218,8 @@ const insertDaily = async (format, payload, { user, bestMenu, leastMenu }, conne
        hpp_total, gross_profit, daily_expense, cash_in, qris_in,
        transfer_in, online_in, cash_difference,
        best_menu_item_id, best_menu_name, least_menu_item_id,
-       least_menu_name, note, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       least_menu_name, note, created_by, created_by_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       format.id,
       payload.recapDate,
@@ -237,6 +244,7 @@ const insertDaily = async (format, payload, { user, bestMenu, leastMenu }, conne
       payload.leastMenu || leastMenu?.name || null,
       payload.note || null,
       payload.createdBy || null,
+      createdByName,
     ]
   );
 
@@ -278,13 +286,14 @@ const addCashToDaily = ({ recapId, cashColumn, amount, kasNote }) =>
   });
 
 const upsertWeekly = async (format, payload) => {
+  const createdByName = await resolveUserName(pool, payload.createdBy);
   await pool.query(
     `INSERT INTO weekly_recaps
       (format_recap_id, period_start_date, period_end_date, total_omzet,
        gross_profit, offline_revenue, online_revenue, catering_revenue,
        catering_order_count, top_channel, operational_issues, team_evaluation,
-       stock_evaluation, action_plan, note, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       stock_evaluation, action_plan, note, created_by, created_by_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        format_recap_id = VALUES(format_recap_id),
        total_omzet = VALUES(total_omzet),
@@ -299,7 +308,8 @@ const upsertWeekly = async (format, payload) => {
        stock_evaluation = VALUES(stock_evaluation),
        action_plan = VALUES(action_plan),
        note = VALUES(note),
-       created_by = VALUES(created_by)`,
+       created_by = VALUES(created_by),
+       created_by_name = VALUES(created_by_name)`,
     [
       format.id,
       payload.periodStartDate,
@@ -317,18 +327,20 @@ const upsertWeekly = async (format, payload) => {
       payload.actionPlan || null,
       payload.note || null,
       payload.createdBy || null,
+      createdByName,
     ]
   );
 };
 
 const upsertMonthly = async (format, payload) => {
+  const createdByName = await resolveUserName(pool, payload.createdBy);
   await pool.query(
     `INSERT INTO monthly_recaps
       (format_recap_id, period_month, omzet, hpp_total,
        gross_profit, estimated_net_profit, catering_order_count,
        retained_menu, evaluated_menu, promotion_evaluation,
-       supplier_evaluation, next_month_strategy, note, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       supplier_evaluation, next_month_strategy, note, created_by, created_by_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        format_recap_id = VALUES(format_recap_id),
        omzet = VALUES(omzet),
@@ -342,7 +354,8 @@ const upsertMonthly = async (format, payload) => {
        supplier_evaluation = VALUES(supplier_evaluation),
        next_month_strategy = VALUES(next_month_strategy),
        note = VALUES(note),
-       created_by = VALUES(created_by)`,
+       created_by = VALUES(created_by),
+       created_by_name = VALUES(created_by_name)`,
     [
       format.id,
       payload.periodMonth,
@@ -358,6 +371,7 @@ const upsertMonthly = async (format, payload) => {
       payload.nextMonthStrategy || null,
       payload.note || null,
       payload.createdBy || null,
+      createdByName,
     ]
   );
 };

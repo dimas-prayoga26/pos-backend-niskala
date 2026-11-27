@@ -267,6 +267,8 @@ module.exports = {
   create,
   findAll: Order.findAll,
   findById: Order.findById,
+  findCustomerName: Order.findCustomerName,
+  findCustomerSuggestions: Order.findCustomerSuggestions,
   findItemCosts: Order.findItemCosts,
   remove,
   updateCateringPaidStatus,

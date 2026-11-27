@@ -1,5 +1,41 @@
 const { pool } = require("../../infrastructure/database/pool");
 
+const orderPhoneDigits = "REGEXP_REPLACE(customer_phone, '[+().[:space:]-]', '')";
+const namedOfflineOrder = `order_type = 'Offline'
+  AND TRIM(customer_name) <> ''
+  AND LOWER(TRIM(customer_name)) NOT REGEXP '^guest(-[0-9]+)?$'`;
+
+const findCustomerName = async (phone) => {
+  const numbers = phone.startsWith("08") ? [phone, "62" + phone.slice(1)] : [phone];
+  const [rows] = await pool.query(
+    `SELECT TRIM(customer_name) AS name FROM orders
+     WHERE ${namedOfflineOrder} AND ${orderPhoneDigits} IN (?)
+     ORDER BY id DESC LIMIT 1`,
+    [numbers]
+  );
+  return rows[0]?.name ?? null;
+};
+
+const findCustomerSuggestions = async (prefix) => {
+  const [rows] = await pool.query(
+    `WITH digits AS (
+       SELECT id, TRIM(customer_name) AS name, ${orderPhoneDigits} AS number_digits
+       FROM orders WHERE ${namedOfflineOrder} AND customer_phone IS NOT NULL
+     ), phones AS (
+       SELECT id, name, CASE WHEN number_digits LIKE '628%'
+         THEN CONCAT('0', SUBSTRING(number_digits, 3)) ELSE number_digits END AS phone
+       FROM digits
+     ), matches AS (
+       SELECT id, name, phone, ROW_NUMBER() OVER (PARTITION BY phone ORDER BY id DESC) AS position_for_phone
+       FROM phones WHERE phone LIKE CONCAT(?, '%') AND phone REGEXP '^[0-9]{10,15}$'
+     )
+     SELECT name, phone FROM matches WHERE position_for_phone = 1
+     ORDER BY (phone = ?) DESC, id DESC LIMIT 5`,
+    [prefix, prefix]
+  );
+  return rows;
+};
+
 // Catering paid amount: Full plans count as fully paid, DP plans use dp_received.
 const mapOrder = (row, items = []) => {
   if (!row) return null;
@@ -582,6 +618,8 @@ module.exports = {
   deleteOrder,
   findAll,
   findById,
+  findCustomerName,
+  findCustomerSuggestions,
   findItemCosts,
   findItemsForStockRestore,
   insertCateringDetails,

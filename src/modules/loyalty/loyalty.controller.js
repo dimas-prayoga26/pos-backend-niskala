@@ -109,6 +109,9 @@ const listRedemptions = withLoyalty((req) => loyaltyService.listRedemptions(hist
 // Stamp Card → Riwayat → Member: every member with all the stamps earned.
 const listMembers = withLoyalty((req) => loyaltyService.listMembers(historyQuery(req)));
 
+// Member Stamp Card → Reset PIN (admin).
+const resetMemberPin = withLoyalty((req) => loyaltyService.resetMemberPin(req.params.id));
+
 // promoMenuItemId: the Promo loyalty menu Tukar gives for the reward (null:
 // none yet), checked against the POS menus before loyalty keeps it.
 const updateReward = withLoyalty(async (req) => {
@@ -141,6 +144,7 @@ module.exports = {
   listRedemptions,
   listStamps,
   redeemReward,
+  resetMemberPin,
   updateProgram,
   updateReward,
 };

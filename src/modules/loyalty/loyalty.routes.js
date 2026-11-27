@@ -11,6 +11,7 @@ const {
   listRedemptions,
   listStamps,
   redeemReward,
+  resetMemberPin,
   updateProgram,
   updateReward,
 } = require("./loyalty.controller");
@@ -33,6 +34,14 @@ const staffOnly = requireRole(staff, "Only admin or cashier can view the stamp c
 router.get("/stamps", authenticate, staffOnly, listStamps);
 router.get("/redemptions", authenticate, staffOnly, listRedemptions);
 router.get("/members", authenticate, staffOnly, listMembers);
+// A member forgot their PIN: admins put it back to the last 4 digits of the number.
+router.post(
+  "/members/:id/reset-pin",
+  authenticate,
+  requireRole(["admin"], "Hanya admin yang bisa reset PIN member."),
+  requireNumericId(),
+  resetMemberPin
+);
 router.post(
   "/redemptions",
   authenticate,

@@ -666,6 +666,13 @@ const connectDB = async () => {
   await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN supplier_evaluation TEXT NULL AFTER promotion_evaluation");
   await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN next_month_strategy TEXT NULL AFTER supplier_evaluation");
 
+  await runSafeMigration("ALTER TABLE daily_recaps ADD COLUMN created_by_name VARCHAR(150) NULL AFTER created_by");
+  await runSafeMigration("ALTER TABLE weekly_recaps ADD COLUMN created_by_name VARCHAR(150) NULL AFTER created_by");
+  await runSafeMigration("ALTER TABLE monthly_recaps ADD COLUMN created_by_name VARCHAR(150) NULL AFTER created_by");
+  await runSafeMigration("UPDATE daily_recaps dr JOIN users u ON u.id = dr.created_by SET dr.created_by_name = u.name WHERE dr.created_by_name IS NULL");
+  await runSafeMigration("UPDATE weekly_recaps wr JOIN users u ON u.id = wr.created_by SET wr.created_by_name = u.name WHERE wr.created_by_name IS NULL");
+  await runSafeMigration("UPDATE monthly_recaps mr JOIN users u ON u.id = mr.created_by SET mr.created_by_name = u.name WHERE mr.created_by_name IS NULL");
+
   logger.info(`MySQL Connected: ${config.dbHost}/${config.dbName}`);
 };
 

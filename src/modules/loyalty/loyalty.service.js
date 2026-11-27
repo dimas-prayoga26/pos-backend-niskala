@@ -105,6 +105,11 @@ const listRedemptions = (options, deps) => listHistory("/redemptions", options, 
 // now, the rewards handed over and ready.
 const listMembers = (options, deps) => listHistory("/members", options, deps);
 
+// A member forgot their PIN: back to the last 4 digits of their number.
+// Answers { id, own_pin: false }.
+const resetMemberPin = async (memberId, deps) =>
+  (await client.request("POST", `/members/${encodeURIComponent(memberId)}/reset-pin`, undefined, deps)).data;
+
 // true / false; null when loyalty can't say, and the loyalty app's own
 // rules then decide.
 const isProgramActive = async (deps) => {
@@ -165,6 +170,7 @@ module.exports = {
   lookupCustomer,
   lookupVoucher,
   redeemReward,
+  resetMemberPin,
   setProgramActive,
   updateReward,
   shouldStamp,

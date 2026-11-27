@@ -118,6 +118,16 @@ describe("loyalty client", () => {
     );
   });
 
+  it("resets a member's PIN by their id", async () => {
+    const { calls, deps } = fakeFetch(jsonResponse(200, { id: 9, own_pin: false }));
+
+    assert.deepEqual(await loyalty.resetMemberPin(9, deps), { id: 9, own_pin: false });
+    assert.deepEqual(
+      calls.map((call) => [call.init.method, call.url, call.body]),
+      [["POST", "http://loyalty.test/api/pos/members/9/reset-pin", undefined]]
+    );
+  });
+
   it("passes a rule refusal on with its message and reason", async () => {
     const { deps } = fakeFetch(
       jsonResponse(422, { message: "Minuman gratis belum bisa ditukar.", reason: "reward_not_ready" })

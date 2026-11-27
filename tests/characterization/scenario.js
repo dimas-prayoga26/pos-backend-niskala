@@ -528,13 +528,6 @@ module.exports = async function scenario(api) {
   await call("print document", "GET", printPath);
   await call("print document wrong order", "GET", printPath.replace(`/order/${offlineId}/`, `/order/${cateringId}/`));
   await call("print document bad token", "GET", `/api/order/${offlineId}/thermal-print/bad-token`);
-  const draftUrl = await call("draft print url", "POST", "/api/order/draft/thermal-print-url", {
-    as: "cashier",
-    body: { payload: printPayload },
-  });
-  await call("draft print document", "GET", new URL(draftUrl.body.data.url).pathname);
-  await call("draft print bad token", "GET", "/api/order/draft/thermal-print/nope");
-  await call("draft print url empty", "POST", "/api/order/draft/thermal-print-url", { as: "cashier", body: {} });
 
   // --- order delete restores stock ---------------------------------------
   const deletable = await call("order create deletable", "POST", "/api/order", {
